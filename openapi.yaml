@@ -1,0 +1,1045 @@
+openapi: 3.1.0
+info:
+  title: Open Mindmap API
+  version: 0.1.0
+  description: |
+    API for managing mindmaps stored in GitHub repositories.
+    Uses GitHub as a single source of truth with branch-based storage.
+    Each mindmap is stored in a separate branch (maps/{mapId}).
+  contact:
+    name: API Support
+    email: support@example.com
+
+servers:
+  - url: https://api.example.com
+    description: Production server
+  - url: http://localhost:8787
+    description: Development server
+
+security:
+  - sessionAuth: []
+
+components:
+  securitySchemes:
+    sessionAuth:
+      type: http
+      scheme: bearer
+      description: Session token obtained after GitHub OAuth
+
+  schemas:
+    Map:
+      type: object
+      required: [id, title, nodes, edges, updatedAt, version]
+      properties:
+        id:
+          type: string
+          pattern: '^map_[a-z0-9-]{6,}$'
+          example: map_abc123
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          example: Product Roadmap Q4
+        tags:
+          type: array
+          items:
+            type: string
+            maxLength: 50
+          maxItems: 20
+          example: [roadmap, product, planning]
+        nodes:
+          type: array
+          maxItems: 5000
+          items:
+            $ref: '#/components/schemas/Node'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/Edge'
+        viewState:
+          type: object
+          properties:
+            zoom:
+              type: number
+              minimum: 0.1
+              maximum: 5.0
+              default: 1.0
+            viewBox:
+              type: object
+              properties:
+                x:
+                  type: number
+                y:
+                  type: number
+                width:
+                  type: number
+                  minimum: 100
+                height:
+                  type: number
+                  minimum: 100
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2025-10-12T10:30:00Z'
+        version:
+          type: integer
+          minimum: 1
+          example: 3
+
+    Node:
+      type: object
+      required: [id, label, x, y, w, h]
+      properties:
+        id:
+          type: string
+          pattern: '^n_[A-Za-z0-9_-]{4,}$'
+          example: n_abc123
+        label:
+          type: string
+          maxLength: 500
+          example: User Authentication
+        x:
+          type: number
+          example: 100.5
+        y:
+          type: number
+          example: 200.0
+        w:
+          type: number
+          minimum: 20
+          maximum: 1000
+          example: 150
+        h:
+          type: number
+          minimum: 20
+          maximum: 1000
+          example: 80
+        nodeType:
+          type: string
+          enum: [rect, circle, diamond, hex, cloud, capsule, file, card]
+          default: rect
+          example: rect
+          description: Node shape type for semantic categorization
+        textAlign:
+          type: string
+          enum: [left, center, right]
+          default: center
+          example: center
+          description: Text horizontal alignment within node
+        textVerticalAlign:
+          type: string
+          enum: [top, middle, bottom]
+          default: middle
+          example: middle
+          description: Text vertical alignment within node
+        collapsed:
+          type: boolean
+          default: false
+        embedUrl:
+          type: string
+          format: uri
+          example: https://www.youtube.com/watch?v=dQw4w9WgXcQ
+        embedType:
+          type: string
+          enum: [youtube, webpage, image, pdf]
+          example: youtube
+        meta:
+          type: object
+          additionalProperties: true
+
+    Edge:
+      type: object
+      required: [id, source, target]
+      properties:
+        id:
+          type: string
+          pattern: '^e_[A-Za-z0-9_-]{4,}$'
+          example: e_xyz789
+        source:
+          type: string
+          example: n_abc123
+        target:
+          type: string
+          example: n_def456
+        label:
+          type: string
+          maxLength: 50
+          example: implements
+        edgeType:
+          type: string
+          enum: [straight, curved, bezier]
+          default: straight
+          example: straight
+          description: Edge line type (straight/curved/bezier)
+        meta:
+          type: object
+          additionalProperties: true
+
+    IndexItem:
+      type: object
+      required: [id, title, tags, nodeCount, edgeCount, updatedAt, version]
+      properties:
+        id:
+          type: string
+          example: map_abc123
+        title:
+          type: string
+          example: Product Roadmap Q4
+        tags:
+          type: array
+          items:
+            type: string
+        nodeCount:
+          type: integer
+          minimum: 0
+          example: 15
+        edgeCount:
+          type: integer
+          minimum: 0
+          example: 12
+        updatedAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          minimum: 1
+          example: 3
+
+    MapVersion:
+      type: object
+      required: [version, commitSha, message, author, date, nodeCount, edgeCount]
+      properties:
+        version:
+          type: integer
+          example: 3
+        commitSha:
+          type: string
+          pattern: '^[0-9a-f]{40}$'
+          example: a3f4b2c1d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0
+        message:
+          type: string
+          example: Update map: Product Roadmap Q4 (v3)
+        author:
+          type: string
+          example: John Doe
+        date:
+          type: string
+          format: date-time
+          example: '2025-10-12T10:30:00Z'
+        nodeCount:
+          type: integer
+          minimum: 0
+          example: 15
+        edgeCount:
+          type: integer
+          minimum: 0
+          example: 12
+
+    User:
+      type: object
+      required: [userId, email]
+      properties:
+        userId:
+          type: string
+          example: choonho.son
+        email:
+          type: string
+          format: email
+          example: choonho.son@example.com
+        name:
+          type: string
+          example: Choonho Son
+        picture:
+          type: string
+          format: uri
+          example: https://example.com/avatar.jpg
+
+    RepositoryStatus:
+      type: object
+      required: [exists, initialized]
+      properties:
+        exists:
+          type: boolean
+          example: true
+        initialized:
+          type: boolean
+          example: true
+
+    SuccessResponse:
+      type: object
+      required: [ok, data]
+      properties:
+        ok:
+          type: boolean
+          example: true
+        data:
+          type: object
+        meta:
+          type: object
+          properties:
+            requestId:
+              type: string
+              example: req_abc123
+            elapsedMs:
+              type: integer
+              example: 12
+
+    ErrorResponse:
+      type: object
+      required: [ok, error]
+      properties:
+        ok:
+          type: boolean
+          example: false
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              example: MAP_409_SHA_MISMATCH
+            message:
+              type: string
+              example: The map was modified by another user
+            details:
+              type: object
+
+paths:
+  /auth/guest:
+    post:
+      summary: Guest login
+      description: Create a guest session without OAuth
+      security: []
+      tags: [Authentication]
+      responses:
+        '200':
+          description: Guest session created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: object
+                        properties:
+                          token:
+                            type: string
+                            example: guest_session_abc123def456
+                          user:
+                            $ref: '#/components/schemas/User'
+
+  /auth/google:
+    get:
+      summary: Initiate Google OAuth flow
+      security: []
+      tags: [Authentication]
+      responses:
+        '302':
+          description: Redirect to Google OAuth
+
+  /auth/google/callback:
+    get:
+      summary: Google OAuth callback
+      security: []
+      tags: [Authentication]
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect with session token
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: OAuth flow failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/me:
+    get:
+      summary: Get current user info
+      tags: [Authentication]
+      responses:
+        '200':
+          description: User information with repository status
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/User'
+                          - type: object
+                            properties:
+                              repository:
+                                $ref: '#/components/schemas/RepositoryStatus'
+        '401':
+          description: No session token provided
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/setup-repo:
+    post:
+      summary: Setup user's GitHub repository
+      description: Initialize or verify the user's GitHub repository for storing mindmaps
+      tags: [Authentication]
+      responses:
+        '200':
+          description: Repository setup complete
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: object
+                        properties:
+                          message:
+                            type: string
+                            example: Repository setup complete
+                          repository:
+                            $ref: '#/components/schemas/RepositoryStatus'
+        '401':
+          description: No session token provided
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Repository setup failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      summary: Logout and clear session
+      tags: [Authentication]
+      responses:
+        '200':
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: object
+                        properties:
+                          message:
+                            type: string
+                            example: Logged out successfully
+
+  /maps:
+    get:
+      summary: List all maps
+      tags: [Maps]
+      parameters:
+        - name: q
+          in: query
+          description: Search query (title, tags)
+          schema:
+            type: string
+        - name: tag
+          in: query
+          description: Filter by tag
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of maps
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: object
+                        properties:
+                          items:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/IndexItem'
+                          total:
+                            type: integer
+
+    post:
+      summary: Create new map
+      tags: [Maps]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Map'
+      responses:
+        '201':
+          description: Map created, PR opened
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: object
+                        properties:
+                          mapId:
+                            type: string
+                          prNumber:
+                            type: integer
+                          branch:
+                            type: string
+        '400':
+          description: Schema validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /maps/{id}:
+    get:
+      summary: Get single map
+      tags: [Maps]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^map_[a-z0-9-]{6,}$'
+        - name: commit
+          in: query
+          description: Specific commit SHA
+          schema:
+            type: string
+        - name: branch
+          in: query
+          description: Branch name
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Map data
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/Map'
+        '404':
+          description: Map not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      summary: Update map
+      tags: [Maps]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Map'
+      responses:
+        '202':
+          description: PR opened/updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: object
+                        properties:
+                          prNumber:
+                            type: integer
+        '409':
+          description: SHA mismatch (concurrent modification)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete map
+      tags: [Maps]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '202':
+          description: Delete PR created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /maps/{id}/metadata:
+    patch:
+      summary: Update map metadata
+      description: Update map title and tags in index.json only
+      tags: [Maps]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                  example: Updated Product Roadmap Q4
+                tags:
+                  type: array
+                  items:
+                    type: string
+                    maxLength: 50
+                  maxItems: 20
+                  example: [roadmap, product, planning, updated]
+      responses:
+        '200':
+          description: Metadata updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          title:
+                            type: string
+                          tags:
+                            type: array
+                            items:
+                              type: string
+        '400':
+          description: Invalid title or validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /maps/{id}/history:
+    get:
+      summary: Get map version history
+      description: Get version history of a map from git commits
+      tags: [Maps]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Map version history
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MapVersion'
+        '404':
+          description: Map not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /maps/{id}/version/{version}:
+    get:
+      summary: Get specific version of map
+      description: Get a specific version of a map from git history
+      tags: [Maps]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: version
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Map version data
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/Map'
+        '404':
+          description: Map or version not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /maps/{id}/snapshot:
+    post:
+      summary: Create snapshot (Git tag)
+      tags: [Maps]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: v1.0.0
+                message:
+                  type: string
+      responses:
+        '201':
+          description: Snapshot created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /search:
+    get:
+      summary: Search maps
+      tags: [Search]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - properties:
+                      data:
+                        type: object
+                        properties:
+                          items:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/IndexItem'
+
+  /webhooks/github:
+    post:
+      summary: GitHub webhook receiver
+      description: Handle GitHub webhooks for push and PR events to invalidate cache
+      security: []
+      tags: [Webhooks]
+      parameters:
+        - name: X-GitHub-Event
+          in: header
+          required: true
+          schema:
+            type: string
+            enum: [push, pull_request, issues, repository]
+          description: GitHub event type
+        - name: X-Hub-Signature-256
+          in: header
+          required: true
+          schema:
+            type: string
+            pattern: '^sha256='
+          description: HMAC-SHA256 signature of the payload
+        - name: X-GitHub-Delivery
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Unique identifier for the webhook delivery
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: GitHub webhook payload
+      responses:
+        '200':
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Missing required headers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid webhook signature
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /upload:
+    post:
+      summary: Upload file
+      description: Upload an image or PDF file to be embedded in mindmap nodes
+      tags:
+        - File Upload
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Image or PDF file (max 10MB)
+                mapId:
+                  type: string
+                  description: ID of the mindmap to upload the file to
+              required:
+                - file
+                - mapId
+      responses:
+        '200':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  url:
+                    type: string
+                    format: uri
+                    example: http://localhost:8787/upload/download/map_123/upload_1234567890_abc123.jpg
+                  filename:
+                    type: string
+                    example: upload_1234567890_abc123.jpg
+                  size:
+                    type: integer
+                    example: 1024000
+                  type:
+                    type: string
+                    example: image/jpeg
+                  mapId:
+                    type: string
+                    example: map_1234567890
+        '400':
+          description: Bad request - invalid file type or size
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Invalid file type. Only images and PDF files are allowed.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    get:
+      summary: Get upload information
+      description: Get information about file upload limits and allowed types
+      tags:
+        - File Upload
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Upload information retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  maxFileSize:
+                    type: string
+                    example: 10MB
+                  allowedTypes:
+                    type: array
+                    items:
+                      type: string
+                    example: ["image/jpeg", "image/png", "image/gif", "application/pdf"]
+                  userId:
+                    type: string
+                    example: user123
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /upload/download/{mapId}/{filename}:
+    get:
+      summary: Download uploaded file
+      description: Download a previously uploaded image or PDF file
+      tags:
+        - File Upload
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: mapId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the mindmap containing the file
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Name of the file to download
+      responses:
+        '200':
+          description: File downloaded successfully
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/gif:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+            image/svg+xml:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Type:
+              description: MIME type of the file
+              schema:
+                type: string
+            Content-Length:
+              description: Size of the file in bytes
+              schema:
+                type: integer
+            Cache-Control:
+              description: Cache control header
+              schema:
+                type: string
+                example: public, max-age=3600
+        '404':
+          description: File not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: File not found
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+tags:
+  - name: Authentication
+    description: OAuth and session management including guest login
+  - name: Maps
+    description: Mindmap CRUD operations with version history and snapshots
+  - name: Search
+    description: Search and filtering across maps
+  - name: Webhooks
+    description: GitHub webhook handling for cache invalidation
+  - name: File Upload
+    description: File upload for images and PDFs to be embedded in mindmap nodes
+

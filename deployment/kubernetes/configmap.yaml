@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mindmap-config
+  namespace: mindmap
+data:
+  # API Configuration
+  NODE_ENV: "production"
+  PORT: "8787"
+  REDIS_URL: "redis://redis-service:6379"
+  FRONTEND_URL: "http://localhost:3000"
+  CORS_ORIGIN: "http://localhost:3000,https://yourdomain.com"
+  DEV_MODE: "false"
+  
+  # Redis Configuration
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+
+
+
+

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="brainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563EB;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1D4ED8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="url(#brainGradient)" />
+  
+  <!-- Brain icon (simplified) -->
+  <g fill="white">
+    <!-- Left hemisphere -->
+    <path d="M 35 30 Q 25 30 25 40 Q 25 50 28 55 Q 30 60 35 60 Q 40 60 42 55 Q 45 50 42 45 Q 40 40 35 35 Q 33 32 35 30 Z" />
+    
+    <!-- Right hemisphere -->
+    <path d="M 65 30 Q 75 30 75 40 Q 75 50 72 55 Q 70 60 65 60 Q 60 60 58 55 Q 55 50 58 45 Q 60 40 65 35 Q 67 32 65 30 Z" />
+    
+    <!-- Connection lines -->
+    <path d="M 42 50 Q 50 48 58 50" stroke="white" stroke-width="2" fill="none" opacity="0.8"/>
+    <path d="M 38 40 Q 50 38 62 40" stroke="white" stroke-width="1.5" fill="none" opacity="0.6"/>
+    
+    <!-- Details (nodes) -->
+    <circle cx="30" cy="45" r="2" fill="white" opacity="0.9"/>
+    <circle cx="35" cy="50" r="2" fill="white" opacity="0.9"/>
+    <circle cx="40" cy="42" r="2" fill="white" opacity="0.9"/>
+    <circle cx="60" cy="42" r="2" fill="white" opacity="0.9"/>
+    <circle cx="65" cy="50" r="2" fill="white" opacity="0.9"/>
+    <circle cx="70" cy="45" r="2" fill="white" opacity="0.9"/>
+  </g>
+</svg>
+

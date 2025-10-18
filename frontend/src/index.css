@@ -1,0 +1,240 @@
+:root {
+  /* ============================================
+     BASE COLORS - 기본 색상
+     사용자에게 시각적 피로를 주지 않는 기본 토대
+     ============================================ */
+  
+  /* Backgrounds - 배경 */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F8FAFC;
+  --bg-tertiary: #F1F5F9;
+  --bg-elevated: rgba(255, 255, 255, 0.9);
+  
+  /* Text - 텍스트 */
+  --text-primary: #1E293B;
+  --text-secondary: #64748B;
+  --text-tertiary: #94A3B8;
+  --text-disabled: #CBD5E1;
+  
+  /* Borders - 경계선 */
+  --border-primary: #E2E8F0;
+  --border-secondary: #CBD5E1;
+  --border-focus: #2563EB;
+  
+  /* ============================================
+     ACCENT COLORS - 강조 색상
+     주요 액션과 상호작용
+     ============================================ */
+  
+  --accent-primary: #2563EB;
+  --accent-hover: #1D4ED8;
+  --accent-active: #1E40AF;
+  --accent-light: #EFF6FF;
+  --accent-lighter: #DBEAFE;
+  
+  /* ============================================
+     SEMANTIC COLORS - 의미 색상
+     상태 변화와 피드백
+     ============================================ */
+  
+  --semantic-success: #16A34A;
+  --semantic-success-light: #DCFCE7;
+  --semantic-warning: #F59E0B;
+  --semantic-warning-light: #FEF3C7;
+  --semantic-error: #DC2626;
+  --semantic-error-light: #FEE2E2;
+  --semantic-info: #0284C7;
+  --semantic-info-light: #E0F2FE;
+  
+  /* ============================================
+     VISUALIZATION COLORS - 시각화 색상
+     노드 타입별 구분 (의미 기반 색상)
+     ============================================ */
+  
+  --viz-idea: #3B82F6;        /* 아이디어 - 파란색 */
+  --viz-plan: #10B981;        /* 계획 - 에메랄드 */
+  --viz-risk: #F97316;        /* 위험 - 오렌지 */
+  --viz-decision: #8B5CF6;    /* 의사결정 - 보라색 */
+  --viz-data: #0EA5E9;        /* 데이터 - 하늘색 */
+  --viz-action: #EF4444;      /* 액션 - 붉은색 */
+  
+  /* Visualization - Light variants */
+  --viz-idea-light: #DBEAFE;
+  --viz-plan-light: #D1FAE5;
+  --viz-risk-light: #FFEDD5;
+  --viz-decision-light: #EDE9FE;
+  --viz-data-light: #E0F2FE;
+  --viz-action-light: #FEE2E2;
+  
+  /* ============================================
+     DARK MODE COLORS
+     빛의 강도를 줄이고 채도를 낮춤
+     ============================================ */
+  
+  --dark-bg-primary: #0F172A;
+  --dark-bg-secondary: #1E293B;
+  --dark-bg-tertiary: #334155;
+  --dark-text-primary: #F1F5F9;
+  --dark-text-secondary: #94A3B8;
+  --dark-accent-primary: #60A5FA;
+  --dark-border: #334155;
+  
+  /* ============================================
+     SHADOWS - 그림자
+     깊이와 계층 표현
+     ============================================ */
+  
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 10px 15px rgba(0, 0, 0, 0.08), 0 4px 6px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 20px 25px rgba(0, 0, 0, 0.10), 0 10px 10px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 25px 50px rgba(0, 0, 0, 0.15), 0 10px 15px rgba(0, 0, 0, 0.08);
+  
+  /* ============================================
+     RADIUS - 둥글기
+     ============================================ */
+  
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  
+  /* ============================================
+     TRANSITIONS - 전환
+     ============================================ */
+  
+  --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* ============================================
+     SPACING - 간격
+     ============================================ */
+  
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+}
+
+/* ============================================
+   GLOBAL STYLES
+   ============================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "SF Pro Display", 
+    'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  letter-spacing: -0.01em;
+}
+
+code {
+  font-family: "SF Mono", "Fira Code", Menlo, Monaco, Consolas, 'Courier New', monospace;
+  letter-spacing: -0.02em;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+input, textarea {
+  font-family: inherit;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+/* ============================================
+   CUSTOM SCROLLBAR
+   ============================================ */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-secondary);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+/* ============================================
+   SELECTION
+   ============================================ */
+
+::selection {
+  background: var(--accent-lighter);
+  color: var(--text-primary);
+}
+
+/* ============================================
+   FOCUS VISIBLE
+   ============================================ */
+
+*:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary { color: var(--text-tertiary); }
+
+.bg-primary { background: var(--bg-primary); }
+.bg-secondary { background: var(--bg-secondary); }
+.bg-tertiary { background: var(--bg-tertiary); }
+
+.border-primary { border-color: var(--border-primary); }
+.border-secondary { border-color: var(--border-secondary); }
+
+/* Semantic utilities */
+.text-success { color: var(--semantic-success); }
+.text-warning { color: var(--semantic-warning); }
+.text-error { color: var(--semantic-error); }
+.text-info { color: var(--semantic-info); }
+
+.bg-success { background: var(--semantic-success-light); }
+.bg-warning { background: var(--semantic-warning-light); }
+.bg-error { background: var(--semantic-error-light); }
+.bg-info { background: var(--semantic-info-light); }

@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  # Redis - Session & Cache Storage
+  redis:
+    image: redis:7-alpine
+    container_name: mindmap-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - mindmap-network
+
+  # Backend API
+  api:
+    build:
+      context: ../../api
+      dockerfile: ../api/Dockerfile
+    container_name: mindmap-api
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    environment:
+      - NODE_ENV=production
+      - PORT=8787
+      - REDIS_URL=redis://redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_OWNER=${GITHUB_OWNER:-}
+      - GITHUB_ORG=${GITHUB_ORG:-}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}
+      - DEV_MODE=${DEV_MODE:-false}
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8787/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - mindmap-network
+
+  # Frontend
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: ../frontend/Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:8787}
+    container_name: mindmap-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - mindmap-network
+
+networks:
+  mindmap-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local
+
+
+
+

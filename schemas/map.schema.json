@@ -1,0 +1,201 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/schemas/map.json",
+  "type": "object",
+  "required": ["id", "title", "nodes", "edges", "updatedAt", "version"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^map_[a-z0-9-]{6,}$",
+      "description": "Unique identifier for the map"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120,
+      "description": "Map title"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 32
+      },
+      "maxItems": 20,
+      "description": "Tags for categorization and search"
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "x", "y", "w", "h"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^n_[A-Za-z0-9_-]{4,}$",
+            "description": "Unique node identifier"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Node label text"
+          },
+          "x": {
+            "type": "number",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y coordinate"
+          },
+          "w": {
+            "type": "number",
+            "minimum": 20,
+            "maximum": 1000,
+            "description": "Width"
+          },
+          "h": {
+            "type": "number",
+            "minimum": 20,
+            "maximum": 1000,
+            "description": "Height"
+          },
+          "nodeType": {
+            "type": "string",
+            "enum": ["rect", "circle", "diamond", "hex", "cloud", "capsule", "file", "card"],
+            "default": "rect",
+            "description": "Node shape type for semantic categorization"
+          },
+          "textAlign": {
+            "type": "string",
+            "enum": ["left", "center", "right"],
+            "default": "center",
+            "description": "Text horizontal alignment within node"
+          },
+          "textVerticalAlign": {
+            "type": "string",
+            "enum": ["top", "middle", "bottom"],
+            "default": "middle",
+            "description": "Text vertical alignment within node"
+          },
+          "backgroundColor": {
+            "type": "string",
+            "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
+            "description": "Background color in hex format (e.g. #ffffff)"
+          },
+          "collapsed": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether node is collapsed"
+          },
+          "embedUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Embedded content URL (YouTube, webpage, etc.)"
+          },
+          "embedType": {
+            "type": "string",
+            "enum": ["youtube", "webpage", "image", "pdf"],
+            "description": "Type of embedded content"
+          },
+          "meta": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Additional metadata"
+          }
+        }
+      },
+      "maxItems": 5000,
+      "description": "Array of nodes in the mindmap"
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "source", "target"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^e_[A-Za-z0-9_-]{4,}$",
+            "description": "Unique edge identifier"
+          },
+          "source": {
+            "type": "string",
+            "description": "Source node ID"
+          },
+          "target": {
+            "type": "string",
+            "description": "Target node ID"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 50,
+            "description": "Edge label text"
+          },
+          "edgeType": {
+            "type": "string",
+            "enum": ["straight", "curved", "bezier"],
+            "default": "straight",
+            "description": "Edge line type"
+          },
+          "meta": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Additional metadata"
+          }
+        }
+      },
+      "description": "Array of edges connecting nodes"
+    },
+    "viewState": {
+      "type": "object",
+      "description": "Canvas view state including zoom and pan",
+      "properties": {
+        "zoom": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 5.0,
+          "default": 1.0,
+          "description": "Zoom level (1.0 = 100%)"
+        },
+        "viewBox": {
+          "type": "object",
+          "description": "SVG viewBox coordinates",
+          "properties": {
+            "x": {
+              "type": "number",
+              "description": "ViewBox X coordinate"
+            },
+            "y": {
+              "type": "number",
+              "description": "ViewBox Y coordinate"
+            },
+            "width": {
+              "type": "number",
+              "minimum": 100,
+              "description": "ViewBox width"
+            },
+            "height": {
+              "type": "number",
+              "minimum": 100,
+              "description": "ViewBox height"
+            }
+          },
+          "required": ["x", "y", "width", "height"]
+        }
+      }
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last update timestamp"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Version number for optimistic locking"
+    }
+  },
+  "additionalProperties": false
+}
+

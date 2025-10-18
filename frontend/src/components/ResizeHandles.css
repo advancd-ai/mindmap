@@ -1,0 +1,108 @@
+/* ============================================
+   RESIZE HANDLES - 크기 조정 핸들
+   위치 고정, 색상과 그림자로만 피드백
+   ============================================ */
+
+.resize-handles-group {
+  pointer-events: all;
+}
+
+.resize-handle {
+  pointer-events: all !important;
+  cursor: pointer !important;
+  transition: var(--transition-fast);
+}
+
+/* Hitbox - invisible larger area for easier clicking */
+.resize-handle-hitbox {
+  pointer-events: all;
+  cursor: inherit;
+  transition: var(--transition-fast);
+}
+
+/* Glow circle */
+.resize-handle-glow {
+  pointer-events: none;
+  transition: var(--transition-fast);
+}
+
+/* Main circle */
+.resize-handle-main {
+  pointer-events: none;
+  transition: var(--transition-fast);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.12));
+}
+
+/* ============================================
+   HOVER STATE - 색상과 그림자만 변경 (위치 고정)
+   ============================================ */
+
+.resize-handle:hover .resize-handle-main {
+  fill: var(--accent-hover);
+  stroke: white;
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 10px rgba(37, 99, 235, 0.6));
+}
+
+.resize-handle:hover .resize-handle-glow {
+  fill: rgba(37, 99, 235, 0.2);
+}
+
+/* ============================================
+   ACTIVE STATE
+   ============================================ */
+
+.resize-handle:active .resize-handle-main {
+  fill: var(--accent-active);
+  filter: drop-shadow(0 0 14px rgba(37, 99, 235, 0.8));
+}
+
+.resize-handle:active .resize-handle-glow {
+  fill: rgba(37, 99, 235, 0.25);
+}
+
+/* ============================================
+   DIRECTION-SPECIFIC CURSORS
+   ============================================ */
+
+.resize-handle[data-direction="nw"],
+.resize-handle[data-direction="se"] {
+  cursor: nwse-resize !important;
+}
+
+.resize-handle[data-direction="ne"],
+.resize-handle[data-direction="sw"] {
+  cursor: nesw-resize !important;
+}
+
+.resize-handle[data-direction="n"],
+.resize-handle[data-direction="s"] {
+  cursor: ns-resize !important;
+}
+
+.resize-handle[data-direction="e"],
+.resize-handle[data-direction="w"] {
+  cursor: ew-resize !important;
+}
+
+/* All child elements inherit cursor */
+.resize-handle * {
+  cursor: inherit !important;
+}
+
+/* ============================================
+   HANDLE APPEARANCE ANIMATION
+   ============================================ */
+
+.resize-handle {
+  animation: handleAppear 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes handleAppear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

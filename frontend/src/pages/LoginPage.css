@@ -1,0 +1,304 @@
+/* Apple-style Login Page */
+.login-page {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: 
+    linear-gradient(135deg, 
+      rgba(0, 122, 255, 0.03) 0%, 
+      rgba(52, 199, 89, 0.02) 50%,
+      rgba(175, 82, 222, 0.03) 100%
+    ),
+    linear-gradient(180deg, #F5F5F7 0%, #FBFBFD 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Background Mindmap Pattern */
+.login-bg-pattern {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  max-width: 1400px;
+  max-height: 900px;
+  opacity: 1;
+  pointer-events: none;
+  z-index: 0;
+  animation: patternFloat 30s ease-in-out infinite;
+}
+
+@keyframes patternFloat {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-48%, -52%) scale(1.02);
+  }
+}
+
+.login-bg-pattern .nodes {
+  animation: nodesFloat 20s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes nodesFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.login-bg-pattern .connections {
+  animation: connectionsFloat 25s ease-in-out infinite;
+}
+
+@keyframes connectionsFloat {
+  0%, 100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.login-language {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 10;
+}
+
+/* Subtle animated glow */
+.login-page::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: 
+    radial-gradient(circle at 30% 30%, rgba(0, 122, 255, 0.04) 0%, transparent 50%),
+    radial-gradient(circle at 70% 70%, rgba(52, 199, 89, 0.03) 0%, transparent 50%);
+  animation: backgroundGlow 20s ease-in-out infinite;
+  z-index: 0;
+}
+
+@keyframes backgroundGlow {
+  0%, 100% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(20px, 20px);
+    opacity: 0.8;
+  }
+}
+
+.login-container {
+  width: 100%;
+  max-width: 440px;
+  padding: 24px;
+  position: relative;
+  z-index: 2;
+  animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Apple-style Card */
+.login-card {
+  text-align: center;
+  box-shadow: 
+    0 30px 60px rgba(0, 0, 0, 0.12),
+    0 10px 30px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  padding: 48px 40px;
+  background: rgba(255, 255, 255, 0.95);
+  position: relative;
+  z-index: 2;
+}
+
+.login-title {
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 12px;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, var(--text) 0%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.login-subtitle {
+  font-size: 17px;
+  color: var(--text-secondary);
+  margin-bottom: 40px;
+  letter-spacing: -0.01em;
+  line-height: 1.5;
+}
+
+/* Google Button - Official Style */
+.login-button.google-button {
+  width: 100%;
+  padding: 16px 24px;
+  font-size: 17px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 40px;
+  background: #FFFFFF;
+  color: #1F1F1F;
+  border: 1px solid #DADCE0;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  transition: var(--transition);
+  letter-spacing: -0.01em;
+}
+
+.login-button.google-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  background: #F8F9FA;
+  border-color: #D2D3D4;
+}
+
+.login-button.google-button:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+  background: #F1F3F4;
+}
+
+/* Divider */
+.login-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 24px 0;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.login-divider span {
+  padding: 0 16px;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Guest Button */
+.login-button.guest-button {
+  width: 100%;
+  padding: 16px 24px;
+  font-size: 17px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  background: var(--bg-secondary);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+  letter-spacing: -0.01em;
+}
+
+.login-button.guest-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  background: var(--bg-tertiary);
+  border-color: var(--border-dark);
+}
+
+.login-button.guest-button:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+  background: var(--bg);
+}
+
+/* Guest Notice */
+.guest-notice {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  text-align: center;
+  line-height: 1.5;
+  margin: 0;
+  padding: 12px 16px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-light);
+}
+
+/* Features List */
+.login-features {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border-light);
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-align: left;
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius);
+  transition: var(--transition-fast);
+}
+
+.feature-item:hover {
+  background: var(--bg-secondary);
+  transform: translateX(4px);
+}
+
+.feature-icon {
+  font-size: 28px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.feature-text {
+  font-size: 15px;
+  color: var(--text-secondary);
+  letter-spacing: -0.01em;
+  line-height: 1.5;
+  font-weight: 500;
+}

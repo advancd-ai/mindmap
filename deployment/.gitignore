@@ -1,0 +1,19 @@
+# Environment files with secrets
+.env
+*.env
+!.env.example
+
+# Kubernetes secrets
+secrets.yaml
+!secrets.yaml.example
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+
+
+
+

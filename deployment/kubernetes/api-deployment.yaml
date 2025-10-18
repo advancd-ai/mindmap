@@ -1,0 +1,139 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mindmap-api
+  namespace: mindmap
+  labels:
+    app: mindmap-api
+    component: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mindmap-api
+  template:
+    metadata:
+      labels:
+        app: mindmap-api
+        component: backend
+    spec:
+      containers:
+      - name: api
+        image: mindmap-api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8787
+          name: http
+        env:
+        # From ConfigMap
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: mindmap-config
+              key: NODE_ENV
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: mindmap-config
+              key: PORT
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: mindmap-config
+              key: REDIS_URL
+        - name: FRONTEND_URL
+          valueFrom:
+            configMapKeyRef:
+              name: mindmap-config
+              key: FRONTEND_URL
+        - name: CORS_ORIGIN
+          valueFrom:
+            configMapKeyRef:
+              name: mindmap-config
+              key: CORS_ORIGIN
+        - name: DEV_MODE
+          valueFrom:
+            configMapKeyRef:
+              name: mindmap-config
+              key: DEV_MODE
+        
+        # From Secrets
+        - name: GOOGLE_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: mindmap-secrets
+              key: GOOGLE_CLIENT_ID
+        - name: GOOGLE_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: mindmap-secrets
+              key: GOOGLE_CLIENT_SECRET
+        - name: GOOGLE_REDIRECT_URI
+          valueFrom:
+            secretKeyRef:
+              name: mindmap-secrets
+              key: GOOGLE_REDIRECT_URI
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: mindmap-secrets
+              key: GITHUB_TOKEN
+        - name: GITHUB_OWNER
+          valueFrom:
+            secretKeyRef:
+              name: mindmap-secrets
+              key: GITHUB_OWNER
+              optional: true
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mindmap-secrets
+              key: REDIS_PASSWORD
+              optional: true
+        
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8787
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8787
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mindmap-api-service
+  namespace: mindmap
+  labels:
+    app: mindmap-api
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8787
+    targetPort: 8787
+    name: http
+  selector:
+    app: mindmap-api
+
+
+
+

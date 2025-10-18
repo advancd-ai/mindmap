@@ -1,0 +1,33 @@
+{
+  "name": "open-mindmap-api",
+  "version": "0.1.0",
+  "description": "Open Mindmap API backend",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc && node scripts/copy-schemas.js",
+    "start": "node dist/index.js",
+    "test": "vitest",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.0",
+    "@octokit/rest": "^20.0.2",
+    "@octokit/auth-app": "^6.0.3",
+    "hono": "^4.6.0",
+    "ajv": "^8.12.0",
+    "ajv-formats": "^2.1.1",
+    "nanoid": "^5.0.4",
+    "redis": "^4.6.11",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.0.4"
+  }
+}
+

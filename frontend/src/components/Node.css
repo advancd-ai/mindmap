@@ -1,0 +1,155 @@
+/* ============================================
+   NODE - 아이디어의 용기
+   관계와 의미의 명료함을 위한 디자인
+   ============================================ */
+
+.node {
+  cursor: grab;
+  transition: var(--transition-fast);
+  user-select: none;
+}
+
+.node rect {
+  transition: var(--transition-fast);
+}
+
+.node:hover {
+  filter: brightness(0.98);
+}
+
+/* ============================================
+   NODE STATES - 명확한 상태 전달
+   ============================================ */
+
+/* Selected State - 선택된 노드 */
+.node.selected rect {
+  stroke-width: 2.5;
+  filter: drop-shadow(0 4px 12px rgba(37, 99, 235, 0.15));
+}
+
+/* Dragging State - 이동 중 */
+.node.dragging {
+  cursor: grabbing;
+  opacity: 0.9;
+}
+
+.node.dragging rect {
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.15));
+}
+
+/* Connecting State - 연결 중 */
+.node.connecting rect {
+  stroke: var(--semantic-success);
+  stroke-width: 2.5;
+  animation: connectingPulse 2s ease-in-out infinite;
+}
+
+@keyframes connectingPulse {
+  0%, 100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 8px rgba(16, 163, 74, 0.3));
+  }
+  50% {
+    opacity: 0.85;
+    filter: drop-shadow(0 0 16px rgba(16, 163, 74, 0.5));
+  }
+}
+
+/* ============================================
+   NODE TYPE ICON - 의미 구분
+   ============================================ */
+
+.node-type-icon {
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+/* ============================================
+   COLLAPSED NODE - 접힌 상태
+   ============================================ */
+
+.node.collapsed {
+  opacity: 0.95;
+}
+
+.node.collapsed rect {
+  stroke-dasharray: 5 5;
+  stroke-dashoffset: 0;
+  animation: dashMove 20s linear infinite;
+}
+
+@keyframes dashMove {
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+/* ============================================
+   NODE SHAPE TYPE STYLES
+   형태에 따른 시각적 스타일
+   ============================================ */
+
+/* Rectangle - 기본 개념 */
+.node[data-shape="rect"] {
+  /* 기본 스타일 */
+}
+
+/* Circle - 원형 */
+.node[data-shape="circle"] {
+  /* 원형 스타일 */
+}
+
+/* Diamond - 결정 단계/분기점 */
+.node[data-shape="diamond"] {
+  /* 마름모 특별 강조 */
+}
+
+.node[data-shape="diamond"]:hover {
+  filter: brightness(0.95) drop-shadow(0 4px 8px rgba(139, 92, 246, 0.2));
+}
+
+/* Hexagon - 육각형 */
+.node[data-shape="hex"] {
+  /* 육각형 스타일 */
+}
+
+/* Cloud - 구름형 */
+.node[data-shape="cloud"] {
+  /* 부드러운 느낌 */
+}
+
+/* Capsule - 진행 상태 */
+.node[data-shape="capsule"] {
+  /* 캡슐형 강조 */
+}
+
+.node[data-shape="capsule"]:hover {
+  filter: brightness(0.95) drop-shadow(0 4px 8px rgba(245, 158, 11, 0.2));
+}
+
+/* File - 참고자료/첨부 문서 */
+.node[data-shape="file"] {
+  /* 파일형 스타일 */
+}
+
+.node[data-shape="file"]:hover {
+  filter: brightness(0.95) drop-shadow(0 4px 8px rgba(100, 116, 139, 0.2));
+}
+
+/* Card - 카드형 */
+.node[data-shape="card"] {
+  /* 카드형 스타일 */
+}
+
+/* ============================================
+   NODE TEXT - 명료한 텍스트
+   ============================================ */
+
+.node text {
+  transition: var(--transition-fast);
+  fill: var(--text-primary);
+}
+
+.node:hover text {
+  opacity: 0.95;
+}

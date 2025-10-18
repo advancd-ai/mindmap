@@ -1,0 +1,193 @@
+/* ============================================
+   CONTEXT MENU - 맥락 기반 메뉴
+   ============================================ */
+
+.context-menu {
+  background: var(--bg-elevated);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-sm);
+  min-width: 200px;
+  z-index: 2000;
+  animation: menuAppear 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes menuAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Position above variant */
+.context-menu.position-above {
+  animation: menuAppearAbove 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes menuAppearAbove {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ============================================
+   MENU ITEM - 명확한 액션
+   ============================================ */
+
+.context-menu-item-wrapper {
+  position: relative;
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space);
+  width: 100%;
+  padding: 10px var(--space);
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-primary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: var(--transition-fast);
+  letter-spacing: -0.01em;
+}
+
+.context-menu-item:hover:not(.disabled) {
+  background: var(--accent-light);
+  color: var(--accent-primary);
+}
+
+.context-menu-item:active:not(.disabled) {
+  background: var(--accent-lighter);
+  transform: scale(0.98);
+}
+
+.context-menu-item.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   MENU ICON & LABEL
+   ============================================ */
+
+.context-menu-icon {
+  font-size: 17px;
+  width: 22px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.context-menu-label {
+  flex: 1;
+  font-weight: 500;
+}
+
+/* ============================================
+   MENU DIVIDER
+   ============================================ */
+
+.context-menu-divider {
+  height: 1px;
+  background: var(--border-primary);
+  margin: var(--space-sm) 0;
+  opacity: 0.6;
+}
+
+/* ============================================
+   SEMANTIC MENU ITEMS
+   ============================================ */
+
+.context-menu-item.success:hover:not(.disabled) {
+  background: var(--semantic-success-light);
+  color: var(--semantic-success);
+}
+
+.context-menu-item.warning:hover:not(.disabled) {
+  background: var(--semantic-warning-light);
+  color: var(--semantic-warning);
+}
+
+.context-menu-item.error:hover:not(.disabled) {
+  background: var(--semantic-error-light);
+  color: var(--semantic-error);
+}
+
+/* ============================================
+   SUBMENU SUPPORT
+   ============================================ */
+
+.context-menu-item.has-submenu {
+  padding-right: var(--space-lg);
+}
+
+.context-menu-arrow {
+  margin-left: auto;
+  font-size: 16px;
+  color: var(--text-tertiary);
+  transition: var(--transition-fast);
+}
+
+.context-menu-item.has-submenu:hover .context-menu-arrow {
+  color: var(--accent-primary);
+  transform: translateX(2px);
+}
+
+/* Submenu Panel */
+.context-submenu {
+  position: absolute;
+  left: 100%;
+  top: -8px;
+  margin-left: 4px;
+  background: var(--bg-elevated);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-sm);
+  min-width: 180px;
+  z-index: 2001;
+  animation: submenuSlideIn 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes submenuSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Submenu positioning adjustments */
+.context-menu-item-wrapper {
+  position: relative;
+}
+
+/* Auto-adjust submenu if it goes beyond viewport */
+@media screen {
+  .context-submenu {
+    /* Will be positioned by JS if needed */
+  }
+}

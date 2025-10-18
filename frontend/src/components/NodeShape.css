@@ -1,0 +1,53 @@
+/* ============================================
+   NODE SHAPES - 노드 형태별 스타일
+   의미론적 정보 구조
+   ============================================ */
+
+/* All shapes inherit smooth transitions */
+.node-shape {
+  transition: var(--transition-fast);
+}
+
+/* Shape-specific hover effects */
+.node-shape:hover {
+  filter: brightness(0.98);
+}
+
+/* Diamond - 특별한 애니메이션 */
+.node-shape-diamond {
+  animation: diamondPulse 3s ease-in-out infinite;
+}
+
+@keyframes diamondPulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 0 rgba(139, 92, 246, 0));
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.3));
+  }
+}
+
+/* Cloud - 부드러운 떠다니는 효과 */
+.node-shape-cloud {
+  animation: cloudFloat 6s ease-in-out infinite;
+}
+
+@keyframes cloudFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+/* File - 문서 느낌의 미묘한 그림자 */
+.node-shape-file {
+  filter: drop-shadow(2px 2px 3px rgba(0, 0, 0, 0.08));
+}
+
+/* Card - 카드 스택 효과 */
+.node-shape-card {
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+}
+

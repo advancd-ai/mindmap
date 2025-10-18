@@ -1,0 +1,109 @@
+/* ============================================
+   LANGUAGE SELECTOR - 언어 선택
+   ============================================ */
+
+.language-selector {
+  position: relative;
+  margin-left: var(--space);
+}
+
+.language-selector-button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.language-selector-button:hover,
+.language-selector-button:focus {
+  background: var(--bg-secondary);
+  border-color: var(--border-secondary);
+  outline: none;
+}
+
+.language-selector-icon {
+  font-size: 16px;
+}
+
+.language-selector-label {
+  font-size: 18px;
+}
+
+/* Dropdown Menu */
+.language-selector-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);  /* Changed: top → bottom (위로 팝업) */
+  right: 0;
+  background: var(--bg-elevated);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-sm);
+  min-width: 160px;
+  z-index: 2000;
+  animation: menuSlideUp 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes menuSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Language Option */
+.language-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space);
+  width: 100%;
+  padding: 10px var(--space);
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: var(--transition-fast);
+  letter-spacing: -0.01em;
+}
+
+.language-option:hover {
+  background: var(--accent-light);
+  color: var(--accent-primary);
+}
+
+.language-option.active {
+  background: var(--accent-lighter);
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
+.language-flag {
+  font-size: 20px;
+}
+
+.language-label {
+  flex: 1;
+}
+
+.language-check {
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--accent-primary);
+}
+

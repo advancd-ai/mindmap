@@ -1,0 +1,121 @@
+/* ============================================
+   COLLAPSE BUTTON - 접기/펼치기 제어
+   명료한 상태 전환
+   ============================================ */
+
+.collapse-button {
+  cursor: pointer;
+  transition: var(--transition);
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.08));
+  transform-origin: center center;
+}
+
+/* Background */
+.collapse-button-bg {
+  transition: var(--transition);
+}
+
+/* Border Ring */
+.collapse-button-ring {
+  transition: var(--transition);
+}
+
+/* Icon */
+.collapse-button-icon {
+  transition: var(--transition);
+}
+
+/* Glow effect */
+.collapse-button-glow {
+  transition: var(--transition);
+}
+
+/* ============================================
+   HOVER STATE - 상호작용 피드백
+   ============================================ */
+
+.collapse-button:hover .collapse-button-bg {
+  filter: brightness(1.05);
+  r: 11;
+}
+
+.collapse-button:hover .collapse-button-ring {
+  stroke: var(--accent-primary);
+  stroke-width: 2;
+  opacity: 1;
+  r: 11;
+}
+
+.collapse-button:hover .collapse-button-icon {
+  fill: var(--accent-primary);
+  font-size: 12;
+}
+
+.collapse-button:hover .collapse-button-glow {
+  opacity: 1;
+  r: 16;
+}
+
+.collapse-button:hover {
+  filter: drop-shadow(0 4px 12px rgba(37, 99, 235, 0.25));
+}
+
+/* ============================================
+   ACTIVE STATE
+   ============================================ */
+
+.collapse-button:active {
+  filter: drop-shadow(0 2px 6px rgba(37, 99, 235, 0.3));
+}
+
+.collapse-button:active .collapse-button-bg {
+  r: 9.5;
+}
+
+.collapse-button:active .collapse-button-ring {
+  stroke-width: 2.5;
+  r: 9.5;
+}
+
+.collapse-button:active .collapse-button-icon {
+  font-size: 10.5;
+}
+
+/* ============================================
+   COLLAPSED STATE - 상태 표시
+   ============================================ */
+
+/* Pulse animation when collapsed */
+.collapse-button .collapse-button-ring[stroke*="2563EB"] {
+  animation: ringPulse 2s ease-in-out infinite;
+}
+
+@keyframes ringPulse {
+  0%, 100% {
+    opacity: 0.6;
+    stroke-width: 1.5;
+  }
+  50% {
+    opacity: 1;
+    stroke-width: 2;
+  }
+}
+
+/* ============================================
+   APPEARANCE ANIMATION
+   ============================================ */
+
+.collapse-button {
+  animation: buttonAppear 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes buttonAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

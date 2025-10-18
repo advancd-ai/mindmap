@@ -1,0 +1,56 @@
+name: Build Index
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'maps/map_*.json'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build index
+        run: node scripts/build-index.mjs
+
+      - name: Check for changes
+        id: git-check
+        run: |
+          git diff --exit-code maps/index.json || echo "changed=true" >> $GITHUB_OUTPUT
+
+      - name: Commit and push index
+        if: steps.git-check.outputs.changed == 'true'
+        run: |
+          git config user.name "openmindmap-bot"
+          git config user.email "bot@openmindmap.example.com"
+          git add maps/index.json
+          git commit -m "chore(index): rebuild index [skip ci]"
+          git push
+
+      - name: Summary
+        run: |
+          echo "### 📊 Index Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Index file rebuilt successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f maps/index.json ]; then
+            map_count=$(jq '.items | length' maps/index.json)
+            echo "**Total maps:** $map_count" >> $GITHUB_STEP_SUMMARY
+          fi
+

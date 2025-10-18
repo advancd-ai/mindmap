@@ -1,0 +1,292 @@
+/* Apple Style Icon System - SF Symbols inspired */
+
+.apple-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+.apple-icon svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  transition: all 0.2s ease;
+}
+
+/* Size variants */
+.apple-icon-xs {
+  width: 10px;
+  height: 10px;
+}
+
+.apple-icon-xs svg {
+  stroke-width: 3;
+}
+
+.apple-icon-small {
+  width: 14px;
+  height: 14px;
+}
+
+.apple-icon-small svg {
+  stroke-width: 2.5;
+}
+
+.apple-icon-medium {
+  width: 18px;
+  height: 18px;
+}
+
+.apple-icon-medium svg {
+  stroke-width: 2;
+}
+
+.apple-icon-large {
+  width: 22px;
+  height: 22px;
+}
+
+.apple-icon-large svg {
+  stroke-width: 1.8;
+}
+
+.apple-icon-xl {
+  width: 26px;
+  height: 26px;
+}
+
+.apple-icon-xl svg {
+  stroke-width: 1.5;
+}
+
+/* Weight variants */
+.apple-icon-light {
+  font-weight: 300;
+}
+
+.apple-icon-light svg {
+  stroke-width: 1.5;
+}
+
+.apple-icon-regular {
+  font-weight: 400;
+}
+
+.apple-icon-regular svg {
+  stroke-width: 2;
+}
+
+.apple-icon-medium {
+  font-weight: 500;
+}
+
+.apple-icon-medium svg {
+  stroke-width: 2;
+}
+
+.apple-icon-semibold {
+  font-weight: 600;
+}
+
+.apple-icon-semibold svg {
+  stroke-width: 2.5;
+}
+
+.apple-icon-bold {
+  font-weight: 700;
+}
+
+.apple-icon-bold svg {
+  stroke-width: 3;
+}
+
+/* Interactive states */
+.apple-icon:hover {
+  transform: scale(1.05);
+  opacity: 0.8;
+}
+
+.apple-icon:active {
+  transform: scale(0.95);
+  opacity: 0.6;
+}
+
+/* Disabled state */
+.apple-icon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.apple-icon:disabled:hover {
+  transform: none;
+  opacity: 0.4;
+}
+
+/* Loading animation */
+.apple-icon[data-loading="true"] {
+  animation: apple-icon-spin 1s linear infinite;
+}
+
+@keyframes apple-icon-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Color variants */
+.apple-icon-primary {
+  color: var(--accent-primary, #007AFF);
+}
+
+.apple-icon-secondary {
+  color: var(--text-secondary, #8E8E93);
+}
+
+.apple-icon-success {
+  color: var(--semantic-success, #34C759);
+}
+
+.apple-icon-warning {
+  color: var(--semantic-warning, #FF9500);
+}
+
+.apple-icon-error {
+  color: var(--semantic-error, #FF3B30);
+}
+
+.apple-icon-muted {
+  color: var(--text-tertiary, #C7C7CC);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .apple-icon-primary {
+    color: var(--accent-primary, #0A84FF);
+  }
+  
+  .apple-icon-secondary {
+    color: var(--text-secondary, #8E8E93);
+  }
+  
+  .apple-icon-success {
+    color: var(--semantic-success, #30D158);
+  }
+  
+  .apple-icon-warning {
+    color: var(--semantic-warning, #FF9F0A);
+  }
+  
+  .apple-icon-error {
+    color: var(--semantic-error, #FF453A);
+  }
+  
+  .apple-icon-muted {
+    color: var(--text-tertiary, #48484A);
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .apple-icon svg {
+    stroke-width: 3;
+  }
+  
+  .apple-icon:hover {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .apple-icon {
+    transition: none;
+  }
+  
+  .apple-icon:hover {
+    transform: none;
+  }
+  
+  .apple-icon:active {
+    transform: none;
+  }
+  
+  .apple-icon[data-loading="true"] {
+    animation: none;
+  }
+}
+
+/* Accessibility */
+.apple-icon:focus {
+  outline: 2px solid var(--accent-primary, #007AFF);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Button integration */
+.button .apple-icon {
+  margin-right: 6px;
+}
+
+.button .apple-icon:last-child {
+  margin-right: 0;
+  margin-left: 6px;
+}
+
+.button .apple-icon:only-child {
+  margin: 0;
+}
+
+/* Toolbar integration */
+.canvas-toolbar .apple-icon {
+  margin-right: 4px;
+}
+
+/* Context menu integration */
+.context-menu-item .apple-icon {
+  margin-right: 8px;
+  width: 14px;
+  height: 14px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .apple-icon-small {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .apple-icon-medium {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .apple-icon-large {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .apple-icon-xl {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* Print styles */
+@media print {
+  .apple-icon {
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+}

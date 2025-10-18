@@ -1,0 +1,251 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://mindmap.example.com/schemas/map-v1.1.0.json",
+  "title": "MindMap Schema v1.1.0",
+  "description": "Enhanced mindmap schema with node shapes and text styling",
+  "type": "object",
+  "required": ["schemaVersion", "schemaFormat", "id", "title", "nodes", "edges", "metadata"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.1.0",
+      "description": "Schema version identifier"
+    },
+    "schemaFormat": {
+      "type": "string",
+      "const": "mindmap-v1",
+      "description": "Schema format identifier"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^map_[a-z0-9-]{6,}$",
+      "description": "Unique identifier for the map"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120,
+      "description": "Map title"
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["createdAt", "updatedAt", "version", "author"],
+      "properties": {
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Data version number"
+        },
+        "author": {
+          "type": "string",
+          "format": "email",
+          "description": "Author email address"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "maxItems": 20,
+          "description": "Tags for categorization and search"
+        }
+      },
+      "additionalProperties": false
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "x", "y", "w", "h"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^n_[A-Za-z0-9_-]{4,}$",
+            "description": "Unique node identifier"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Node label text"
+          },
+          "x": {
+            "type": "number",
+            "description": "X coordinate"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y coordinate"
+          },
+          "w": {
+            "type": "number",
+            "minimum": 20,
+            "maximum": 1000,
+            "description": "Width"
+          },
+          "h": {
+            "type": "number",
+            "minimum": 20,
+            "maximum": 1000,
+            "description": "Height"
+          },
+          "nodeType": {
+            "type": "string",
+            "enum": ["rect", "circle", "diamond", "hex", "cloud", "capsule", "file", "card"],
+            "default": "rect",
+            "description": "Node shape type for semantic categorization"
+          },
+          "textAlign": {
+            "type": "string",
+            "enum": ["left", "center", "right"],
+            "default": "center",
+            "description": "Text horizontal alignment within node"
+          },
+          "textVerticalAlign": {
+            "type": "string",
+            "enum": ["top", "middle", "bottom"],
+            "default": "middle",
+            "description": "Text vertical alignment within node"
+          },
+          "fontSize": {
+            "type": "number",
+            "minimum": 8,
+            "maximum": 72,
+            "default": 14,
+            "description": "Font size in pixels"
+          },
+          "fontWeight": {
+            "type": "string",
+            "enum": ["normal", "bold", "100", "200", "300", "400", "500", "600", "700", "800", "900"],
+            "default": "normal",
+            "description": "Font weight"
+          },
+          "fontColor": {
+            "type": "string",
+            "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
+            "default": "#000000",
+            "description": "Text color in hex format"
+          },
+          "backgroundColor": {
+            "type": "string",
+            "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
+            "description": "Background color in hex format"
+          },
+          "borderColor": {
+            "type": "string",
+            "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
+            "description": "Border color in hex format"
+          },
+          "borderWidth": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10,
+            "default": 1,
+            "description": "Border width in pixels"
+          },
+          "collapsed": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether node is collapsed"
+          },
+          "embedUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Embedded content URL"
+          },
+          "embedType": {
+            "type": "string",
+            "enum": ["youtube", "webpage", "image", "pdf"],
+            "description": "Type of embedded content"
+          }
+        },
+        "additionalProperties": false
+      },
+      "maxItems": 5000,
+      "description": "Array of nodes in the mindmap"
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "source", "target"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^e_[A-Za-z0-9_-]{4,}$",
+            "description": "Unique edge identifier"
+          },
+          "source": {
+            "type": "string",
+            "description": "Source node ID"
+          },
+          "target": {
+            "type": "string",
+            "description": "Target node ID"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 50,
+            "description": "Edge label text"
+          },
+          "edgeType": {
+            "type": "string",
+            "enum": ["straight", "curved", "bezier"],
+            "default": "straight",
+            "description": "Edge line type"
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
+            "description": "Edge color in hex format"
+          },
+          "width": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 10,
+            "default": 2,
+            "description": "Edge width in pixels"
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Array of edges connecting nodes"
+    },
+    "viewState": {
+      "type": "object",
+      "properties": {
+        "zoom": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 5.0,
+          "default": 1.0,
+          "description": "Zoom level"
+        },
+        "viewBox": {
+          "type": "object",
+          "properties": {
+            "x": { "type": "number", "description": "ViewBox X coordinate" },
+            "y": { "type": "number", "description": "ViewBox Y coordinate" },
+            "width": { "type": "number", "minimum": 100, "description": "ViewBox width" },
+            "height": { "type": "number", "minimum": 100, "description": "ViewBox height" }
+          },
+          "required": ["x", "y", "width", "height"],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
+

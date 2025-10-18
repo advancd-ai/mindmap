@@ -1,0 +1,262 @@
+{
+  "app": {
+    "title": "오픈 마인드맵",
+    "subtitle": "아이디어 정리를 위한 시각적 사고 도구"
+  },
+  "login": {
+    "title": "오픈 마인드맵",
+    "subtitle": "아이디어 정리를 위한 시각적 사고 도구",
+    "signInWithGoogle": "Google로 로그인",
+    "or": "또는",
+    "continueAsGuest": "게스트로 계속하기",
+    "guestNotice": "게스트 모드: 모든 게스트가 하나의 저장소를 공유합니다. 맵이 다른 사용자에게 보일 수 있습니다.",
+    "features": {
+      "create": "시각적 마인드맵 생성",
+      "shapes": "다양한 노드 형태와 스타일",
+      "connect": "아이디어 연결 및 콘텐츠 임베드"
+    }
+  },
+  "auth": {
+    "setupRepo": {
+      "message": "개인 저장소를 설정하는 중...",
+      "checkRepo": "GitHub 저장소 확인",
+      "createRepo": "저장소 생성",
+      "initRepo": "저장소 초기화",
+      "complete": "설정 완료",
+      "error": "설정에 실패했습니다. 다시 시도해주세요."
+    }
+  },
+  "dashboard": {
+    "title": "내 마인드맵",
+    "logout": "로그아웃",
+    "signIn": "로그인",
+    "guestMode": "게스트 모드",
+    "guestModeDesc": "맵이 모든 게스트와 공유됩니다. Google로 로그인하면 개인 저장소를 사용할 수 있습니다.",
+    "createNew": "+ 새 마인드맵 만들기",
+    "search": "맵 검색...",
+    "loading": "맵 로딩 중...",
+    "empty": "아직 마인드맵이 없습니다. 첫 번째 맵을 만들어보세요!",
+    "nodes": "노드",
+    "edges": "엣지",
+    "updatingMap": "마인드맵 업데이트 중...",
+    "updateSuccess": "마인드맵이 성공적으로 업데이트되었습니다!",
+    "updateError": "마인드맵 업데이트에 실패했습니다. 다시 시도해주세요.",
+    "deleteError": "마인드맵 삭제에 실패했습니다. 다시 시도해주세요."
+  },
+  "progress": {
+    "preparing": "업데이트 준비 중...",
+    "updating": "메타데이터 업데이트 중...",
+    "refreshing": "대시보드 새로고침 중..."
+  },
+  "editor": {
+    "back": "← Dashboard",
+    "mapTitle": "마인드맵 제목",
+    "mapTitlePlaceholder": "마인드맵 제목을 입력하세요...",
+    "untitled": "제목 없는 마인드맵",
+    "editTitle": "제목 편집",
+    "editTitlePrompt": "새 제목을 입력하세요:",
+    "save": "저장 (미리보기)",
+    "saving": "저장 중...",
+    "readonly": "읽기 전용",
+    "readonlySubtitle": "이전 버전을 보고 있습니다",
+    "refreshToLatest": "최신으로 새로고침",
+    "refreshing": "새로고침 중...",
+    "refreshSuccess": "버전 {{version}}으로 성공적으로 새로고침되었습니다!",
+    "refreshError": "최신 버전으로 새로고침에 실패했습니다",
+    "saveSuccess": "마인드맵이 성공적으로 저장되었습니다!",
+    "saveError": "마인드맵 저장에 실패했습니다. 다시 시도해주세요.",
+    "unsavedChanges": "저장되지 않은 변경사항",
+    "emptyCanvas": "\"노드 추가\" 버튼을 클릭하여 마인드맵 만들기 시작",
+    "emptyCanvasHint": "우클릭으로 더 많은 옵션 보기",
+    "logout": "로그아웃"
+  },
+  "toolbar": {
+    "addNode": "+ 노드 추가",
+    "edit": "✏️ 편집",
+    "embed": "➕ 임베드",
+    "changeEmbed": "🌐 변경",
+    "connect": "🔗 연결",
+    "cancelConnection": "✕ 연결 취소",
+    "delete": "🗑️ 삭제",
+    "deleteEdge": "🗑️ 엣지 삭제"
+  },
+  "canvas": {
+    "connecting": "🔗 연결 중... 대상 노드를 클릭하세요",
+    "resizing": "📐 크기 조정 중...",
+    "editingNode": "✏️ 노드 편집 중...",
+    "editingEdge": "✏️ 엣지 라벨 편집 중...",
+    "panning": "🖐️ 캔버스 이동 중...",
+    "nodes": "노드",
+    "edges": "엣지",
+    "collapsed": "접힘"
+  },
+  "contextMenu": {
+    "editLabel": "라벨 편집",
+    "connectTo": "연결...",
+    "addEmbed": "임베드 추가",
+    "changeEmbed": "임베드 변경",
+    "removeEmbed": "임베드 제거",
+    "collapse": "📁 접기",
+    "expand": "📂 펼치기",
+    "addChild": "자식 노드 추가",
+    "duplicate": "복제",
+    "changeShape": "형태 변경",
+    "textAlign": "텍스트 정렬",
+    "delete": "삭제",
+    "addNodeHere": "여기에 노드 추가",
+    "addLabel": "라벨 추가",
+    "removeLabel": "라벨 제거",
+    "edgeType": "엣지 타입",
+    "deleteEdge": "엣지 삭제"
+  },
+  "textAlign": {
+    "horizontal": "수평 정렬",
+    "left": "왼쪽",
+    "center": "중앙",
+    "right": "오른쪽",
+    "vertical": "수직 정렬",
+    "top": "위",
+    "middle": "중간",
+    "bottom": "아래"
+  },
+  "edgeType": {
+    "straight": "직선",
+    "curved": "곡선",
+    "bezier": "베지어 곡선"
+  },
+  "nodeShape": {
+    "title": "노드 형태 선택",
+    "hint": "형태는 정보의 분류 체계로 작동합니다",
+    "rect": "사각형",
+    "circle": "원형",
+    "diamond": "마름모",
+    "hex": "육각형",
+    "cloud": "구름형",
+    "capsule": "캡슐형",
+    "file": "파일형",
+    "card": "카드형",
+    "description": {
+      "rect": "기본 개념",
+      "circle": "순환/완성",
+      "diamond": "결정 단계/분기점",
+      "hex": "연결성/네트워크",
+      "cloud": "아이디어/브레인스토밍",
+      "capsule": "진행 상태",
+      "file": "참고자료/첨부 문서",
+      "card": "카테고리/그룹"
+    }
+  },
+  "embedDialog": {
+    "title": "콘텐츠 임베드",
+    "urlLabel": "URL",
+    "urlPlaceholder": "YouTube 또는 웹페이지 URL 입력...",
+    "hint": "참고: 많은 웹사이트들이 보안 정책(X-Frame-Options)으로 인해 임베드를 차단합니다.",
+    "recommended": "임베드 가능한 추천 사이트:",
+    "save": "저장",
+    "cancel": "취소"
+  },
+  "jsonPreview": {
+    "title": "💾 저장 미리보기",
+    "copy": "📋 복사",
+    "copied": "✓ 복사됨!",
+    "download": "💾 다운로드",
+    "nodes": "노드",
+    "edges": "엣지",
+    "size": "크기",
+    "cancel": "취소",
+    "confirmSave": "확인 및 저장"
+  },
+  "help": {
+    "title": "ℹ️ 도움말",
+    "nodes": "노드",
+    "edges": "엣지",
+    "zoomView": "줌 & 뷰",
+    "shortcuts": "단축키",
+    "addNode": "추가: \"노드 추가\" 버튼 클릭 (선택된 노드 근처)",
+    "addHere": "여기에 추가: 캔버스 우클릭 → 여기에 노드 추가",
+    "addChild": "자식 추가: 노드 우클릭 → 자식 노드 추가",
+    "edit": "편집: 더블클릭 또는 우클릭 → 편집",
+    "move": "이동: 클릭 앤 드래그",
+    "resize": "크기 조정: 모서리/엣지 드래그 (8개 핸들)",
+    "embedContent": "임베드: 우클릭 → 임베드 추가 (YouTube/Web)",
+    "collapseNode": "접기: ‹ 버튼 클릭 (우상단)",
+    "connectNodes": "연결: 파란색 핸들 클릭",
+    "changeShape": "형태 변경: 우클릭 → 형태 변경",
+    "textAlign": "텍스트 정렬: 우클릭 → 텍스트 정렬 (수평/수직)",
+    "duplicateNode": "복제: 우클릭 → 복제",
+    "selectEdge": "선택: 엣지 라인 클릭",
+    "addEdgeLabel": "라벨 추가: 더블클릭 또는 엣지 우클릭",
+    "changeEdgeType": "타입 변경: 우클릭 → 엣지 타입 (직선/곡선/베지어)",
+    "edgeMenu": "메뉴: 우클릭으로 더 많은 옵션",
+    "zoom": "줌: Ctrl + 스크롤 (또는 🔍 버튼)",
+    "pan": "이동: 배경 클릭 앤 드래그",
+    "resetView": "초기화: ⟲ 버튼 클릭 (100%)",
+    "enterSave": "Enter: 텍스트 저장",
+    "escCancel": "ESC: 작업 취소"
+  },
+  "createMapDialog": {
+    "title": "새 마인드맵 만들기",
+    "subtitle": "아이디어를 시각적으로 정리하세요",
+    "mapTitle": "마인드맵 제목",
+    "titlePlaceholder": "마인드맵 제목을 입력하세요...",
+    "tags": "태그",
+    "optional": "선택사항",
+    "tagsPlaceholder": "태그 추가...",
+    "tagsHint": "태그를 추가하여 맵을 쉽게 분류하고 찾을 수 있습니다",
+    "addTag": "추가",
+    "cancel": "취소",
+    "create": "마인드맵 만들기"
+  },
+  "editMapDialog": {
+    "title": "마인드맵 정보 편집",
+    "subtitle": "맵의 제목과 태그를 업데이트하세요",
+    "mapTitle": "마인드맵 제목",
+    "titlePlaceholder": "마인드맵 제목을 입력하세요...",
+    "tags": "태그",
+    "optional": "선택사항",
+    "tagsPlaceholder": "태그 추가...",
+    "tagsHint": "태그를 추가하여 맵을 쉽게 분류하고 찾을 수 있습니다",
+    "addTag": "추가",
+    "cancel": "취소",
+    "save": "변경사항 저장"
+  },
+  "language": {
+    "select": "Language",
+    "en": "English",
+    "ko": "한국어"
+  },
+  "colorPicker": {
+    "title": "배경색 선택",
+    "preview": "미리보기",
+    "presets": "프리셋 색상",
+    "custom": "사용자 지정 색상",
+    "apply": "적용",
+    "cancel": "취소"
+  },
+  "jsonPreview": {
+    "changeLogTitle": "이번 저장의 변경사항:",
+    "noChanges": "추적된 변경사항 없음"
+  },
+  "versionHistory": {
+    "title": "버전 히스토리",
+    "loading": "버전 히스토리 로딩 중...",
+    "error": "버전 히스토리 로드 실패",
+    "noVersions": "버전 히스토리가 없습니다",
+    "current": "현재",
+    "latest": "최신",
+    "nodes": "노드",
+    "edges": "엣지",
+    "cancel": "취소",
+    "loadVersion": "버전 로드",
+    "progress": {
+      "fetching": "버전 히스토리 가져오는 중...",
+      "processing": "버전 데이터 처리 중...",
+      "complete": "히스토리 로드 완료!",
+      "connecting": "서버 연결 중...",
+      "processingData": "버전 데이터 처리 중...",
+      "processingVersion": "버전 {{version}} 처리 중...",
+      "foundVersions": "{{count}}개 버전 발견"
+    }
+  }
+}
+

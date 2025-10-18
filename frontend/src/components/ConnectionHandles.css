@@ -1,0 +1,42 @@
+/* Apple-style Connection Handles */
+.connection-handle {
+  pointer-events: all !important;
+  cursor: crosshair;
+  transition: var(--transition-fast);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.connection-handle circle {
+  transition: var(--transition-fast);
+}
+
+.connection-handle:hover circle {
+  r: 8;
+  fill: var(--primary);
+  stroke: white;
+  stroke-width: 3;
+  filter: drop-shadow(0 0 8px rgba(0, 122, 255, 0.5));
+}
+
+.connection-handle:active circle {
+  r: 7;
+  filter: drop-shadow(0 0 12px rgba(0, 122, 255, 0.7));
+}
+
+/* Pulse animation for handles */
+@keyframes handlePulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.connection-handle circle {
+  animation: handlePulse 2s ease-in-out infinite;
+}
+
+.connection-handle:hover circle {
+  animation: none;
+}

@@ -1,0 +1,262 @@
+{
+  "app": {
+    "title": "Open Mindmap",
+    "subtitle": "Visual thinking tool for organizing ideas"
+  },
+  "login": {
+    "title": "Open Mindmap",
+    "subtitle": "Visual thinking tool for organizing ideas",
+    "signInWithGoogle": "Sign in with Google",
+    "or": "or",
+    "continueAsGuest": "Continue as Guest",
+    "guestNotice": "Guest mode: All guests share one repository. Your maps may be visible to others.",
+    "features": {
+      "create": "Create visual mindmaps",
+      "shapes": "Multiple node shapes & styles",
+      "connect": "Connect ideas & embed content"
+    }
+  },
+  "auth": {
+    "setupRepo": {
+      "message": "Setting up your personal storage...",
+      "checkRepo": "Checking GitHub repository",
+      "createRepo": "Creating repository",
+      "initRepo": "Initializing storage",
+      "complete": "Setup complete",
+      "error": "Setup failed. Please try again."
+    }
+  },
+  "dashboard": {
+    "title": "My Mindmaps",
+    "logout": "Logout",
+    "signIn": "Sign In",
+    "guestMode": "Guest Mode",
+    "guestModeDesc": "Maps are shared with all guests. Sign in with Google for private storage.",
+    "createNew": "+ Create New Mind Map",
+    "search": "Search maps...",
+    "loading": "Loading maps...",
+    "empty": "No mindmaps yet. Create your first one!",
+    "nodes": "Nodes",
+    "edges": "Edges",
+    "updatingMap": "Updating mind map...",
+    "updateSuccess": "Mind map updated successfully!",
+    "updateError": "Failed to update mind map. Please try again.",
+    "deleteError": "Failed to delete mind map. Please try again."
+  },
+  "progress": {
+    "preparing": "Preparing update...",
+    "updating": "Updating metadata...",
+    "refreshing": "Refreshing dashboard..."
+  },
+  "editor": {
+    "back": "← Dashboard",
+    "mapTitle": "Mind Map Title",
+    "mapTitlePlaceholder": "Enter your mindmap title...",
+    "untitled": "Untitled Mind Map",
+    "editTitle": "Edit title",
+    "editTitlePrompt": "Enter new title:",
+    "save": "Save (Preview)",
+    "saving": "Saving...",
+    "readonly": "Read Only",
+    "readonlySubtitle": "You are viewing an older version",
+    "refreshToLatest": "Refresh to Latest",
+    "refreshing": "Refreshing...",
+    "refreshSuccess": "Successfully refreshed to version {{version}}!",
+    "refreshError": "Failed to refresh to latest version",
+    "saveSuccess": "Mind map saved successfully!",
+    "saveError": "Failed to save mind map. Please try again.",
+    "unsavedChanges": "Unsaved changes",
+    "emptyCanvas": "Click \"Add Node\" to start building your mindmap",
+    "emptyCanvasHint": "Right-click for more options",
+    "logout": "Logout"
+  },
+  "toolbar": {
+    "addNode": "+ Add Node",
+    "edit": "✏️ Edit",
+    "embed": "➕ Embed",
+    "changeEmbed": "🌐 Change",
+    "connect": "🔗 Connect",
+    "cancelConnection": "✕ Cancel Connection",
+    "delete": "🗑️ Delete",
+    "deleteEdge": "🗑️ Delete Edge"
+  },
+  "canvas": {
+    "connecting": "🔗 Connecting... Click target node",
+    "resizing": "📐 Resizing...",
+    "editingNode": "✏️ Editing node...",
+    "editingEdge": "✏️ Editing edge label...",
+    "panning": "🖐️ Panning canvas...",
+    "nodes": "Nodes",
+    "edges": "Edges",
+    "collapsed": "collapsed"
+  },
+  "contextMenu": {
+    "editLabel": "Edit Label",
+    "connectTo": "Connect to...",
+    "addEmbed": "Add Embed",
+    "changeEmbed": "Change Embed",
+    "removeEmbed": "Remove Embed",
+    "collapse": "📁 Collapse",
+    "expand": "📂 Expand",
+    "addChild": "Add Child Node",
+    "duplicate": "Duplicate",
+    "changeShape": "Change Shape",
+    "textAlign": "Text Align",
+    "delete": "Delete",
+    "addNodeHere": "Add Node Here",
+    "addLabel": "Add Label",
+    "removeLabel": "Remove Label",
+    "edgeType": "Edge Type",
+    "deleteEdge": "Delete Edge"
+  },
+  "textAlign": {
+    "horizontal": "수평 정렬",
+    "left": "Left",
+    "center": "Center",
+    "right": "Right",
+    "vertical": "수직 정렬",
+    "top": "Top",
+    "middle": "Middle",
+    "bottom": "Bottom"
+  },
+  "edgeType": {
+    "straight": "Straight Line",
+    "curved": "Curved Line",
+    "bezier": "Bezier Curve"
+  },
+  "nodeShape": {
+    "title": "노드 형태 선택",
+    "hint": "형태는 정보의 분류 체계로 작동합니다",
+    "rect": "Rectangle",
+    "circle": "Circle",
+    "diamond": "Diamond",
+    "hex": "Hexagon",
+    "cloud": "Cloud",
+    "capsule": "Capsule",
+    "file": "File",
+    "card": "Card",
+    "description": {
+      "rect": "기본 개념",
+      "circle": "순환/완성",
+      "diamond": "결정 단계/분기점",
+      "hex": "연결성/네트워크",
+      "cloud": "아이디어/브레인스토밍",
+      "capsule": "진행 상태",
+      "file": "참고자료/첨부 문서",
+      "card": "카테고리/그룹"
+    }
+  },
+  "embedDialog": {
+    "title": "Embed Content",
+    "urlLabel": "URL",
+    "urlPlaceholder": "Enter YouTube or webpage URL...",
+    "hint": "Note: Many websites block embedding due to security policies (X-Frame-Options).",
+    "recommended": "Recommended embeddable sites:",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "jsonPreview": {
+    "title": "💾 Save Preview",
+    "copy": "📋 Copy",
+    "copied": "✓ Copied!",
+    "download": "💾 Download",
+    "nodes": "Nodes",
+    "edges": "Edges",
+    "size": "Size",
+    "cancel": "Cancel",
+    "confirmSave": "Confirm & Save"
+  },
+  "help": {
+    "title": "ℹ️ Help",
+    "nodes": "Nodes",
+    "edges": "Edges",
+    "zoomView": "Zoom & View",
+    "shortcuts": "Shortcuts",
+    "addNode": "Add: Click \"Add Node\" button (near selected node)",
+    "addHere": "Add here: Right-click canvas → Add Node Here",
+    "addChild": "Add child: Right-click node → Add Child Node",
+    "edit": "Edit: Double-click or right-click → Edit",
+    "move": "Move: Click and drag",
+    "resize": "Resize: Drag corners/edges (8 handles)",
+    "embedContent": "Embed: Right-click → Add Embed (YouTube/Web)",
+    "collapseNode": "Collapse: Click ‹ button (top-right)",
+    "connectNodes": "Connect: Click blue handles",
+    "changeShape": "Change shape: Right-click → Change Shape",
+    "textAlign": "Text align: Right-click → Text Align (Horizontal/Vertical)",
+    "duplicateNode": "Duplicate: Right-click → Duplicate",
+    "selectEdge": "Select: Click on edge line",
+    "addEdgeLabel": "Add label: Double-click or right-click edge",
+    "changeEdgeType": "Change type: Right-click → Edge Type (Straight/Curved/Bezier)",
+    "edgeMenu": "Menu: Right-click for more options",
+    "zoom": "Zoom: Ctrl + Scroll (or use 🔍 buttons)",
+    "pan": "Pan: Click and drag background",
+    "resetView": "Reset: Click ⟲ button (100%)",
+    "enterSave": "Enter: Save text",
+    "escCancel": "ESC: Cancel action"
+  },
+  "createMapDialog": {
+    "title": "Create New Mind Map",
+    "subtitle": "Organize your ideas visually",
+    "mapTitle": "Mind Map Title",
+    "titlePlaceholder": "Enter mind map title...",
+    "tags": "Tags",
+    "optional": "optional",
+    "tagsPlaceholder": "Add tag...",
+    "tagsHint": "Add tags to categorize and find your maps easily",
+    "addTag": "Add",
+    "cancel": "Cancel",
+    "create": "Create Mind Map"
+  },
+  "editMapDialog": {
+    "title": "Edit Mind Map Info",
+    "subtitle": "Update your map's title and tags",
+    "mapTitle": "Mind Map Title",
+    "titlePlaceholder": "Enter mind map title...",
+    "tags": "Tags",
+    "optional": "optional",
+    "tagsPlaceholder": "Add tag...",
+    "tagsHint": "Add tags to categorize and find your maps easily",
+    "addTag": "Add",
+    "cancel": "Cancel",
+    "save": "Save Changes"
+  },
+  "language": {
+    "select": "Language",
+    "en": "English",
+    "ko": "한국어"
+  },
+  "colorPicker": {
+    "title": "Choose Background Color",
+    "preview": "Preview",
+    "presets": "Preset Colors",
+    "custom": "Custom Color",
+    "apply": "Apply",
+    "cancel": "Cancel"
+  },
+  "jsonPreview": {
+    "changeLogTitle": "Changes in this save:",
+    "noChanges": "No changes tracked"
+  },
+  "versionHistory": {
+    "title": "Version History",
+    "loading": "Loading version history...",
+    "error": "Failed to load version history",
+    "noVersions": "No version history found",
+    "current": "Current",
+    "latest": "Latest",
+    "nodes": "nodes",
+    "edges": "edges",
+    "cancel": "Cancel",
+    "loadVersion": "Load Version",
+    "progress": {
+      "fetching": "Fetching version history...",
+      "processing": "Processing versions...",
+      "complete": "History loaded successfully!",
+      "connecting": "Connecting to server...",
+      "processingData": "Processing version data...",
+      "processingVersion": "Processing version {{version}}...",
+      "foundVersions": "Found {{count}} versions"
+    }
+  }
+}
+

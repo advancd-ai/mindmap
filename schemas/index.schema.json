@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/schemas/index.json",
+  "type": "object",
+  "required": ["items", "generatedAt"],
+  "properties": {
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the index was generated"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "tags", "updatedAt", "commitSha"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^map_[a-z0-9-]{6,}$",
+            "description": "Map identifier"
+          },
+          "title": {
+            "type": "string",
+            "description": "Map title"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Map tags"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          },
+          "commitSha": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$",
+            "description": "Git commit SHA"
+          }
+        }
+      },
+      "description": "Array of map metadata"
+    }
+  },
+  "additionalProperties": false
+}
+

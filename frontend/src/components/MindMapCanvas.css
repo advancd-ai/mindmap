@@ -1,0 +1,437 @@
+/* ============================================
+   MINDMAP CANVAS - 사고의 공간
+   ============================================ */
+
+.mindmap-canvas-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+  position: relative;
+}
+
+/* ============================================
+   TOOLBAR - 도구의 질서
+   ============================================ */
+
+.canvas-toolbar {
+  display: flex;
+  gap: var(--space);
+  align-items: center;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--bg-elevated);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: visible;
+  z-index: 10;
+}
+
+.canvas-toolbar .button {
+  font-size: 14px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.button-screenshot {
+  background: linear-gradient(135deg, var(--semantic-success) 0%, #16A34A 100%);
+  color: white;
+  border: none;
+  box-shadow: 
+    0 2px 8px rgba(22, 163, 74, 0.2),
+    0 1px 4px rgba(22, 163, 74, 0.15);
+}
+
+.button-screenshot:hover {
+  background: linear-gradient(135deg, #16A34A 0%, #15803D 100%);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 4px 12px rgba(22, 163, 74, 0.3),
+    0 2px 6px rgba(22, 163, 74, 0.2);
+}
+
+.button-screenshot:active {
+  transform: translateY(0);
+  box-shadow: 
+    0 1px 4px rgba(22, 163, 74, 0.2),
+    0 0.5px 2px rgba(22, 163, 74, 0.15);
+}
+
+.button-save {
+  background: linear-gradient(135deg, var(--accent-primary) 0%, #2563EB 100%);
+  color: white;
+  border: none;
+  box-shadow: 
+    0 2px 8px rgba(37, 99, 235, 0.2),
+    0 1px 4px rgba(37, 99, 235, 0.15);
+}
+
+.button-save:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 4px 12px rgba(37, 99, 235, 0.3),
+    0 2px 6px rgba(37, 99, 235, 0.2);
+}
+
+.button-save:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 
+    0 1px 4px rgba(37, 99, 235, 0.2),
+    0 0.5px 2px rgba(37, 99, 235, 0.15);
+}
+
+.button-save:disabled {
+  background: var(--bg-tertiary);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Readonly Button */
+.button-readonly {
+  background: linear-gradient(135deg, var(--semantic-warning) 0%, #F59E0B 100%);
+  color: white;
+  border: none;
+  box-shadow: 
+    0 2px 8px rgba(245, 158, 11, 0.2),
+    0 1px 4px rgba(245, 158, 11, 0.15);
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.button-readonly:hover {
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  transform: none;
+  box-shadow: 
+    0 2px 8px rgba(245, 158, 11, 0.3),
+    0 1px 4px rgba(245, 158, 11, 0.2);
+}
+
+.button-readonly:active {
+  transform: none;
+  box-shadow: 
+    0 1px 4px rgba(245, 158, 11, 0.2),
+    0 0.5px 2px rgba(245, 158, 11, 0.15);
+}
+
+/* Readonly Overlay */
+.readonly-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 20px;
+}
+
+.readonly-banner {
+  background: linear-gradient(135deg, var(--semantic-warning) 0%, #F59E0B 100%);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 12px;
+  box-shadow: 
+    0 4px 20px rgba(245, 158, 11, 0.3),
+    0 2px 8px rgba(245, 158, 11, 0.2);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  animation: readonlyPulse 2s ease-in-out infinite;
+}
+
+.readonly-icon {
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+
+.readonly-text {
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+}
+
+.readonly-subtitle {
+  font-size: 12px;
+  opacity: 0.9;
+  font-weight: 400;
+}
+
+@keyframes readonlyPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 1;
+  }
+}
+
+/* Refresh Overlay */
+.refresh-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  pointer-events: none;
+}
+
+.refresh-progress-container {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-primary);
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.3),
+    0 8px 16px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  min-width: 320px;
+  text-align: center;
+}
+
+.refresh-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.refresh-icon {
+  font-size: 24px;
+  animation: refreshSpin 1s linear infinite;
+}
+
+.refresh-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.refresh-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.refresh-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-primary) 0%, #2563EB 100%);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  position: relative;
+}
+
+.refresh-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+  animation: progressShimmer 1.5s ease-in-out infinite;
+}
+
+.refresh-progress-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Mono', Menlo, Monaco, Consolas, monospace;
+}
+
+.refresh-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.refresh-spinner {
+  animation: refreshSpin 1s linear infinite;
+}
+
+.refresh-text {
+  font-size: 12px;
+}
+
+@keyframes refreshSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes progressShimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+
+/* ============================================
+   ZOOM CONTROLS - 명확한 스케일 제어
+   ============================================ */
+
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  padding: 4px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
+}
+
+.zoom-controls .button {
+  padding: 6px 10px;
+  min-width: 36px;
+  font-size: 14px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  box-shadow: none;
+}
+
+.zoom-controls .button:hover {
+  background: var(--bg-secondary);
+  transform: none;
+}
+
+.zoom-controls .button:active {
+  background: var(--bg-tertiary);
+}
+
+.zoom-level {
+  min-width: 56px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  user-select: none;
+  padding: 0 var(--space-sm);
+  letter-spacing: -0.02em;
+}
+
+/* ============================================
+   CANVAS STATUS - 상태 메시지
+   ============================================ */
+
+.canvas-status {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  padding: var(--space-sm) var(--space);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-primary);
+  letter-spacing: -0.01em;
+}
+
+/* ============================================
+   SVG CANVAS - 사고의 캔버스
+   ============================================ */
+
+.mindmap-canvas {
+  flex: 1;
+  cursor: grab;
+  touch-action: none;
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.02) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(16, 163, 74, 0.02) 0%, transparent 50%);
+  transition: cursor 0.1s;
+  user-select: none;
+}
+
+.mindmap-canvas.panning {
+  cursor: grabbing !important;
+}
+
+.mindmap-canvas.panning * {
+  cursor: grabbing !important;
+}
+
+.mindmap-canvas:active {
+  cursor: grabbing;
+}
+
+.canvas-background {
+  cursor: grab;
+}
+
+.canvas-background:active,
+.panning .canvas-background {
+  cursor: grabbing;
+}
+
+/* ============================================
+   EMPTY STATE - 시작의 안내
+   ============================================ */
+
+.empty-canvas {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: var(--text-secondary);
+  pointer-events: none;
+  animation: fadeIn 0.6s ease-out;
+}
+
+.empty-canvas p {
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin-bottom: var(--space-sm);
+  color: var(--text-primary);
+}
+
+.empty-canvas p:last-child {
+  font-size: 15px;
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+/* ============================================
+   GRID PATTERN - 구조의 가이드
+   ============================================ */
+
+.mindmap-canvas defs pattern path {
+  stroke: var(--border-primary);
+  stroke-width: 0.5;
+}

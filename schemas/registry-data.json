@@ -1,0 +1,29 @@
+{
+  "registryVersion": "1.0.0",
+  "lastUpdated": "2024-01-15T10:30:00Z",
+  "schemas": {
+    "mindmap-v1": {
+      "format": "mindmap-v1",
+      "latest": "1.2.0",
+      "versions": ["1.0.0", "1.1.0", "1.2.0"],
+      "migrationPaths": {
+        "1.0.0": ["1.1.0"],
+        "1.1.0": ["1.2.0"],
+        "1.2.0": ["2.0.0"]
+      },
+      "deprecated": false,
+      "description": "Initial mindmap schema format with basic node and edge support"
+    },
+    "mindmap-v2": {
+      "format": "mindmap-v2",
+      "latest": "2.0.0",
+      "versions": ["2.0.0"],
+      "migrationPaths": {
+        "2.0.0": []
+      },
+      "deprecated": false,
+      "description": "Enhanced mindmap schema with advanced features and 3D support"
+    }
+  }
+}
+

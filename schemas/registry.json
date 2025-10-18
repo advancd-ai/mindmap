@@ -1,0 +1,76 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Schema Registry",
+  "description": "Registry of all available map schema versions",
+  "type": "object",
+  "properties": {
+    "registryVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Registry format version"
+    },
+    "lastUpdated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last update timestamp"
+    },
+    "schemas": {
+      "type": "object",
+      "patternProperties": {
+        "^mindmap-v\\d+$": {
+          "type": "object",
+          "properties": {
+            "format": {
+              "type": "string",
+              "description": "Schema format identifier"
+            },
+            "latest": {
+              "type": "string",
+              "pattern": "^\\d+\\.\\d+\\.\\d+$",
+              "description": "Latest version in this format"
+            },
+            "versions": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^\\d+\\.\\d+\\.\\d+$"
+              },
+              "description": "All available versions"
+            },
+            "migrationPaths": {
+              "type": "object",
+              "patternProperties": {
+                "^\\d+\\.\\d+\\.\\d+$": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^\\d+\\.\\d+\\.\\d+$"
+                  }
+                }
+              },
+              "description": "Available migration paths from each version"
+            },
+            "deprecated": {
+              "type": "boolean",
+              "default": false,
+              "description": "Whether this format is deprecated"
+            },
+            "deprecationNotice": {
+              "type": "string",
+              "description": "Deprecation notice message"
+            },
+            "endOfLife": {
+              "type": "string",
+              "format": "date",
+              "description": "End of life date for deprecated formats"
+            }
+          },
+          "required": ["format", "latest", "versions", "migrationPaths"]
+        }
+      }
+    }
+  },
+  "required": ["registryVersion", "lastUpdated", "schemas"],
+  "additionalProperties": false
+}
+

@@ -1,0 +1,170 @@
+/* ============================================
+   TOOLBAR HELP - Apple-like Help Button
+   ============================================ */
+
+.toolbar-help {
+  position: relative;
+  z-index: 1000;
+  display: inline-flex;
+}
+
+.help-summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  padding: var(--space-sm) var(--space);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  transition: var(--transition-fast);
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.help-summary::-webkit-details-marker {
+  display: none;
+}
+
+.help-summary:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-secondary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-xs);
+}
+
+.help-summary:active {
+  transform: translateY(0);
+}
+
+/* Help Content Panel - Popup from Footer */
+.help-content {
+  position: absolute;
+  bottom: calc(100% + 12px);  /* Popup upwards from footer */
+  right: 0;
+  min-width: 400px;
+  max-width: 500px;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: var(--bg-elevated);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.12),
+    0 8px 20px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+  padding: var(--space-lg);
+  margin-bottom: 8px;
+  opacity: 0;
+  transform: translateY(10px);  /* Start position for animation */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 10000;
+}
+
+.toolbar-help details[open] .help-content {
+  opacity: 1;
+  transform: translateY(0);  /* End position - no vertical offset */
+  pointer-events: all;
+}
+
+/* Section Title */
+.help-section-title {
+  margin: 0 0 var(--space-sm) 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  padding-bottom: var(--space-xs);
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.help-section-title:not(:first-child) {
+  margin-top: var(--space-md);
+}
+
+/* Help List */
+.help-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--text-secondary);
+}
+
+.help-list li {
+  margin-bottom: var(--space-xs);
+}
+
+.help-list strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Custom Scrollbar for help content */
+.help-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.help-content::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: var(--radius-full);
+}
+
+.help-content::-webkit-scrollbar-thumb {
+  background: var(--border-secondary);
+  border-radius: var(--radius-full);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: var(--transition-fast);
+}
+
+.help-content::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+  background-clip: padding-box;
+}
+
+/* Arrow indicator pointing down to button */
+.help-content::before {
+  content: '';
+  position: absolute;
+  bottom: -8px;  /* Arrow at bottom pointing down */
+  right: 20px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid var(--border-primary);  /* Changed: border-bottom → border-top */
+}
+
+.help-content::after {
+  content: '';
+  position: absolute;
+  bottom: -7px;  /* Arrow at bottom */
+  right: 21px;
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 7px solid var(--bg-elevated);  /* Changed: border-bottom → border-top */
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .help-content {
+    min-width: 300px;
+    max-width: 90vw;
+    right: -10px;
+  }
+  
+  .help-summary {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+}

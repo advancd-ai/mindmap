@@ -1,0 +1,120 @@
+/* ============================================
+   EDGE - 관계의 선
+   노드 간 연결을 명료하게 표현
+   ============================================ */
+
+.edge {
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.edge line {
+  stroke: var(--border-secondary);
+  stroke-width: 1.5;
+  transition: var(--transition-fast);
+}
+
+.edge:hover line {
+  stroke-width: 2;
+  stroke: var(--accent-primary);
+  filter: drop-shadow(0 2px 4px rgba(37, 99, 235, 0.15));
+}
+
+/* ============================================
+   EDGE SELECTED STATE
+   ============================================ */
+
+.edge.selected line {
+  stroke: var(--accent-primary);
+  stroke-width: 2;
+  filter: drop-shadow(0 4px 8px rgba(37, 99, 235, 0.2));
+}
+
+/* ============================================
+   COLLAPSED NODE EDGES - 상태 표현
+   ============================================ */
+
+.edge.from-collapsed line,
+.edge.to-collapsed line {
+  stroke-dasharray: 6 6;
+  stroke-dashoffset: 0;
+  opacity: 0.6;
+  animation: dashFlow 15s linear infinite;
+}
+
+@keyframes dashFlow {
+  to {
+    stroke-dashoffset: -120;
+  }
+}
+
+/* ============================================
+   EDGE LABEL - 관계의 설명
+   ============================================ */
+
+.edge text {
+  font-size: 12px;
+  font-weight: 500;
+  fill: var(--text-secondary);
+  letter-spacing: -0.01em;
+  user-select: none;
+  transition: var(--transition-fast);
+}
+
+.edge text tspan {
+  dominant-baseline: middle;
+}
+
+.edge:hover text {
+  font-weight: 600;
+  fill: var(--text-primary);
+}
+
+/* Edge label background */
+.edge rect {
+  fill: var(--bg-primary);
+  stroke: var(--border-primary);
+  transition: var(--transition-fast);
+}
+
+.edge.selected rect {
+  stroke: var(--accent-primary);
+  filter: drop-shadow(0 2px 4px rgba(37, 99, 235, 0.1));
+}
+
+/* ============================================
+   EDGE SEMANTIC COLORS
+   의미에 따른 엣지 색상
+   ============================================ */
+
+.edge[data-type="dependency"] path {
+  stroke: var(--viz-data);
+}
+
+.edge[data-type="flow"] path {
+  stroke: var(--viz-plan);
+}
+
+.edge[data-type="impact"] path {
+  stroke: var(--viz-risk);
+}
+
+/* ============================================
+   EDGE TYPE STYLES
+   선 타입별 스타일
+   ============================================ */
+
+.edge-straight path {
+  /* 직선은 기본 스타일 */
+}
+
+.edge-curved path {
+  /* 곡선은 부드러운 느낌 */
+  stroke-linecap: round;
+}
+
+.edge-bezier path {
+  /* 자유 곡선은 더 부드러운 느낌 */
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
