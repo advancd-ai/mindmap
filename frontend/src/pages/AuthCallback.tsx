@@ -173,7 +173,6 @@ export default function AuthCallback() {
         step.status === 'active' ? { ...step, status: 'error' } : step
       ));
       
-      const errorMessage = error.response?.data?.error?.message || error.message;
       setProgressMessage(t('auth.setupRepo.error', 'Setup failed. Please try again.'));
       
       // Show error but still allow to proceed

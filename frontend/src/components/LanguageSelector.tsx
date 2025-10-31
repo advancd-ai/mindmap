@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import './LanguageSelector.css';
 
 export default function LanguageSelector() {
-  const { i18n, t } = useTranslation();
+  const { i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const selectorRef = useRef<HTMLDivElement>(null);
 

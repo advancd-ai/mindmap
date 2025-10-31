@@ -18,18 +18,6 @@ export default function EmbedDialog({ mapId, onSave, onCancel }: EmbedDialogProp
   const [uploading, setUploading] = useState(false);
 
   const detectEmbedType = (inputUrl: string): 'youtube' | 'webpage' | 'image' | 'pdf' => {
-    const embeddableServices = [
-      'youtube.com',
-      'youtu.be',
-      'docs.google.com',
-      'codesandbox.io',
-      'codepen.io',
-      'jsfiddle.net',
-      'figma.com',
-      'miro.com',
-      'whimsical.com',
-    ];
-
     if (inputUrl.includes('youtube.com') || inputUrl.includes('youtu.be')) {
       return 'youtube';
     }

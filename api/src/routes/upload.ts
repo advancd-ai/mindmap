@@ -3,9 +3,9 @@
  */
 
 import { Hono } from 'hono';
-import { requireAuth } from '../middleware/auth';
-import { requestId } from '../middleware/request-id';
-import { uploadFileToGitHub, getGitHubRepoPath } from '../utils/github';
+import { requireAuth } from '../middleware/auth.js';
+import { requestId } from '../middleware/request-id.js';
+import { uploadFileToGitHub, getGitHubRepoPath } from '../utils/github.js';
 import { Octokit } from '@octokit/rest';
 import type { User } from '../types.js';
 

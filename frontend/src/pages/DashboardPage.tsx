@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/auth';
 import { useMindMapStore } from '../store/mindmap';
-import { fetchMaps, searchMaps, deleteMap, updateMapMetadata } from '../api/maps';
+import { fetchMaps, searchMaps, deleteMap, updateMapMetadata, type MapListItem } from '../api/maps';
 import LanguageSelector from '../components/LanguageSelector';
 import CreateMapDialog from '../components/CreateMapDialog';
 import EditMapDialog from '../components/EditMapDialog';
@@ -34,13 +34,17 @@ export default function DashboardPage() {
   const logout = useAuthStore((state) => state.logout);
   const setMap = useMindMapStore((state) => state.setMap);
 
-  const { data: maps, isLoading, error, refetch } = useQuery({
+  const { data: maps, isLoading, error } = useQuery<MapListItem[]>({
     queryKey: ['maps', searchQuery],
     queryFn: () => (searchQuery ? searchMaps(searchQuery) : fetchMaps()),
-    onError: (err: any) => {
-      console.error('❌ Query error:', err);
-    },
   });
+
+  // Handle query errors
+  useEffect(() => {
+    if (error) {
+      console.error('❌ Query error:', error);
+    }
+  }, [error]);
 
 
   // Scroll detection
@@ -272,7 +276,7 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {maps?.map((map) => (
+          {maps?.map((map: MapListItem) => (
             <div
               key={map.id}
               className="map-card card"
@@ -311,7 +315,7 @@ export default function DashboardPage() {
                 {/* Tags */}
                 {map.tags && map.tags.length > 0 && (
                   <div className="map-tags">
-                    {map.tags.slice(0, 3).map((tag) => (
+                    {map.tags.slice(0, 3).map((tag: string) => (
                       <span key={tag} className="tag">
                         {tag}
                       </span>
