@@ -16,8 +16,20 @@ export async function initRedis() {
     password: process.env.REDIS_PASSWORD || undefined,
   });
 
-  redisClient.on('error', (err) => console.error('Redis Client Error:', err));
+  redisClient.on('error', (err) => {
+    console.error('❌ Redis Client Error:', err);
+    // Don't crash the server on Redis errors
+  });
+  
   redisClient.on('connect', () => console.log('✅ Redis connected'));
+  
+  redisClient.on('reconnecting', () => {
+    console.log('🔄 Redis reconnecting...');
+  });
+  
+  redisClient.on('ready', () => {
+    console.log('✅ Redis ready');
+  });
 
   await redisClient.connect();
 
@@ -34,22 +46,38 @@ export function getRedis() {
 // KV-like interface to match Cloudflare Workers KV
 export const cache = {
   async get(key: string): Promise<string | null> {
-    const redis = getRedis();
-    return await redis.get(key);
+    try {
+      const redis = getRedis();
+      return await redis.get(key);
+    } catch (error) {
+      console.error(`❌ Redis get error for key ${key}:`, error);
+      // Return null on error to indicate cache miss
+      return null;
+    }
   },
 
   async put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void> {
-    const redis = getRedis();
-    if (options?.expirationTtl) {
-      await redis.setEx(key, options.expirationTtl, value);
-    } else {
-      await redis.set(key, value);
+    try {
+      const redis = getRedis();
+      if (options?.expirationTtl) {
+        await redis.setEx(key, options.expirationTtl, value);
+      } else {
+        await redis.set(key, value);
+      }
+    } catch (error) {
+      console.error(`❌ Redis put error for key ${key}:`, error);
+      // Don't throw - cache writes are non-critical
     }
   },
 
   async delete(key: string): Promise<void> {
-    const redis = getRedis();
-    await redis.del(key);
+    try {
+      const redis = getRedis();
+      await redis.del(key);
+    } catch (error) {
+      console.error(`❌ Redis delete error for key ${key}:`, error);
+      // Don't throw - cache deletes are non-critical
+    }
   },
 };
 

@@ -7,9 +7,10 @@ import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth.js';
 import { GitHubClient } from '../github/client.js';
 import { cache } from '../lib/redis.js';
+import { getGitHubRepoPath } from '../utils/github.js';
 import type { Env, User } from '../types.js';
 
-export const searchRouter = new Hono<{ Bindings: Env }>();
+export const searchRouter = new Hono<{ Bindings: Env; Variables: { user: User } }>();
 
 searchRouter.use('*', requireAuth());
 
@@ -38,7 +39,8 @@ searchRouter.get('/', async (c) => {
 
   try {
     // Get index from cache or GitHub
-    const cacheKey = `index:${user.org}:${user.repo}:latest`;
+    const repoPath = getGitHubRepoPath(user);
+    const cacheKey = `index:${repoPath.owner}:${repoPath.repo}:latest`;
     const cached = await cache.get(cacheKey);
 
     let index;

@@ -38,17 +38,36 @@ export const requireAuth = () =>
 
     try {
       // Load user from session cache
-      const userJson = await cache.get(`session:${token}`);
+      const cacheKey = `session:${token}`;
+      const userJson = await cache.get(cacheKey);
       
       if (!userJson) {
-        throw new UnauthorizedError('Invalid or expired session token');
+        console.warn(`Session token not found in cache: ${cacheKey.substring(0, 20)}...`);
+        console.warn('This usually means the session expired (24h TTL) or Redis was restarted.');
+        console.warn('User needs to re-authenticate. Use POST /auth/guest for guest access.');
+        throw new UnauthorizedError('Invalid or expired session token. Please log in again.');
       }
 
-      const user: User = JSON.parse(userJson);
+      let user: User;
+      try {
+        user = JSON.parse(userJson);
+      } catch (parseError) {
+        console.error('Failed to parse user session data:', parseError);
+        throw new UnauthorizedError('Invalid session data format');
+      }
 
       c.set('user', user);
       await next();
     } catch (error) {
+      // If it's already an UnauthorizedError, rethrow it
+      if (error instanceof UnauthorizedError) {
+        throw error;
+      }
+      
+      // Log unexpected errors for debugging
+      console.error('Auth middleware error:', error);
+      
+      // For other errors (e.g., Redis connection issues), throw a generic error
       throw new UnauthorizedError('Invalid or expired session token');
     }
   });

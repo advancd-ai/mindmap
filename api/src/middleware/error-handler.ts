@@ -56,6 +56,6 @@ export const errorHandler = (err: Error, c: Context): Response => {
     },
   };
 
-  return c.json(response, status);
+  return c.json(response, status as any);
 };
 

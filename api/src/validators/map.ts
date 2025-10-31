@@ -4,7 +4,6 @@
 
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
-import type { Map } from '../types';
 
 // Import schema (in production, load from file system or embed)
 const mapSchema = {
@@ -79,18 +78,23 @@ addFormats(ajv);
 
 const validate = ajv.compile(mapSchema);
 
-export function validateMap(map: any): { valid: boolean; errors?: any[] } {
-  const valid = validate(map);
+export function validateMap(mapData: any): { valid: boolean; errors?: any[] } {
+  const valid = validate(mapData);
 
   if (!valid) {
-    return { valid: false, errors: validate.errors };
+    return { valid: false, errors: validate.errors || [] };
+  }
+
+  // Type guard to ensure mapData has the expected structure
+  if (!mapData || typeof mapData !== 'object' || !Array.isArray(mapData.nodes) || !Array.isArray(mapData.edges)) {
+    return { valid: false, errors: ['Invalid map data structure'] };
   }
 
   // Cross-validation: check edge references
-  const nodeIds = new Set(map.nodes.map((n: any) => n.id));
+  const nodeIds = new Set(mapData.nodes.map((n: any) => n.id));
   const edgeErrors = [];
 
-  for (const edge of map.edges) {
+  for (const edge of mapData.edges) {
     if (!nodeIds.has(edge.source)) {
       edgeErrors.push({
         field: 'edges',

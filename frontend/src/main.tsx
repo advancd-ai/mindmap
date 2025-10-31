@@ -8,7 +8,14 @@ import './index.css';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
+      retry: (failureCount, error: any) => {
+        // Don't retry on 401 (unauthorized) errors
+        if (error?.response?.status === 401) {
+          return false;
+        }
+        // Retry other errors once
+        return failureCount < 1;
+      },
       refetchOnWindowFocus: false,
     },
   },

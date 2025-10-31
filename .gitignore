@@ -50,6 +50,13 @@ temp/
 deployment/docker/.env
 deployment/kubernetes/secrets.yaml
 
+# SSL certificates
+deployment/nginx/ssl/
+*.pem
+*.key
+*.crt
+*.cert
+
 # Build artifacts
 *.tar
 *.tar.gz

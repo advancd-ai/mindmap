@@ -4,7 +4,6 @@
 
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
-import type { Map } from '../types.js';
 
 export interface SchemaInfo {
   version: string;
@@ -152,10 +151,10 @@ export class SchemaManager {
       return { valid: false, errors: [`Schema not loaded for version: ${version}`] };
     }
 
-    const valid = validate(data);
+    const valid = validate(data) as boolean;
     return {
       valid,
-      errors: valid ? undefined : validate.errors
+      errors: valid ? undefined : (validate.errors || [])
     };
   }
 
@@ -199,7 +198,7 @@ export class SchemaManager {
     } catch (error) {
       return {
         success: false,
-        errors: [`Migration failed: ${error.message}`]
+        errors: [`Migration failed: ${error instanceof Error ? error.message : String(error)}`]
       };
     }
   }

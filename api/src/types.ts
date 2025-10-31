@@ -108,6 +108,8 @@ export interface User {
   email: string;
   name?: string;
   picture?: string;
+  org?: string;
+  repo?: string;
 }
 
 export interface ApiResponse<T = any> {

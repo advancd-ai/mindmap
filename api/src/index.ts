@@ -79,10 +79,40 @@ const redis = await initRedis();
 const port = parseInt(process.env.PORT || '8787');
 console.log(`🚀 Open Mindmap API starting on port ${port}`);
 
-serve({
+// Handle uncaught exceptions and rejections BEFORE starting server
+process.on('uncaughtException', (err: Error) => {
+  console.error('❌ Uncaught Exception:', err);
+  console.error('Stack:', err.stack);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason: unknown, promise: Promise<any>) => {
+  console.error('❌ Unhandled Rejection at:', promise);
+  console.error('Reason:', reason);
+  if (reason instanceof Error) {
+    console.error('Stack:', reason.stack);
+  }
+  process.exit(1);
+});
+
+const server = serve({
   fetch: app.fetch,
   port,
 });
+
+// Handle server errors if server supports event listeners
+if (server && typeof server.on === 'function') {
+  server.on('error', (err: Error & { code?: string }) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`❌ Port ${port} is already in use. Please stop the other process or use a different port.`);
+      console.error(`   You can kill the process using: lsof -ti:${port} | xargs kill -9`);
+    } else {
+      console.error('❌ Server error:', err);
+      console.error('Stack:', err.stack);
+    }
+    process.exit(1);
+  });
+}
 
 console.log(`✅ Server is running on http://localhost:${port}`);
 

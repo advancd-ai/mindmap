@@ -7,8 +7,9 @@ import { requireAuth } from '../middleware/auth';
 import { requestId } from '../middleware/request-id';
 import { uploadFileToGitHub, getGitHubRepoPath } from '../utils/github';
 import { Octokit } from '@octokit/rest';
+import type { User } from '../types.js';
 
-const upload = new Hono();
+const upload = new Hono<{ Variables: { user: User } }>();
 
 // Apply middleware
 upload.use('*', requestId());
@@ -55,7 +56,7 @@ upload.post('/', requireAuth(), async (c) => {
     }
 
     // Get user info from auth middleware
-    const user = c.get('user');
+    const user = c.get('user') as User;
     if (!user) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
@@ -100,7 +101,7 @@ upload.post('/', requireAuth(), async (c) => {
 
 // Get upload info (optional - for debugging)
 upload.get('/info', requireAuth(), async (c) => {
-  const user = c.get('user');
+  const user = c.get('user') as User;
   if (!user) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
@@ -123,7 +124,7 @@ upload.get('/info', requireAuth(), async (c) => {
 
 // Download file endpoint
 upload.get('/download/:mapId/:filename', requireAuth(), async (c) => {
-  const user = c.get('user');
+  const user = c.get('user') as User;
   if (!user) {
     return c.json({ error: 'Unauthorized' }, 401);
   }

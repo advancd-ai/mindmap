@@ -17,13 +17,13 @@ services:
       timeout: 3s
       retries: 3
     networks:
-      - mindmap-network
+      - stock-network
 
   # Backend API
   api:
     build:
-      context: ../../api
-      dockerfile: ../api/Dockerfile
+      context: ./api
+      dockerfile: Dockerfile
     container_name: mindmap-api
     restart: unless-stopped
     ports:
@@ -33,11 +33,11 @@ services:
       - PORT=8787
       - REDIS_URL=redis://redis:6379
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://localhost:3000/auth/callback}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
-      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
       - GITHUB_OWNER=${GITHUB_OWNER:-}
       - GITHUB_ORG=${GITHUB_ORG:-}
       - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}
@@ -52,15 +52,15 @@ services:
       retries: 3
       start_period: 40s
     networks:
-      - mindmap-network
+      - stock-network
 
   # Frontend
   frontend:
     build:
-      context: ../../frontend
-      dockerfile: ../frontend/Dockerfile
+      context: ./frontend
+      dockerfile: Dockerfile
       args:
-        - VITE_API_URL=${VITE_API_URL:-http://localhost:8787}
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:8787/api}
     container_name: mindmap-frontend
     restart: unless-stopped
     ports:
@@ -73,19 +73,13 @@ services:
       timeout: 10s
       retries: 3
     networks:
-      - mindmap-network
+      - stock-network
 
 networks:
-  mindmap-network:
+  stock-network:
     driver: bridge
 
 volumes:
   redis-data:
     driver: local
-
-
-
-
-
-
 
