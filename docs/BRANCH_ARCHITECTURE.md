@@ -27,35 +27,68 @@ Branches:
 ```
 Branch: maps/map_1234567890
 └── map.json               # 마인드맵 데이터
+
+Main branch:
+└── maps/
+    └── index.json         # 맵 목록 메타데이터 (자동 관리)
 ```
 
 ## 🔄 작동 방식
 
 ### **1. 맵 목록 조회**
 ```typescript
-// GitHub API: List branches
-GET /repos/{owner}/{repo}/branches
+// GitHub API: Get index.json from main branch
+GET /repos/{owner}/{repo}/contents/maps/index.json?ref=main
 
-// Filter branches starting with "maps/"
-branches = branches.filter(b => b.name.startsWith('maps/'))
+// Parse index.json to get map list
+{
+  "generatedAt": "2025-01-01T00:00:00Z",
+  "items": [
+    {
+      "id": "map_1234567890",
+      "title": "My Map",
+      "nodeCount": 10,
+      "edgeCount": 8,
+      "updatedAt": "2025-01-01T00:00:00Z",
+      "version": 1
+    }
+  ]
+}
 
-// Extract mapId from branch name
-mapId = branchName.replace('maps/', '')
-
-// Fetch each map.json from each branch
+// Note: Index.json is automatically maintained when maps are created/updated/deleted
 ```
 
 ### **2. 맵 생성**
 ```typescript
-// 1. Create new branch from main
-git branch maps/map_new123 main
+// 1. Check if repository exists, create if not
+await octokit.repos.get({ owner, repo })
+// If 404: Create repository with auto_init: true
 
-// 2. Create map.json in new branch
-git checkout maps/map_new123
-echo '{...mapData...}' > map.json
-git add map.json
-git commit -m "Create map: My New Map"
-git push
+// 2. Ensure main branch exists (with retry logic)
+await octokit.git.getRef({ owner, repo, ref: 'heads/main' })
+// If 404: Wait for auto_init or create manually
+
+// 3. Create new branch from main
+await octokit.git.createRef({
+  ref: 'refs/heads/maps/map_new123',
+  sha: mainBranchSha
+})
+
+// 4. Create map.json in new branch
+await octokit.repos.createOrUpdateFileContents({
+  path: 'map.json',
+  branch: 'maps/map_new123',
+  content: base64EncodedMapData,
+  message: 'Create map: My New Map'
+})
+
+// 5. Update index.json in main branch
+await octokit.repos.createOrUpdateFileContents({
+  path: 'maps/index.json',
+  branch: 'main',
+  content: updatedIndexData,
+  message: 'Add map to index: My New Map'
+})
 ```
 
 ### **3. 맵 조회**
@@ -66,20 +99,47 @@ GET /repos/{owner}/{repo}/contents/map.json?ref=maps/map_1234567890
 
 ### **4. 맵 수정**
 ```typescript
-// Update map.json in the branch
-PUT /repos/{owner}/{repo}/contents/map.json
-{
-  "branch": "maps/map_1234567890",
-  "message": "Update map: v2",
-  "content": "{base64 encoded map data}",
-  "sha": "{current file sha}"
-}
+// 1. Ensure repository and main branch exist (same as createMap)
+// If repository doesn't exist: Create it
+// If main branch doesn't exist: Create it with initial commit
+
+// 2. Check if map branch exists
+await octokit.repos.getBranch({ owner, repo, branch: 'maps/map_1234567890' })
+// If 404: Create branch from main (auto-create missing branches)
+
+// 3. Update map.json in the branch
+await octokit.repos.createOrUpdateFileContents({
+  path: 'map.json',
+  branch: 'maps/map_1234567890',
+  message: "Update map: v2",
+  content: "{base64 encoded map data}",
+  sha: "{current file sha}" // undefined for new files
+})
+
+// 4. Update index.json in main branch
+await octokit.repos.createOrUpdateFileContents({
+  path: 'maps/index.json',
+  branch: 'main',
+  content: updatedIndexData,
+  message: 'Update map metadata: My Map (v2)'
+})
 ```
 
 ### **5. 맵 삭제**
 ```typescript
-// Delete the branch
-DELETE /repos/{owner}/{repo}/git/refs/heads/maps/map_1234567890
+// 1. Delete the branch
+await octokit.git.deleteRef({
+  owner, repo,
+  ref: 'heads/maps/map_1234567890'
+})
+
+// 2. Remove from index.json in main branch
+await octokit.repos.createOrUpdateFileContents({
+  path: 'maps/index.json',
+  branch: 'main',
+  content: updatedIndexDataWithoutMap,
+  message: 'Remove map from index: map_1234567890'
+})
 ```
 
 ## 🎨 Architecture 다이어그램
@@ -90,21 +150,36 @@ DELETE /repos/{owner}/{repo}/git/refs/heads/maps/map_1234567890
 │                  {username}/mindmap-data                     │
 └─────────────────────────────────────────────────────────────┘
                             │
-                            ├── main (README.md)
+                            ├── main
+                            │   ├── README.md
+                            │   └── maps/
+                            │       └── index.json          # 자동 관리
+                            │           {
+                            │             "generatedAt": "...",
+                            │             "items": [
+                            │               {
+                            │                 "id": "map_123",
+                            │                 "title": "Project Planning",
+                            │                 "nodeCount": 10,
+                            │                 "edgeCount": 8,
+                            │                 ...
+                            │               }
+                            │             ]
+                            │           }
                             │
-                            ├── maps/project-planning
+                            ├── maps/map_123
                             │   └── map.json
                             │       {
-                            │         "id": "project-planning",
+                            │         "id": "map_123",
                             │         "title": "Project Planning",
                             │         "nodes": [...],
                             │         "edges": [...]
                             │       }
                             │
-                            ├── maps/meeting-notes
+                            ├── maps/map_456
                             │   └── map.json
                             │
-                            └── maps/architecture-design
+                            └── maps/map_789
                                 └── map.json
 ```
 
@@ -113,6 +188,7 @@ DELETE /repos/{owner}/{repo}/git/refs/heads/maps/map_1234567890
 ### **1. 독립성**
 - 각 맵이 완전히 독립적
 - 한 맵의 변경이 다른 맵에 영향 없음
+- 브랜치가 없으면 자동 생성 (updateMap 시)
 
 ### **2. 버전 관리**
 - Git의 네이티브 버전 관리 활용
@@ -122,16 +198,23 @@ DELETE /repos/{owner}/{repo}/git/refs/heads/maps/map_1234567890
 ### **3. 확장성**
 - 맵 개수 제한 없음
 - 브랜치 수만큼 확장 가능
+- 저장소가 없으면 자동 생성
 
 ### **4. 성능**
-- 인덱스 파일 불필요
-- 브랜치 리스트로 맵 목록 파악
-- 필요한 맵만 fetch
+- 인덱스 파일로 빠른 목록 조회
+- Redis 캐싱 (30초 TTL)
+- 필요한 맵만 fetch (map.json)
 
 ### **5. 협업**
 - Git 브랜치 보호 규칙 활용
 - PR 기반 협업 가능
 - 충돌 관리 용이
+
+### **6. 자동화**
+- 저장소 자동 생성 (guest/user 모두 지원)
+- main 브랜치 자동 생성 (재시도 로직 포함)
+- 맵 브랜치 자동 생성 (updateMap 시)
+- 인덱스 자동 업데이트 (생성/수정/삭제 시)
 
 ## 📊 비교: 이전 vs 현재
 
@@ -151,33 +234,41 @@ main branch:
 - 동시 편집 시 충돌 위험
 - PR이 여러 맵에 영향
 
-### **현재 아키텍처 (브랜치 기반)**
+### **현재 아키텍처 (브랜치 기반 + 인덱스)**
 ```
 Repository:
-├── main                    # 문서
+├── main                    # 문서 + maps/index.json
+│   └── maps/
+│       └── index.json      # 맵 목록 메타데이터
 ├── maps/map_1234567890    # 맵 1 (독립)
+│   └── map.json
 ├── maps/map_9876543210    # 맵 2 (독립)
+│   └── map.json
 └── ...
 ```
 
 **장점:**
-- 인덱스 자동 생성 (브랜치 리스트)
+- 인덱스 자동 관리 (맵 생성/수정/삭제 시 자동 업데이트)
 - 각 맵이 독립적 브랜치
 - 동시 편집 충돌 없음
 - 맵별 독립 히스토리
+- 빠른 목록 조회 (index.json 캐싱)
 
 ## 🔧 API 변경사항
 
 ### **맵 목록 조회**
 ```typescript
-// Before
+// Current Implementation
 GET /api/maps
 → Reads maps/index.json from main branch
+→ Cached for 30 seconds in Redis
+→ Fast response with metadata only (no need to fetch each map.json)
 
-// After
+// Alternative (not used, but possible)
 GET /api/maps
 → Lists branches starting with "maps/"
 → Fetches map.json from each branch
+→ More API calls, slower response
 ```
 
 ### **맵 생성**
@@ -190,9 +281,11 @@ POST /api/maps
 
 // After
 POST /api/maps
+→ Ensure repository exists (create if not)
+→ Ensure main branch exists (create if not)
 → Create new branch: maps/map_xxx
 → Add map.json to branch root
-→ No index update needed
+→ Update maps/index.json in main branch (automatic)
 ```
 
 ### **맵 삭제**
@@ -206,7 +299,7 @@ DELETE /api/maps/:id
 // After
 DELETE /api/maps/:id
 → Delete branch: maps/map_xxx
-→ No index update needed
+→ Remove from maps/index.json in main branch (automatic)
 ```
 
 ## 🧪 테스트 시나리오
@@ -328,19 +421,28 @@ git push origin main
 - `main` 브랜치: 보호 권장
 - `maps/*` 브랜치: 개별 수정 허용
 
+### **자동 생성 로직**
+- **저장소**: createMap/updateMap 시 존재하지 않으면 자동 생성
+- **main 브랜치**: 최대 5번 재시도 후 수동 생성 (auto_init 실패 시)
+- **맵 브랜치**: updateMap 시 존재하지 않으면 main에서 자동 생성
+- **index.json**: 첫 맵 생성 시 자동 생성, 이후 자동 업데이트
+
 ### **성능 고려사항**
-- 브랜치 목록은 페이지네이션 지원
-- 한 번에 최대 100개 브랜치 조회
-- 필요시 추가 요청으로 더 많은 브랜치 조회
+- 인덱스 조회는 Redis에 30초 캐싱
+- 브랜치 목록은 페이지네이션 지원 (현재 미사용)
+- 한 번에 최대 100개 브랜치 조회 (현재 미사용)
+- 맵 목록은 index.json에서 조회 (브랜치 리스트 아님)
 
 ## 🎯 결론
 
 브랜치 기반 아키텍처는:
 - ✅ Git의 네이티브 기능 활용
-- ✅ 인덱스 파일 자동 생성
+- ✅ 인덱스 파일 자동 관리 (생성/업데이트)
 - ✅ 맵별 독립성 보장
 - ✅ 버전 관리 강화
 - ✅ 확장성 향상
+- ✅ 저장소/브랜치 자동 생성 (사용자 편의성)
+- ✅ Redis 캐싱으로 성능 최적화
 
-이는 "GitHub를 데이터베이스로 사용"하는 Open Mindmap의 철학에 더 부합합니다.
+이는 "GitHub를 데이터베이스로 사용"하는 Open Mindmap의 철학에 더 부합하며, 실제 구현에서는 인덱스 파일을 활용하여 빠른 목록 조회를 제공합니다.
 

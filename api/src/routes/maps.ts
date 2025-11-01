@@ -230,7 +230,7 @@ mapsRouter.put('/:id', async (c) => {
       },
       202
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating map:', error);
     throw error;
   }

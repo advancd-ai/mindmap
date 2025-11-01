@@ -548,75 +548,265 @@ export class GitHubClient {
 
     try {
       // ==========================================
-      // STEP 1: Update map.json in branch
+      // STEP 0: Ensure repository and main branch exist
       // ==========================================
-      const { data: currentFile } = await this.octokit.repos.getContent({
-        owner: this.owner,
-        repo: this.repo,
-        path: MAP_FILE_PATH,
-        ref: branchName,
-      });
+      try {
+        await this.octokit.repos.get({
+          owner: this.owner,
+          repo: this.repo,
+        });
+      } catch (error: any) {
+        if (error.status === 404) {
+          console.log(`📦 Repository ${this.owner}/${this.repo} not found. Creating...`);
+          
+          // Check if owner is an organization or user
+          const isOrg = await this.isOrganization();
+          
+          if (isOrg) {
+            await this.octokit.repos.createInOrg({
+              org: this.owner,
+              name: this.repo,
+              description: `Personal mindmap data storage for Open Mindmap (${this.user.email})`,
+              private: true,
+              auto_init: true,
+            });
+          } else {
+            await this.octokit.repos.createForAuthenticatedUser({
+              name: this.repo,
+              description: `Personal mindmap data storage for Open Mindmap (${this.user.email})`,
+              private: true,
+              auto_init: true,
+            });
+          }
+          
+          console.log(`✅ Repository ${this.owner}/${this.repo} created`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } else {
+          throw error;
+        }
+      }
 
-      if (!('sha' in currentFile)) {
-        throw new Error('Map file not found');
+      // Get main branch SHA with retry logic (same as createMap)
+      let mainSha: string | null = null;
+      let branchAttempts = 0;
+      const maxBranchAttempts = 5;
+      
+      while (!mainSha && branchAttempts < maxBranchAttempts) {
+        branchAttempts++;
+        try {
+          const { data: ref } = await this.octokit.git.getRef({
+            owner: this.owner,
+            repo: this.repo,
+            ref: 'heads/main',
+          });
+          mainSha = ref.object.sha;
+          console.log(`✅ Main branch found (SHA: ${mainSha.substring(0, 7)})`);
+        } catch (error: any) {
+          if (error.status === 404 && branchAttempts < maxBranchAttempts) {
+            console.log(`⏳ Main branch not ready yet, waiting... (attempt ${branchAttempts}/${maxBranchAttempts})`);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          } else if (error.status === 404) {
+            console.log(`⚠️ Main branch not found, creating manually...`);
+            // Create main branch with initial commit
+            const { data: blob } = await this.octokit.git.createBlob({
+              owner: this.owner,
+              repo: this.repo,
+              content: '# Mindmap Data Repository\n\nThis repository stores mindmap data for Open Mindmap.\nEach branch represents a separate mindmap.',
+              encoding: 'utf-8',
+            });
+
+            const { data: tree } = await this.octokit.git.createTree({
+              owner: this.owner,
+              repo: this.repo,
+              tree: [
+                {
+                  path: 'README.md',
+                  mode: '100644',
+                  type: 'blob',
+                  sha: blob.sha,
+                },
+              ],
+            });
+
+            const { data: commit } = await this.octokit.git.createCommit({
+              owner: this.owner,
+              repo: this.repo,
+              message: 'Initial commit',
+              tree: tree.sha,
+            });
+
+            await this.octokit.git.createRef({
+              owner: this.owner,
+              repo: this.repo,
+              ref: 'refs/heads/main',
+              sha: commit.sha,
+            });
+
+            mainSha = commit.sha;
+            console.log(`✅ Main branch created manually`);
+            break;
+          } else {
+            throw error;
+          }
+        }
+      }
+      
+      if (!mainSha) {
+        throw new Error('Failed to get or create main branch');
+      }
+
+      // ==========================================
+      // STEP 1: Check if branch exists, create if not
+      // ==========================================
+      let branchExists = false;
+      try {
+        await this.octokit.repos.getBranch({
+          owner: this.owner,
+          repo: this.repo,
+          branch: branchName,
+        });
+        branchExists = true;
+        console.log(`✅ Branch ${branchName} exists`);
+      } catch (branchError: any) {
+        if (branchError.status === 404) {
+          console.log(`📝 Branch ${branchName} not found, creating new branch for map ${map.id}`);
+          branchExists = false;
+          
+          // Create new branch from main
+          await this.octokit.git.createRef({
+            owner: this.owner,
+            repo: this.repo,
+            ref: `refs/heads/${branchName}`,
+            sha: mainSha,
+          });
+          
+          console.log(`✅ Branch ${branchName} created from main`);
+        } else {
+          throw branchError;
+        }
+      }
+
+      // ==========================================
+      // STEP 2: Update or create map.json in branch
+      // ==========================================
+      let fileSha: string | undefined;
+      
+      if (branchExists) {
+        try {
+          const { data: currentFile } = await this.octokit.repos.getContent({
+            owner: this.owner,
+            repo: this.repo,
+            path: MAP_FILE_PATH,
+            ref: branchName,
+          });
+
+          if ('sha' in currentFile) {
+            fileSha = currentFile.sha;
+          }
+        } catch (fileError: any) {
+          if (fileError.status !== 404) {
+            throw fileError;
+          }
+          // File doesn't exist, will create new one
+          console.log(`📝 map.json not found in branch, will create new file`);
+        }
       }
 
       await this.octokit.repos.createOrUpdateFileContents({
         owner: this.owner,
         repo: this.repo,
         path: MAP_FILE_PATH,
-        message: `Update map: ${map.title} (v${map.version})`,
+        message: branchExists 
+          ? `Update map: ${map.title} (v${map.version})`
+          : `Create map: ${map.title}`,
         content: Buffer.from(JSON.stringify(map, null, 2)).toString('base64'),
         branch: branchName,
-        sha: currentFile.sha,
+        sha: fileSha, // undefined for new files
       });
 
-      console.log(`✅ Updated map ${map.id} in branch ${branchName}`);
+      console.log(`✅ ${branchExists ? 'Updated' : 'Created'} map ${map.id} in branch ${branchName}`);
 
       // ==========================================
-      // STEP 2: Update index.json in main branch
+      // STEP 3: Update index.json in main branch
       // ==========================================
       console.log(`📋 Updating index metadata in main branch`);
       
       try {
-        const { data: indexFile } = await this.octokit.repos.getContent({
+        let indexSha: string | undefined;
+        let currentIndex: Index;
+        
+        try {
+          const { data: indexFile } = await this.octokit.repos.getContent({
+            owner: this.owner,
+            repo: this.repo,
+            path: 'maps/index.json',
+            ref: 'main',
+          });
+          
+          if ('content' in indexFile) {
+            indexSha = indexFile.sha;
+            const content = Buffer.from(indexFile.content, 'base64').toString('utf-8');
+            currentIndex = JSON.parse(content);
+          } else {
+            throw new Error('Invalid index file');
+          }
+        } catch (error: any) {
+          if (error.status === 404) {
+            // Create initial index if it doesn't exist
+            console.log(`📋 Creating initial index.json`);
+            currentIndex = {
+              generatedAt: new Date().toISOString(),
+              items: [],
+            };
+          } else {
+            throw error;
+          }
+        }
+        
+        // Find and update or add the map metadata in index
+        const itemIndex = currentIndex.items.findIndex(item => item.id === map.id);
+        
+        if (itemIndex >= 0) {
+          // Update existing map metadata (keep original title)
+          currentIndex.items[itemIndex] = {
+            ...currentIndex.items[itemIndex],  // Keep existing data (including original title)
+            nodeCount: map.nodes.length,       // Update metadata only
+            edgeCount: map.edges.length,
+            updatedAt: map.updatedAt,
+            version: map.version,
+          };
+          console.log(`✅ Updating existing map in index: ${map.id}`);
+        } else {
+          // Add new map to index (branch was just created)
+          const newIndexItem: IndexItem = {
+            id: map.id,
+            title: map.title,
+            tags: map.tags || [],
+            nodeCount: map.nodes.length,
+            edgeCount: map.edges.length,
+            updatedAt: map.updatedAt,
+            version: map.version,
+          };
+          currentIndex.items.push(newIndexItem);
+          console.log(`✅ Adding new map to index: ${map.id}`);
+        }
+        
+        currentIndex.generatedAt = new Date().toISOString();
+        
+        // Update index.json
+        await this.octokit.repos.createOrUpdateFileContents({
           owner: this.owner,
           repo: this.repo,
           path: 'maps/index.json',
-          ref: 'main',
+          message: branchExists
+            ? `Update map metadata: ${map.title} (v${map.version})`
+            : `Add map to index: ${map.title}`,
+          content: Buffer.from(JSON.stringify(currentIndex, null, 2)).toString('base64'),
+          branch: 'main',
+          sha: indexSha,
         });
         
-        if ('content' in indexFile) {
-          const content = Buffer.from(indexFile.content, 'base64').toString('utf-8');
-          const currentIndex: Index = JSON.parse(content);
-          
-          // Find and update the map metadata in index (title은 변경하지 않음)
-          const itemIndex = currentIndex.items.findIndex(item => item.id === map.id);
-          if (itemIndex >= 0) {
-            // Keep original title, only update metadata
-            currentIndex.items[itemIndex] = {
-              ...currentIndex.items[itemIndex],  // Keep existing data (including original title)
-              nodeCount: map.nodes.length,       // Update metadata only
-              edgeCount: map.edges.length,
-              updatedAt: map.updatedAt,
-              version: map.version,
-            };
-            currentIndex.generatedAt = new Date().toISOString();
-            
-            // Update index.json (commit message includes current title)
-            await this.octokit.repos.createOrUpdateFileContents({
-              owner: this.owner,
-              repo: this.repo,
-              path: 'maps/index.json',
-              message: `Update map metadata: ${map.title} (v${map.version})`,
-              content: Buffer.from(JSON.stringify(currentIndex, null, 2)).toString('base64'),
-              branch: 'main',
-              sha: indexFile.sha,
-            });
-            
-            console.log(`✅ Index metadata updated for map: ${map.id} (title unchanged)`);
-          }
-        }
+        console.log(`✅ Index ${branchExists ? 'updated' : 'created'} for map: ${map.id}`);
       } catch (error: any) {
         console.warn(`⚠️ Failed to update index: ${error.message}`);
         // Continue even if index update fails
@@ -627,8 +817,10 @@ export class GitHubClient {
         mapId: map.id,
       };
     } catch (error: any) {
-      if (error.status === 404) {
-        throw new Error(`Map ${map.id} not found in branch ${branchName}`);
+      console.error(`❌ Error updating/creating map ${map.id}:`, error);
+      // Re-throw with more context if needed
+      if (error.status === 422) {
+        throw new Error(`Failed to create branch ${branchName}: ${error.message}`);
       }
       throw error;
     }
