@@ -120,7 +120,7 @@ export default function SharePage() {
     );
   }
 
-  const { map: sharedMapData, shareInfo } = data.data;
+  const { map: sharedMapData } = data.data;
 
   // Wait for map to be set in store before rendering canvas
   // Check if map is loaded and matches the shared map data
