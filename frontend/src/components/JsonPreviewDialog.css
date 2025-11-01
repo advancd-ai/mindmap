@@ -182,8 +182,8 @@
   overflow: auto;
   padding: var(--space-lg) var(--space-xl);
   background: #1E293B;
-  min-height: 400px;
-  max-height: 60vh;
+  min-height: 300px;
+  max-height: calc(70vh - 300px); /* Adjust based on header, actions, toolbar */
 }
 
 .json-preview-code {
@@ -206,7 +206,26 @@
   /* JSON 구문 강조를 위한 스타일 */
 }
 
-/* Actions */
+/* Actions - Top (Save button) */
+.json-preview-actions-top {
+  display: flex;
+  gap: var(--space);
+  justify-content: flex-end;
+  padding: var(--space-md) var(--space-xl);
+  border-bottom: 1px solid var(--border-primary);
+  background: var(--bg-secondary);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.json-preview-actions-top .button {
+  min-width: 120px;
+  font-weight: 500;
+}
+
+/* Actions - Bottom (Cancel only) */
 .json-preview-actions {
   display: flex;
   gap: var(--space);

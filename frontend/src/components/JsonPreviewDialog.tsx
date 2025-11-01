@@ -52,6 +52,18 @@ export default function JsonPreviewDialog({ data, changeLog, onClose, onConfirm 
           </button>
         </div>
 
+        {/* Actions - Moved to top, always visible */}
+        {onConfirm && (
+          <div className="json-preview-actions-top">
+            <button className="button" onClick={onConfirm}>
+              Confirm & Save
+            </button>
+            <button className="button button-secondary" onClick={onClose}>
+              Cancel
+            </button>
+          </div>
+        )}
+
         {/* Change Log */}
         {changeLog && changeLog.length > 0 && (
           <div className="json-preview-changelog">
@@ -112,16 +124,14 @@ export default function JsonPreviewDialog({ data, changeLog, onClose, onConfirm 
           </pre>
         </div>
 
-        <div className="json-preview-actions">
-          <button className="button button-secondary" onClick={onClose}>
-            Cancel
-          </button>
-          {onConfirm && (
-            <button className="button" onClick={onConfirm}>
-              Confirm & Save
+        {/* Bottom actions - only Cancel if no onConfirm */}
+        {!onConfirm && (
+          <div className="json-preview-actions">
+            <button className="button button-secondary" onClick={onClose}>
+              Cancel
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

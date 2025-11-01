@@ -13,6 +13,8 @@ export interface MapListItem {
   edgeCount: number;
   updatedAt: string;
   version: number;
+  shareToken?: string;
+  shareEnabled?: boolean;
 }
 
 export async function fetchMaps(query?: string): Promise<MapListItem[]> {

@@ -16,6 +16,7 @@ import LanguageSelector from '../components/LanguageSelector';
 import ToolbarHelp from '../components/ToolbarHelp';
 import Toast, { type ToastType } from '../components/Toast';
 import VersionHistoryDialog from '../components/VersionHistoryDialog';
+import ShareSettingsModal from '../components/ShareSettingsModal';
 import './EditorPage.css';
 
 export default function EditorPage() {
@@ -30,6 +31,7 @@ export default function EditorPage() {
   const [isLatestVersion, setIsLatestVersion] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshProgress, setRefreshProgress] = useState(0);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const map = useMindMapStore((state) => state.map);
   const isDirty = useMindMapStore((state) => state.isDirty);
@@ -355,8 +357,17 @@ export default function EditorPage() {
         </div>
 
         <div className="editor-header-right">
-          {/* Unsaved indicator only */}
+          {/* Unsaved indicator and Share button */}
           <div className="editor-actions">
+            {mapId && (
+              <button
+                className="button button-secondary share-button"
+                onClick={() => setShowShareModal(true)}
+                title="Share map"
+              >
+                🔗 Share
+              </button>
+            )}
             {isDirty && <span className="unsaved-indicator">{t('editor.unsavedChanges')}</span>}
           </div>
         </div>
@@ -445,6 +456,15 @@ export default function EditorPage() {
           message={toast.message}
           type={toast.type}
           onClose={() => setToast(null)}
+        />
+      )}
+
+      {/* Share Settings Modal */}
+      {showShareModal && mapId && (
+        <ShareSettingsModal
+          mapId={mapId}
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
         />
       )}
 

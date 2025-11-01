@@ -14,6 +14,7 @@ import CreateMapDialog from '../components/CreateMapDialog';
 import EditMapDialog from '../components/EditMapDialog';
 import Toast, { type ToastType } from '../components/Toast';
 import ProgressIndicator from '../components/ProgressIndicator';
+import ShareStatusBadge from '../components/ShareStatusBadge';
 import './DashboardPage.css';
 
 export default function DashboardPage() {
@@ -282,6 +283,10 @@ export default function DashboardPage() {
               className="map-card card"
               onClick={() => navigate(`/editor/${map.id}`)}
             >
+              <ShareStatusBadge 
+                isShared={map.shareEnabled || false}
+                viewCount={undefined} // View count not available in MapListItem
+              />
               <div className="map-card-content">
                 <div className="map-card-header">
                   <h3 className="map-title">{map.title}</h3>

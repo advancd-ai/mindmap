@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import EditorPage from './pages/EditorPage';
 import AuthCallback from './pages/AuthCallback';
+import SharePage from './pages/SharePage';
 import './App.css';
 
 function App() {
@@ -17,6 +18,9 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
+        
+        {/* Share page - no auth required */}
+        <Route path="/share/:token" element={<SharePage />} />
         
         <Route
           path="/dashboard"
