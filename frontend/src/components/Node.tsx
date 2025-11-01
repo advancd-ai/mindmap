@@ -12,6 +12,7 @@ import CollapseButton from './CollapseButton';
 import NodeShape from './NodeShape';
 import ImageDisplay from './ImageDisplay';
 import PdfDisplay from './PdfDisplay';
+import MarkdownRenderer from './MarkdownRenderer';
 import { getNodeDisplayDimensions, getCollapsedTitle } from '../utils/nodeHelpers';
 import './Node.css';
 import './NodeShape.css';
@@ -136,60 +137,53 @@ export default function Node({
           strokeWidth={isSelected || isConnectionSource ? 2.5 : 2}
         />
 
-        {/* Title text - non-interactive */}
-        <g pointerEvents="none">
-          <text
-            x={(() => {
-              const align = node.textAlign || 'center';
-              const padding = 40;
-              switch (align) {
-                case 'left':
-                  return node.x + padding;
-                case 'right':
-                  return node.x + displayWidth - padding;
-                case 'center':
-                default:
-                  return node.x + displayWidth / 2;
-              }
-            })()}
-            y={(() => {
-              const vAlign = node.textVerticalAlign || 'middle';
-              const padding = 16;
-              switch (vAlign) {
-                case 'top':
-                  return node.y + padding;
-                case 'bottom':
-                  return node.y + displayHeight - padding;
-                case 'middle':
-                default:
-                  return node.y + displayHeight / 2;
-              }
-            })()}
-            textAnchor={(() => {
-              const align = node.textAlign || 'center';
-              switch (align) {
-                case 'left': return 'start';
-                case 'right': return 'end';
-                case 'center':
-                default: return 'middle';
-              }
-            })()}
-            dominantBaseline={(() => {
-              const vAlign = node.textVerticalAlign || 'middle';
-              switch (vAlign) {
-                case 'top': return 'hanging';
-                case 'bottom': return 'alphabetic';
-                case 'middle':
-                default: return 'middle';
-              }
-            })()}
-            fontSize="14"
-            fontWeight="600"
-            fill="#111827"
+        {/* Node label with markdown support */}
+        <foreignObject
+          x={node.x}
+          y={node.y}
+          width={displayWidth}
+          height={displayHeight}
+          pointerEvents="none"
+          className="node-label-container"
+        >
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              position: 'relative',
+              overflow: 'hidden',
+            }}
           >
-            {node.collapsed ? getCollapsedTitle(node.label) : node.label}
-          </text>
-        </g>
+            {node.collapsed ? (
+              // Collapsed: show simple text preview
+              <div
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: node.textVerticalAlign === 'top' ? 'flex-start' : 
+                             node.textVerticalAlign === 'bottom' ? 'flex-end' : 'center',
+                  justifyContent: node.textAlign === 'left' ? 'flex-start' :
+                                 node.textAlign === 'right' ? 'flex-end' : 'center',
+                  padding: '8px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#111827',
+                  textAlign: node.textAlign || 'left',
+                }}
+              >
+                {getCollapsedTitle(node.label)}
+              </div>
+            ) : (
+              // Expanded: show full markdown
+              <MarkdownRenderer
+                content={node.label}
+                textAlign={node.textAlign || 'left'}
+                textVerticalAlign={node.textVerticalAlign || 'middle'}
+              />
+            )}
+          </div>
+        </foreignObject>
 
         {/* Embedded content - only show when not collapsed */}
         {node.embedUrl && !node.collapsed && (

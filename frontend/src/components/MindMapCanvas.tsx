@@ -940,7 +940,7 @@ export default function MindMapCanvas({
             disabled: true,
           },
           {
-            label: `  ${node?.textAlign === 'left' ? '✓' : '  '} Left`,
+            label: `  ${node?.textAlign === 'left' || !node?.textAlign ? '✓' : '  '} Left`,
             icon: '⊣',
             onClick: () => {
               updateNode(nodeId, { textAlign: 'left' });
@@ -948,7 +948,7 @@ export default function MindMapCanvas({
             },
           },
           {
-            label: `  ${node?.textAlign === 'center' || !node?.textAlign ? '✓' : '  '} Center`,
+            label: `  ${node?.textAlign === 'center' ? '✓' : '  '} Center`,
             icon: '⊢',
             onClick: () => {
               updateNode(nodeId, { textAlign: 'center' });
@@ -1633,6 +1633,9 @@ export default function MindMapCanvas({
               textAlign={editingNode.textAlign}
               onSave={(newLabel) => handleSaveNodeLabel(editingNodeId, newLabel)}
               onCancel={handleCancelEdit}
+              onTextAlignChange={(align) => {
+                updateNode(editingNodeId, { textAlign: align });
+              }}
             />
           );
         })()}
