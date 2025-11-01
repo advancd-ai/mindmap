@@ -12,6 +12,7 @@ import { authRouter } from './routes/auth.js';
 import { mapsRouter } from './routes/maps.js';
 import { searchRouter } from './routes/search.js';
 import { webhookRouter } from './routes/webhooks.js';
+import { shareRouter } from './routes/share.js';
 import upload from './routes/upload.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { requestId } from './middleware/request-id.js';
@@ -50,7 +51,9 @@ app.get('/health', (c) => {
 
 // Routes
 app.route('/auth', authRouter);
-app.route('/maps', mapsRouter);
+app.route('/share', shareRouter); // /share/:token (public)
+app.route('/maps', mapsRouter);   // /maps/* (map CRUD routes)
+app.route('/maps', shareRouter);  // /maps/:id/share (share management, more specific)
 app.route('/search', searchRouter);
 app.route('/webhooks', webhookRouter);
 app.route('/upload', upload);

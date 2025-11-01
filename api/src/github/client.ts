@@ -952,6 +952,66 @@ export class GitHubClient {
   }
 
   /**
+   * Update map share info in index.json
+   */
+  async updateMapShareInfo(
+    id: string,
+    shareToken: string | undefined,
+    shareEnabled: boolean
+  ): Promise<void> {
+    await this.resolveOwner();
+    
+    console.log(`🔗 Updating map share info in index.json: ${id}`, { shareToken, shareEnabled });
+
+    try {
+      const { data: indexFile } = await this.octokit.repos.getContent({
+        owner: this.owner,
+        repo: this.repo,
+        path: 'maps/index.json',
+        ref: 'main',
+      });
+      
+      if ('content' in indexFile) {
+        const content = Buffer.from(indexFile.content, 'base64').toString('utf-8');
+        const currentIndex: Index = JSON.parse(content);
+        
+        // Find and update the map share info
+        const itemIndex = currentIndex.items.findIndex(item => item.id === id);
+        if (itemIndex >= 0) {
+          currentIndex.items[itemIndex] = {
+            ...currentIndex.items[itemIndex],
+            shareToken: shareEnabled ? shareToken : undefined,
+            shareEnabled,
+          };
+          currentIndex.generatedAt = new Date().toISOString();
+          
+          // Update index.json
+          await this.octokit.repos.createOrUpdateFileContents({
+            owner: this.owner,
+            repo: this.repo,
+            path: 'maps/index.json',
+            message: `Update map share info: ${id}`,
+            content: Buffer.from(JSON.stringify(currentIndex, null, 2)).toString('base64'),
+            branch: 'main',
+            sha: indexFile.sha,
+          });
+          
+          console.log(`✅ Map share info updated in index: ${id}`);
+        } else {
+          console.warn(`⚠️ Map ${id} not found in index.json`);
+        }
+      }
+    } catch (error: any) {
+      if (error.status === 404) {
+        console.warn(`⚠️ index.json not found, skipping share info update`);
+      } else {
+        console.error(`❌ Error updating map share info:`, error);
+        throw error;
+      }
+    }
+  }
+
+  /**
    * Update map metadata (title, tags) in index.json only
    */
   async updateMapMetadata(

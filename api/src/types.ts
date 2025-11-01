@@ -96,6 +96,8 @@ export interface IndexItem {
   edgeCount: number;
   updatedAt: string;
   version: number;
+  shareToken?: string;
+  shareEnabled?: boolean;
 }
 
 export interface Index {
@@ -130,5 +132,27 @@ export interface PRTransaction {
   prNumber?: number; // Deprecated: No longer used with branch-based storage
   branch: string;
   mapId?: string;
+}
+
+export interface ShareInfo {
+  mapId: string;
+  userId: string;
+  userEmail: string;
+  token: string;
+  enabled: boolean;
+  expiresAt?: string;
+  allowEmbed: boolean;
+  passwordHash?: string;
+  viewCount: number;
+  lastViewedAt?: string;
+  createdAt: string;
+}
+
+export interface ShareConfig {
+  enabled?: boolean;
+  expiresAt?: string;
+  allowEmbed?: boolean;
+  regenerateToken?: boolean;
+  password?: string;
 }
 
