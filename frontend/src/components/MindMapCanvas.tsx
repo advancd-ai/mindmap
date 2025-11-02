@@ -11,6 +11,7 @@ import Node from './Node';
 import Edge from './Edge';
 import TemporaryEdge from './TemporaryEdge';
 import NodeEditor from './NodeEditor';
+import RichEditor from './RichEditor';
 import EdgeEditor from './EdgeEditor';
 import ContextMenu, { type MenuItem } from './ContextMenu';
 import EmbedDialog from './EmbedDialog';
@@ -74,6 +75,9 @@ export default function MindMapCanvas({
   const [shapeTargetNodeId, setShapeTargetNodeId] = useState<string | null>(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [colorTargetNodeId, setColorTargetNodeId] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadingImagePosition, setUploadingImagePosition] = useState<{ x: number; y: number } | null>(null);
+  const [lastMousePosition, setLastMousePosition] = useState<{ x: number; y: number } | null>(null);
   const [isResizing, setIsResizing] = useState(false);
   const [resizingNodeId, setResizingNodeId] = useState<string | null>(null);
   const [resizeDirection, setResizeDirection] = useState<ResizeDirection | null>(null);
@@ -490,6 +494,180 @@ export default function MindMapCanvas({
     };
   }, [zoom, viewBox]);
 
+  // Window-level paste event handler (for better browser compatibility)
+  // This ensures paste works even if SVG doesn't have focus (some browsers require this)
+  useEffect(() => {
+    const handleWindowPaste = async (e: ClipboardEvent) => {
+      // Skip if readonly or editing
+      if (isReadOnly || editingNodeId || editingEdgeId) {
+        return;
+      }
+
+      // Check if we're in an input/textarea/contentEditable (don't interfere with text editing)
+      const activeElement = document.activeElement;
+      if (
+        activeElement &&
+        (activeElement.tagName === 'INPUT' ||
+          activeElement.tagName === 'TEXTAREA' ||
+          activeElement.getAttribute('contenteditable') === 'true')
+      ) {
+        console.log('⏸️ Window paste: Active element is text input, ignoring');
+        return;
+      }
+
+      // Check if clipboard contains image
+      const clipboardData = e.clipboardData;
+      if (!clipboardData) return;
+
+      const items = Array.from(clipboardData.items);
+      const imageItem = items.find(item => item.type.startsWith('image/'));
+
+      if (!imageItem) {
+        // No image, let default behavior handle it
+        return;
+      }
+
+      console.log('🖼️ Window paste: Image detected, handling...');
+      
+      // Prevent default and handle the paste
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Call the main paste handler logic (inline to avoid dependency issues)
+      try {
+        setIsUploadingImage(true);
+
+        const file = imageItem.getAsFile();
+        if (!file) {
+          throw new Error('Failed to get image file from clipboard');
+        }
+
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/bmp'];
+        if (!allowedTypes.includes(file.type)) {
+          throw new Error(`Unsupported image type: ${file.type}`);
+        }
+
+        // Validate file size (max 10MB)
+        const maxSize = 10 * 1024 * 1024;
+        if (file.size > maxSize) {
+          throw new Error('Image too large. Maximum size is 10MB.');
+        }
+
+        // Get paste position (last mouse position or canvas center)
+        const mouseX = lastMousePosition?.x || window.innerWidth / 2;
+        const mouseY = lastMousePosition?.y || window.innerHeight / 2;
+        const svgCoords = screenToSVG(mouseX, mouseY);
+        setUploadingImagePosition({ x: svgCoords.x, y: svgCoords.y });
+
+        console.log('🖼️ Pasting image from clipboard:', { type: file.type, size: file.size, position: svgCoords });
+
+        // Upload image (get auth token and upload)
+        if (!map) {
+          throw new Error('No map available');
+        }
+
+        const auth = localStorage.getItem('auth-storage');
+        let authToken = null;
+        if (auth) {
+          try {
+            const { token } = JSON.parse(auth).state;
+            authToken = token;
+          } catch (e) {
+            console.error('Failed to parse auth storage:', e);
+          }
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('mapId', map.id);
+
+        const headers: HeadersInit = {};
+        if (authToken) {
+          headers.Authorization = `Bearer ${authToken}`;
+        }
+
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+        const response = await fetch(`${apiUrl}/upload`, {
+          method: 'POST',
+          headers,
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Upload failed: ${response.status} ${errorText}`);
+        }
+
+        const result = await response.json();
+        console.log('📤 Image upload successful:', result);
+        const imageUrl = result.url;
+
+        // Get image dimensions for node size
+        const imageDimensions = await new Promise<{ width: number; height: number }>((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => {
+            resolve({ width: img.width, height: img.height });
+          };
+          img.onerror = reject;
+          img.src = imageUrl;
+        });
+
+        // Calculate node size (max 600px width or height, maintain aspect ratio)
+        const maxDimension = 600;
+        let nodeWidth = imageDimensions.width;
+        let nodeHeight = imageDimensions.height;
+
+        if (nodeWidth > maxDimension || nodeHeight > maxDimension) {
+          const scale = Math.min(maxDimension / nodeWidth, maxDimension / nodeHeight);
+          nodeWidth = nodeWidth * scale;
+          nodeHeight = nodeHeight * scale;
+        }
+
+        // Minimum node size
+        nodeWidth = Math.max(nodeWidth, 200);
+        nodeHeight = Math.max(nodeHeight, 150);
+
+        // Adjust position to center the node
+        const nodeX = svgCoords.x - nodeWidth / 2;
+        const nodeY = svgCoords.y - nodeHeight / 2;
+
+        // Create image node
+        const newNode: NodeType = {
+          id: `n_${Date.now()}`,
+          label: file.name || 'Image',
+          x: nodeX,
+          y: nodeY,
+          w: nodeWidth,
+          h: nodeHeight,
+          embedUrl: imageUrl,
+          embedType: 'image',
+          contentType: 'richeditor',
+        };
+
+        addNode(newNode);
+        selectNode(newNode.id);
+
+        console.log('✅ Image node created:', newNode.id);
+      } catch (error) {
+        console.error('❌ Failed to paste image:', error);
+        alert(error instanceof Error ? error.message : '이미지 붙여넣기에 실패했습니다.');
+      } finally {
+        setIsUploadingImage(false);
+        setUploadingImagePosition(null);
+      }
+    };
+
+    window.addEventListener('paste', handleWindowPaste, true); // Use capture phase
+
+    return () => {
+      window.removeEventListener('paste', handleWindowPaste, true);
+    };
+    // Note: We intentionally omit uploadImageFile, screenToSVG, addNode, selectNode from deps
+    // to avoid circular dependencies and ensure the handler uses the latest versions
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReadOnly, editingNodeId, editingEdgeId, lastMousePosition]);
+
   const handleCanvasClick = (e: React.MouseEvent<SVGSVGElement>) => {
     if (e.target === svgRef.current) {
       selectNode(null);
@@ -565,15 +743,199 @@ export default function MindMapCanvas({
       y,
       w: 150,
       h: 80,
+      contentType: 'richeditor', // 기본 타입을 richeditor로 설정
     };
     
     addNode(newNode);
     selectNode(newNode.id);
   };
 
+  // Upload image file to server
+  const uploadImageFile = async (file: File): Promise<string> => {
+    if (!map) {
+      throw new Error('No map available');
+    }
+
+    // Get auth token from localStorage
+    const auth = localStorage.getItem('auth-storage');
+    let authToken = null;
+    if (auth) {
+      try {
+        const { token } = JSON.parse(auth).state;
+        authToken = token;
+      } catch (e) {
+        console.error('Failed to parse auth storage:', e);
+      }
+    }
+
+    // Create FormData for file upload
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('mapId', map.id);
+
+    // Prepare headers
+    const headers: HeadersInit = {};
+    if (authToken) {
+      headers.Authorization = `Bearer ${authToken}`;
+    }
+
+    // Upload file to backend
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+    const response = await fetch(`${apiUrl}/upload`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Upload failed: ${response.status} ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log('📤 Image upload successful:', result);
+    return result.url;
+  };
+
+  // Handle paste event for image
+  const handlePaste = async (e: React.ClipboardEvent<SVGSVGElement> | ClipboardEvent) => {
+    console.log('📋 Paste event detected:', { isReadOnly, editingNodeId, editingEdgeId });
+    
+    if (isReadOnly) {
+      console.log('⏸️ Readonly mode, ignoring paste');
+      return;
+    }
+    
+    // Don't handle paste if user is editing text
+    if (editingNodeId || editingEdgeId) {
+      console.log('⏸️ Editing node/edge, ignoring paste');
+      return;
+    }
+
+    // Check if SVG is focused (for React events) or if we're handling window event
+    if (e instanceof ClipboardEvent) {
+      // Window-level paste event - check if canvas is in focus
+      const activeElement = document.activeElement;
+      if (activeElement && activeElement !== svgRef.current && !svgRef.current?.contains(activeElement)) {
+        console.log('⏸️ Canvas not focused, ignoring paste');
+        return;
+      }
+    }
+
+    const clipboardData = e.clipboardData;
+    if (!clipboardData) {
+      console.log('⚠️ No clipboard data available');
+      return;
+    }
+
+    // Check if clipboard contains image
+    const items = Array.from(clipboardData.items);
+    console.log('📋 Clipboard items:', items.map(item => ({ type: item.type, kind: item.kind })));
+    
+    const imageItem = items.find(item => item.type.startsWith('image/'));
+
+    if (!imageItem) {
+      // No image in clipboard, ignore
+      console.log('⏸️ No image in clipboard, ignoring paste');
+      return;
+    }
+
+    console.log('🖼️ Image found in clipboard:', imageItem.type);
+    e.preventDefault();
+    e.stopPropagation();
+
+    try {
+      setIsUploadingImage(true);
+
+      // Get image file from clipboard
+      const file = imageItem.getAsFile();
+      if (!file) {
+        throw new Error('Failed to get image file from clipboard');
+      }
+
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/bmp'];
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error(`Unsupported image type: ${file.type}`);
+      }
+
+      // Validate file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        throw new Error('Image too large. Maximum size is 10MB.');
+      }
+
+      // Get paste position (last mouse position or canvas center)
+      const mouseX = lastMousePosition?.x || window.innerWidth / 2;
+      const mouseY = lastMousePosition?.y || window.innerHeight / 2;
+      const svgCoords = screenToSVG(mouseX, mouseY);
+      setUploadingImagePosition({ x: svgCoords.x, y: svgCoords.y });
+
+      console.log('🖼️ Pasting image from clipboard:', { type: file.type, size: file.size, position: svgCoords });
+
+      // Upload image
+      const imageUrl = await uploadImageFile(file);
+
+      // Get image dimensions for node size
+      const imageDimensions = await new Promise<{ width: number; height: number }>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          resolve({ width: img.width, height: img.height });
+        };
+        img.onerror = reject;
+        img.src = imageUrl;
+      });
+
+      // Calculate node size (max 600px width or height, maintain aspect ratio)
+      const maxDimension = 600;
+      let nodeWidth = imageDimensions.width;
+      let nodeHeight = imageDimensions.height;
+
+      if (nodeWidth > maxDimension || nodeHeight > maxDimension) {
+        const scale = Math.min(maxDimension / nodeWidth, maxDimension / nodeHeight);
+        nodeWidth = nodeWidth * scale;
+        nodeHeight = nodeHeight * scale;
+      }
+
+      // Minimum node size
+      nodeWidth = Math.max(nodeWidth, 200);
+      nodeHeight = Math.max(nodeHeight, 150);
+
+      // Adjust position to center the node
+      const nodeX = svgCoords.x - nodeWidth / 2;
+      const nodeY = svgCoords.y - nodeHeight / 2;
+
+      // Create image node
+      const newNode: NodeType = {
+        id: `n_${Date.now()}`,
+        label: file.name || 'Image',
+        x: nodeX,
+        y: nodeY,
+        w: nodeWidth,
+        h: nodeHeight,
+        embedUrl: imageUrl,
+        embedType: 'image',
+        contentType: 'richeditor', // 이미지 노드는 richeditor 타입
+      };
+
+      addNode(newNode);
+      selectNode(newNode.id);
+
+      console.log('✅ Image node created:', newNode.id);
+    } catch (error) {
+      console.error('❌ Failed to paste image:', error);
+      alert(error instanceof Error ? error.message : '이미지 붙여넣기에 실패했습니다.');
+    } finally {
+      setIsUploadingImage(false);
+      setUploadingImagePosition(null);
+    }
+  };
 
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
     const svgCoords = screenToSVG(e.clientX, e.clientY);
+    
+    // Track mouse position for paste positioning
+    setLastMousePosition({ x: e.clientX, y: e.clientY });
 
     // Handle canvas panning
     if (isPanning) {
@@ -875,6 +1237,7 @@ export default function MindMapCanvas({
               y: node.y + 100,
               w: 150,
               h: 80,
+              contentType: 'richeditor', // 기본 타입을 richeditor로 설정
             };
             addNode(newNode);
             
@@ -902,6 +1265,7 @@ export default function MindMapCanvas({
               id: `n_${Date.now()}`,
               x: node.x + 30,
               y: node.y + 30,
+              contentType: node.contentType || 'richeditor', // 기본 타입을 richeditor로 설정 (기존 노드 타입 유지)
             };
             addNode(newNode);
             selectNode(newNode.id);
@@ -917,6 +1281,35 @@ export default function MindMapCanvas({
           setShowShapeSelector(true);
           setContextMenu(null);
         },
+      },
+      {
+        label: 'Content Type',
+        icon: '📝',
+        onClick: () => {},
+        submenu: [
+          {
+            label: 'Editor Type',
+            icon: '📝',
+            onClick: () => {},
+            disabled: true,
+          },
+          {
+            label: `  ${node?.contentType === 'markdown' ? '✓' : '  '} Markdown`,
+            icon: '📝',
+            onClick: () => {
+              updateNode(nodeId, { contentType: 'markdown' });
+              console.log('📝 Content type: markdown');
+            },
+          },
+          {
+            label: `  ${node?.contentType !== 'markdown' ? '✓' : '  '} Rich Editor`,
+            icon: '✏️',
+            onClick: () => {
+              updateNode(nodeId, { contentType: 'richeditor' });
+              console.log('📝 Content type: richeditor');
+            },
+          },
+        ],
       },
       {
         label: 'Background Color',
@@ -1105,6 +1498,7 @@ export default function MindMapCanvas({
             y: svgCoords.y - 40,
             w: 150,
             h: 80,
+            contentType: 'richeditor', // 기본 타입을 richeditor로 설정
           };
           addNode(newNode);
           selectNode(newNode.id);
@@ -1520,10 +1914,19 @@ export default function MindMapCanvas({
         className={`mindmap-canvas ${isPanning ? 'panning' : ''}`}
         viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
         onClick={handleCanvasClick}
-        onMouseDown={handleCanvasMouseDown}
+        onMouseDown={(e) => {
+          handleCanvasMouseDown(e);
+          // Ensure SVG gets focus for paste events
+          if (svgRef.current && !isReadOnly) {
+            svgRef.current.focus();
+          }
+        }}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onContextMenu={handleCanvasContextMenu}
+        onPaste={handlePaste}
+        tabIndex={0}
+        style={{ outline: 'none' }}
       >
         {/* Grid background and arrow marker */}
         <defs>
@@ -1622,6 +2025,28 @@ export default function MindMapCanvas({
           const editingNode = map.nodes.find((n) => n.id === editingNodeId);
           if (!editingNode) return null;
           
+          // Choose editor based on contentType (default: richeditor)
+          const isRichEditor = editingNode.contentType !== 'markdown';
+          
+          if (isRichEditor) {
+            return (
+              <RichEditor
+                key={`richeditor-${editingNodeId}`}
+                x={editingNode.x}
+                y={editingNode.y}
+                width={editingNode.w}
+                height={editingNode.h}
+                initialValue={editingNode.label}
+                textAlign={editingNode.textAlign}
+                onSave={(newLabel) => handleSaveNodeLabel(editingNodeId, newLabel)}
+                onCancel={handleCancelEdit}
+                onTextAlignChange={(align) => {
+                  updateNode(editingNodeId, { textAlign: align });
+                }}
+              />
+            );
+          }
+          
           return (
             <NodeEditor
               key={`editor-${editingNodeId}`}
@@ -1683,15 +2108,51 @@ export default function MindMapCanvas({
         </div>
       )}
 
-      {/* Context Menu */}
-      {contextMenu && (
-        <ContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
-          items={contextMenu.items}
-          onClose={closeContextMenu}
-        />
-      )}
+        {/* Image Upload Indicator */}
+        {isUploadingImage && uploadingImagePosition && (
+          <foreignObject
+            x={uploadingImagePosition.x - 40}
+            y={uploadingImagePosition.y - 40}
+            width={80}
+            height={80}
+            style={{ pointerEvents: 'none' }}
+          >
+            <div style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'rgba(37, 99, 235, 0.9)',
+              borderRadius: '8px',
+              color: '#ffffff',
+              fontSize: '12px',
+              padding: '8px',
+            }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                border: '3px solid rgba(255, 255, 255, 0.3)',
+                borderTopColor: '#ffffff',
+                borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite',
+                marginBottom: '4px',
+              }} />
+              <div>Uploading...</div>
+            </div>
+          </foreignObject>
+        )}
+
+        {/* Context Menu */}
+        {contextMenu && (
+          <ContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            items={contextMenu.items}
+            onClose={closeContextMenu}
+          />
+        )}
 
       {/* Embed Dialog */}
       {showEmbedDialog && (

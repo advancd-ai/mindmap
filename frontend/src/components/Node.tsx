@@ -13,6 +13,7 @@ import NodeShape from './NodeShape';
 import ImageDisplay from './ImageDisplay';
 import PdfDisplay from './PdfDisplay';
 import MarkdownRenderer from './MarkdownRenderer';
+import RichEditorRenderer from './RichEditorRenderer';
 import { getNodeDisplayDimensions, getCollapsedTitle } from '../utils/nodeHelpers';
 import './Node.css';
 import './NodeShape.css';
@@ -174,9 +175,16 @@ export default function Node({
               >
                 {getCollapsedTitle(node.label)}
               </div>
-            ) : (
-              // Expanded: show full markdown
+            ) : node.contentType === 'markdown' ? (
+              // Expanded: show markdown
               <MarkdownRenderer
+                content={node.label}
+                textAlign={node.textAlign || 'left'}
+                textVerticalAlign={node.textVerticalAlign || 'middle'}
+              />
+            ) : (
+              // Expanded: show rich editor HTML content (default)
+              <RichEditorRenderer
                 content={node.label}
                 textAlign={node.textAlign || 'left'}
                 textVerticalAlign={node.textVerticalAlign || 'middle'}

@@ -123,12 +123,9 @@ upload.get('/info', requireAuth(), async (c) => {
 });
 
 // Download file endpoint
-upload.get('/download/:mapId/:filename', requireAuth(), async (c) => {
-  const user = c.get('user') as User;
-  if (!user) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
+// Note: This endpoint is public because images need to be accessible via <img> tags
+// Files are identified by mapId and random filename, providing basic security through obscurity
+upload.get('/download/:mapId/:filename', async (c) => {
   const mapId = c.req.param('mapId');
   const filename = c.req.param('filename');
 
@@ -141,10 +138,11 @@ upload.get('/download/:mapId/:filename', requireAuth(), async (c) => {
       auth: process.env.GITHUB_TOKEN,
     });
 
-    // Use the same repository path logic as mindmaps
-    const repoPath = getGitHubRepoPath(user);
-    const owner = repoPath.owner;
-    const repo = repoPath.repo;
+    // For public downloads, we use default repository from environment variables
+    // Files are stored in the same repository structure as maps
+    // TODO: In the future, we could store owner/repo in map metadata for better multi-repo support
+    const owner = process.env.GITHUB_OWNER || 'choonho';
+    const repo = process.env.GITHUB_REPO || 'guest';
     const branchName = `maps/${mapId}`;
     const path = `files/${filename}`;
 

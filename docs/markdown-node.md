@@ -4,6 +4,24 @@
 
 노드의 텍스트(label)를 기본적으로 **마크다운 형식**으로 지원하여, 더 풍부하고 구조화된 콘텐츠를 노드 내에 표현할 수 있도록 한다.
 
+## 📌 노드 타입 시스템 개요
+
+노드는 **콘텐츠 타입**에 따라 두 가지 편집 방식을 지원합니다:
+
+1. **Markdown Node** (현재 구현 완료)
+   - 마크다운 문법을 사용한 텍스트 편집
+   - 코드처럼 텍스트를 입력하여 서식 적용
+   - 개발자 친화적, 버전 관리에 유리
+   - 자세한 내용은 본 문서 참조
+
+2. **Rich Editor Node** (기획 중)
+   - WYSIWYG 방식의 시각적 편집
+   - 드래그 앤 드롭으로 서식 적용
+   - 비개발자 사용자 친화적
+   - 자세한 내용은 `docs/richeditor-node.md` 참조
+
+사용자는 노드를 생성할 때 또는 편집 중에 콘텐츠 타입을 선택할 수 있으며, `contentType` 필드로 관리됩니다.
+
 ## 📊 현재 상태
 
 ### 현재 구현
@@ -55,11 +73,13 @@
 ```typescript
 interface Node {
   id: string;
-  label: string;           // 마크다운 텍스트 (기존 유지)
-  labelFormat?: 'markdown' | 'plain';  // 포맷 타입 (기본: 'markdown')
+  label: string;                    // 마크다운 텍스트 또는 HTML (contentType에 따라)
+  contentType?: 'markdown' | 'richeditor';  // 콘텐츠 타입 (기본: 'markdown')
   // ... 기존 필드
 }
 ```
+
+**참고**: 리치 에디터 노드 타입 지원은 `docs/richeditor-node.md` 참조
 
 #### 마이그레이션
 - 기존 `label` 값은 자동으로 마크다운으로 처리 (호환성 유지)

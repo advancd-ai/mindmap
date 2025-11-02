@@ -25,6 +25,7 @@ export interface Node {
   w: number;
   h: number;
   nodeType?: NodeShapeType;
+  contentType?: 'markdown' | 'richeditor';  // 콘텐츠 타입 (기본: 'markdown')
   textAlign?: TextAlignHorizontal;
   textVerticalAlign?: TextAlignVertical;
   collapsed?: boolean;

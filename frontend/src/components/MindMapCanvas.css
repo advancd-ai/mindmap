@@ -366,6 +366,12 @@
    SVG CANVAS - 사고의 캔버스
    ============================================ */
 
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .mindmap-canvas {
   flex: 1;
   cursor: grab;
