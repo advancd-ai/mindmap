@@ -1,0 +1,316 @@
+/* MarkdownEditorModal - Overlay modal for markdown editing */
+
+.markdown-editor-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.markdown-editor-modal {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  width: 90%;
+  max-width: 1400px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease-out;
+  overflow: hidden;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.markdown-editor-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+  gap: 16px;
+}
+
+.markdown-editor-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.markdown-editor-view-toggle {
+  display: flex;
+  gap: 4px;
+  background: #f3f4f6;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.markdown-editor-view-toggle button {
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.markdown-editor-view-toggle button:hover {
+  color: #374151;
+  background: #e5e7eb;
+}
+
+.markdown-editor-view-toggle button.active {
+  background: #ffffff;
+  color: #111827;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.markdown-editor-modal-close {
+  background: none;
+  border: none;
+  font-size: 28px;
+  line-height: 1;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+  margin-left: auto;
+}
+
+.markdown-editor-modal-close:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.markdown-editor-modal-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 500px;
+  max-height: calc(90vh - 140px);
+}
+
+.markdown-editor-content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.markdown-editor-content.markdown-editor-split {
+  display: flex;
+}
+
+.markdown-editor-content.markdown-editor-edit {
+  display: flex;
+}
+
+.markdown-editor-content.markdown-editor-preview {
+  display: flex;
+}
+
+.markdown-editor-editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid #e5e7eb;
+}
+
+.markdown-editor-content.markdown-editor-edit .markdown-editor-editor {
+  border-right: none;
+}
+
+.markdown-editor-content.markdown-editor-preview .markdown-editor-editor {
+  display: none;
+}
+
+.markdown-editor-textarea {
+  flex: 1;
+  width: 100%;
+  padding: 20px;
+  font-size: 14px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+  line-height: 1.6;
+  border: none;
+  outline: none;
+  resize: none;
+  background: #ffffff;
+  color: #111827;
+  overflow-y: auto;
+}
+
+.markdown-editor-textarea:focus {
+  outline: none;
+}
+
+.markdown-editor-preview {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  background: #f9fafb;
+}
+
+.markdown-editor-content.markdown-editor-split .markdown-editor-preview {
+  border-left: 1px solid #e5e7eb;
+}
+
+.markdown-editor-content.markdown-editor-edit .markdown-editor-preview {
+  display: none;
+}
+
+.markdown-preview-content {
+  max-width: 100%;
+  word-wrap: break-word;
+}
+
+.markdown-preview-empty {
+  color: #9ca3af;
+  font-style: italic;
+  text-align: center;
+  padding: 40px;
+}
+
+.markdown-editor-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.markdown-editor-modal-help {
+  font-size: 12px;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.markdown-editor-modal-help kbd {
+  padding: 2px 6px;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 3px;
+  font-size: 10px;
+  font-family: monospace;
+  color: #374151;
+}
+
+.markdown-editor-modal-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.markdown-editor-modal-button {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.markdown-editor-modal-button.cancel {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.markdown-editor-modal-button.cancel:hover {
+  background: #e5e7eb;
+}
+
+.markdown-editor-modal-button.save {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.markdown-editor-modal-button.save:hover {
+  background: #1d4ed8;
+}
+
+.markdown-editor-modal-button:active {
+  transform: scale(0.98);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .markdown-editor-modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .markdown-editor-modal-body {
+    max-height: calc(100vh - 140px);
+  }
+
+  .markdown-editor-content.markdown-editor-split {
+    flex-direction: column;
+  }
+
+  .markdown-editor-editor {
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+    max-height: 50%;
+  }
+
+  .markdown-editor-preview {
+    max-height: 50%;
+  }
+
+  .markdown-editor-modal-footer {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .markdown-editor-modal-actions {
+    width: 100%;
+  }
+
+  .markdown-editor-modal-button {
+    flex: 1;
+  }
+}
+

@@ -5,9 +5,13 @@
   padding: 8px;
   overflow: auto;
   word-wrap: break-word;
+  overflow-wrap: break-word;
   font-size: 14px;
   line-height: 1.6;
   color: #111827;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .rich-editor-renderer.empty {
@@ -46,10 +50,16 @@
   justify-content: flex-end;
 }
 
-/* Typography */
+/* Typography - Reset and base styles */
+.rich-editor-renderer * {
+  box-sizing: border-box;
+}
+
 .rich-editor-renderer p {
   margin: 0.5em 0;
   line-height: 1.6;
+  color: inherit;
+  font-size: inherit;
 }
 
 .rich-editor-renderer p:first-child {
@@ -69,6 +79,7 @@
   margin: 0.8em 0 0.4em 0;
   font-weight: 600;
   line-height: 1.3;
+  color: #111827;
 }
 
 .rich-editor-renderer h1:first-child,
@@ -104,20 +115,27 @@
   font-size: 0.85em;
 }
 
-.rich-editor-renderer strong {
+.rich-editor-renderer strong,
+.rich-editor-renderer b {
   font-weight: 600;
+  color: inherit;
 }
 
-.rich-editor-renderer em {
+.rich-editor-renderer em,
+.rich-editor-renderer i {
   font-style: italic;
+  color: inherit;
 }
 
 .rich-editor-renderer u {
   text-decoration: underline;
+  color: inherit;
 }
 
-.rich-editor-renderer s {
+.rich-editor-renderer s,
+.rich-editor-renderer strike {
   text-decoration: line-through;
+  color: inherit;
 }
 
 .rich-editor-renderer code {
@@ -126,6 +144,8 @@
   border-radius: 3px;
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
   font-size: 0.9em;
+  color: #111827;
+  font-weight: normal;
 }
 
 .rich-editor-renderer pre {
@@ -145,11 +165,13 @@
 .rich-editor-renderer ol {
   margin: 0.5em 0;
   padding-left: 1.5em;
+  color: #111827;
 }
 
 .rich-editor-renderer li {
   margin: 0.2em 0;
   line-height: 1.5;
+  color: inherit;
 }
 
 .rich-editor-renderer blockquote {
@@ -158,6 +180,10 @@
   border-left: 3px solid #d1d5db;
   color: #6b7280;
   font-style: italic;
+}
+
+.rich-editor-renderer blockquote p {
+  color: inherit;
 }
 
 .rich-editor-renderer hr {
@@ -174,6 +200,67 @@
 
 .rich-editor-renderer a:hover {
   color: #1d4ed8;
+}
+
+/* Ensure all text elements inherit color and base styles */
+.rich-editor-renderer span,
+.rich-editor-renderer div {
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+/* Ensure nested formatting tags maintain styles */
+.rich-editor-renderer p strong,
+.rich-editor-renderer p b,
+.rich-editor-renderer div strong,
+.rich-editor-renderer div b,
+.rich-editor-renderer span strong,
+.rich-editor-renderer span b,
+.rich-editor-renderer h1 strong,
+.rich-editor-renderer h1 b,
+.rich-editor-renderer h2 strong,
+.rich-editor-renderer h2 b,
+.rich-editor-renderer h3 strong,
+.rich-editor-renderer h3 b {
+  font-weight: 600;
+  color: inherit;
+}
+
+.rich-editor-renderer p em,
+.rich-editor-renderer p i,
+.rich-editor-renderer div em,
+.rich-editor-renderer div i,
+.rich-editor-renderer span em,
+.rich-editor-renderer span i {
+  font-style: italic;
+  color: inherit;
+}
+
+.rich-editor-renderer p u,
+.rich-editor-renderer div u,
+.rich-editor-renderer span u {
+  text-decoration: underline;
+  color: inherit;
+}
+
+.rich-editor-renderer p s,
+.rich-editor-renderer p strike,
+.rich-editor-renderer div s,
+.rich-editor-renderer div strike,
+.rich-editor-renderer span s,
+.rich-editor-renderer span strike {
+  text-decoration: line-through;
+  color: inherit;
+}
+
+/* Default paragraph styling for empty or minimal content */
+.rich-editor-renderer > *:first-child {
+  margin-top: 0;
+}
+
+.rich-editor-renderer > *:last-child {
+  margin-bottom: 0;
 }
 
 /* Custom scrollbar */

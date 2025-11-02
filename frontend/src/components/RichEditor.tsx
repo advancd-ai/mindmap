@@ -5,7 +5,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import DOMPurify from 'dompurify';
-import RichEditorToolbar from './RichEditorToolbar';
 import './RichEditor.css';
 
 interface RichEditorProps {
@@ -18,6 +17,7 @@ interface RichEditorProps {
   onSave: (newLabel: string) => void;
   onCancel: () => void;
   onTextAlignChange?: (align: 'left' | 'center' | 'right') => void;
+  editorType?: 'markdown' | 'richeditor' | 'text'; // 에디터 타입 (footer 라벨용)
 }
 
 export default function RichEditor({
@@ -29,9 +29,10 @@ export default function RichEditor({
   textAlign = 'left',
   onSave,
   onCancel,
+  // @ts-ignore - Not used but kept for API compatibility
   onTextAlignChange,
+  editorType = 'richeditor',
 }: RichEditorProps) {
-  const [currentTextAlign, setCurrentTextAlign] = useState<'left' | 'center' | 'right'>(textAlign);
   const [pasteAsPlainText, setPasteAsPlainText] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
 
@@ -52,15 +53,10 @@ export default function RichEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Update currentTextAlign when textAlign prop changes
-  useEffect(() => {
-    setCurrentTextAlign(textAlign);
-  }, [textAlign]);
-
   const autoResize = () => {
     if (editorRef.current) {
       const scrollHeight = editorRef.current.scrollHeight;
-      const maxHeight = height - 60; // Reserve space for toolbar
+      const maxHeight = height; // No toolbar, use full height
       editorRef.current.style.minHeight = `${Math.min(scrollHeight, maxHeight)}px`;
     }
   };
@@ -260,21 +256,12 @@ export default function RichEditor({
       }}
     >
       <div className="rich-editor-container">
-        <RichEditorToolbar
-          editorRef={editorRef}
-          textAlign={currentTextAlign}
-          onTextAlignChange={(align) => {
-            setCurrentTextAlign(align);
-            onTextAlignChange?.(align);
-          }}
-          onCommand={execCommand}
-        />
         <div
           ref={editorRef}
           contentEditable
           className="rich-editor-content"
           style={{
-            textAlign: currentTextAlign,
+            textAlign: textAlign,
           }}
           onInput={handleInput}
           onKeyDown={handleKeyDown}
@@ -286,7 +273,13 @@ export default function RichEditor({
         />
         <div className="rich-editor-help">
           <span className="help-text">
-            <kbd>Alt</kbd> + <kbd>Enter</kbd> 저장 후 종료 • <kbd>Esc</kbd> 취소 • <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>V</kbd> 텍스트만 붙여넣기
+            <span className="editor-type-label">
+              {editorType === 'markdown' && 'Markdown'}
+              {editorType === 'richeditor' && 'Rich Editor'}
+              {editorType === 'text' && 'Text'}
+            </span>
+            <span className="separator">•</span>
+            <kbd>Alt</kbd> + <kbd>Enter</kbd> 저장 후 종료 • <kbd>Esc</kbd> 취소
           </span>
         </div>
       </div>

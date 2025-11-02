@@ -2,7 +2,7 @@
  * Editor page - edit mindmap
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -37,6 +37,12 @@ export default function EditorPage() {
   const isDirty = useMindMapStore((state) => state.isDirty);
   const setMap = useMindMapStore((state) => state.setMap);
   const reset = useMindMapStore((state) => state.reset);
+  const canvasSaveHandlerRef = useRef<(() => void) | null>(null);
+
+  // Stable callback for onSave prop (must be outside JSX to avoid hook order issues)
+  const handleSaveCallback = useCallback((saveHandler: () => void) => {
+    canvasSaveHandlerRef.current = saveHandler;
+  }, []);
 
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
@@ -108,10 +114,13 @@ export default function EditorPage() {
         const hasOptimisticUpdate = optimisticVersionManager.hasPendingUpdate(mapId || '');
         const expectedVersion = optimisticVersionManager.getExpectedVersion(mapId || '', map.version);
         
-        // Optimistic update가 있고 Save 후인 경우에만 고려
-        const isLatest = hasOptimisticUpdate 
-          ? map.version >= expectedVersion 
-          : (latestVersion !== null ? map.version >= latestVersion : true);
+        // latestVersion이 아직 로드되지 않았으면 (null) 일단 true로 설정 (낙관적 접근)
+        // 실제 버전 비교는 latestVersion이 로드된 후에만 수행
+        const isLatest = latestVersion === null
+          ? true // 아직 로드 중이면 최신으로 가정
+          : hasOptimisticUpdate 
+            ? map.version >= expectedVersion 
+            : map.version >= latestVersion;
           
         setIsLatestVersion(isLatest);
         
@@ -122,7 +131,7 @@ export default function EditorPage() {
           isLatest,
           isNewMap,
           hasOptimisticUpdate,
-          logic: hasOptimisticUpdate ? 'optimistic' : 'actual'
+          logic: latestVersion === null ? 'pending' : (hasOptimisticUpdate ? 'optimistic' : 'actual')
         });
       }
     } else {
@@ -130,18 +139,23 @@ export default function EditorPage() {
     }
   }, [latestVersion, map, isNewMap, mapId]);
 
-  // Debug readonly condition
+  // Debug readonly condition and save button visibility
   useEffect(() => {
     const isReadOnlyCondition = !isNewMap && !isLatestVersion;
-    console.log('🔍 Readonly Debug:', {
+    const saveButtonVisible = (isNewMap || isLatestVersion); // 새 맵이거나 최신 버전이면 표시
+    const saveHandlerReady = !!canvasSaveHandlerRef.current;
+    
+    console.log('🔍 Save Button Debug:', {
       latestVersion,
       mapVersion: map?.version,
       mapExists: !!map,
       isLatestVersion,
       isReadOnlyCondition,
-      condition: `!${isNewMap} && !${isLatestVersion}`,
-      mapId,
-      isNewMap
+      isNewMap,
+      saveButtonVisible,
+      saveHandlerReady,
+      canShowSaveButton: saveButtonVisible && saveHandlerReady,
+      mapId
     });
   }, [latestVersion, map, mapId, isNewMap, isLatestVersion]);
 
@@ -357,7 +371,7 @@ export default function EditorPage() {
         </div>
 
         <div className="editor-header-right">
-          {/* Unsaved indicator and Share button */}
+          {/* Share button, Save button, and Unsaved indicator */}
           <div className="editor-actions">
             {mapId && (
               <button
@@ -366,6 +380,16 @@ export default function EditorPage() {
                 title="Share map"
               >
                 🔗 Share
+              </button>
+            )}
+            {(isNewMap || isLatestVersion) && (
+              <button
+                className="button button-primary save-button"
+                onClick={() => canvasSaveHandlerRef.current?.()}
+                disabled={!isDirty || !canvasSaveHandlerRef.current}
+                title={!canvasSaveHandlerRef.current ? "Save handler not ready" : "Save mindmap"}
+              >
+                💾 {t('editor.save')}
               </button>
             )}
             {isDirty && <span className="unsaved-indicator">{t('editor.unsavedChanges')}</span>}
@@ -379,6 +403,7 @@ export default function EditorPage() {
           onRefreshToLatest={refreshToLatestVersion}
           isRefreshing={isRefreshing}
           refreshProgress={refreshProgress}
+          onSave={handleSaveCallback}
         />
       </div>
 

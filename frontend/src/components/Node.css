@@ -153,3 +153,103 @@
 .node:hover text {
   opacity: 0.95;
 }
+
+/* ============================================
+   EDIT BUTTON - 최신 디자인 트렌드
+   Glassmorphism + Micro-interactions
+   ============================================ */
+
+.node-edit-button {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 4px 12px rgba(37, 99, 235, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #2563eb;
+  position: relative;
+  overflow: hidden;
+}
+
+.node-edit-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.node-edit-button:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(37, 99, 235, 0.3);
+  box-shadow: 
+    0 2px 6px rgba(0, 0, 0, 0.08),
+    0 8px 20px rgba(37, 99, 235, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px) scale(1.02);
+  color: #1d4ed8;
+}
+
+.node-edit-button:hover::before {
+  opacity: 1;
+}
+
+.node-edit-button:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.1),
+    0 2px 8px rgba(37, 99, 235, 0.15),
+    inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.node-edit-button .apple-icon {
+  position: relative;
+  z-index: 1;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.node-edit-button:hover .apple-icon {
+  transform: scale(1.1);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .node-edit-button {
+    background: rgba(30, 41, 59, 0.95);
+    border-color: rgba(59, 130, 246, 0.3);
+    box-shadow: 
+      0 1px 3px rgba(0, 0, 0, 0.3),
+      0 4px 12px rgba(59, 130, 246, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    color: #60a5fa;
+  }
+
+  .node-edit-button:hover {
+    background: rgba(30, 41, 59, 1);
+    border-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 
+      0 2px 6px rgba(0, 0, 0, 0.4),
+      0 8px 20px rgba(59, 130, 246, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    color: #93c5fd;
+  }
+
+  .node-edit-button::before {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(96, 165, 250, 0.08) 100%);
+  }
+}

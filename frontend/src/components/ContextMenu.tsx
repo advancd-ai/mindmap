@@ -12,6 +12,7 @@ export interface MenuItem {
   disabled?: boolean;
   divider?: boolean;
   submenu?: MenuItem[];
+  shortcut?: string; // Keyboard shortcut (e.g., "e", "Ctrl+D", "Delete")
 }
 
 interface ContextMenuProps {
@@ -131,6 +132,16 @@ export default function ContextMenu({ x, y, items, onClose }: ContextMenuProps) 
                 </span>
               )}
               <span className="context-menu-label">{item.label}</span>
+              {item.shortcut && (
+                <span className="context-menu-shortcut">
+                  {item.shortcut.split('+').map((key, idx) => (
+                    <span key={idx}>
+                      {idx > 0 && <span className="shortcut-separator">+</span>}
+                      <kbd className="shortcut-key">{key.trim()}</kbd>
+                    </span>
+                  ))}
+                </span>
+              )}
               {item.submenu && <span className="context-menu-arrow">›</span>}
             </button>
             
@@ -171,6 +182,16 @@ export default function ContextMenu({ x, y, items, onClose }: ContextMenuProps) 
                     >
                       {subitem.icon && <span className="context-menu-icon">{subitem.icon}</span>}
                       <span className="context-menu-label">{subitem.label}</span>
+                      {subitem.shortcut && (
+                        <span className="context-menu-shortcut">
+                          {subitem.shortcut.split('+').map((key, idx) => (
+                            <span key={idx}>
+                              {idx > 0 && <span className="shortcut-separator">+</span>}
+                              <kbd className="shortcut-key">{key.trim()}</kbd>
+                            </span>
+                          ))}
+                        </span>
+                      )}
                     </button>
                   )
                 ))}

@@ -17,7 +17,7 @@
 
 .canvas-toolbar {
   display: flex;
-  gap: var(--space);
+  gap: var(--space-md);
   align-items: center;
   padding: var(--space-md) var(--space-lg);
   background: var(--bg-elevated);
@@ -28,6 +28,7 @@
   position: relative;
   overflow: visible;
   z-index: 10;
+  flex-wrap: wrap;
 }
 
 .canvas-toolbar .button {
@@ -35,31 +36,53 @@
   padding: 8px 16px;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-xs);
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
-.button-screenshot {
-  background: linear-gradient(135deg, var(--semantic-success) 0%, #16A34A 100%);
-  color: white;
-  border: none;
-  box-shadow: 
-    0 2px 8px rgba(22, 163, 74, 0.2),
-    0 1px 4px rgba(22, 163, 74, 0.15);
+/* Toolbar button groups */
+.canvas-toolbar .toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 0 var(--space-sm);
+  border-left: 1px solid var(--border-primary);
 }
 
-.button-screenshot:hover {
-  background: linear-gradient(135deg, #16A34A 0%, #15803D 100%);
-  transform: translateY(-2px);
-  box-shadow: 
-    0 4px 12px rgba(22, 163, 74, 0.3),
-    0 2px 6px rgba(22, 163, 74, 0.2);
+.canvas-toolbar .toolbar-group:first-child {
+  border-left: none;
+  padding-left: 0;
 }
 
-.button-screenshot:active {
-  transform: translateY(0);
-  box-shadow: 
-    0 1px 4px rgba(22, 163, 74, 0.2),
-    0 0.5px 2px rgba(22, 163, 74, 0.15);
+.canvas-toolbar .toolbar-group:last-child {
+  margin-left: auto;
+}
+
+/* Editor mode buttons styling */
+.canvas-toolbar .button-editor-mode {
+  padding: 6px 12px;
+  font-size: 13px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.canvas-toolbar .button-editor-mode:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  border-color: var(--accent-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
+}
+
+.canvas-toolbar .button-editor-mode span:first-child {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .button-save {
@@ -92,6 +115,33 @@
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+/* Active button state for editor mode buttons */
+.button-active,
+.canvas-toolbar .button-editor-mode.button-active {
+  background: linear-gradient(135deg, var(--accent-primary) 0%, #2563EB 100%) !important;
+  color: white !important;
+  border-color: var(--accent-primary) !important;
+  box-shadow: 
+    0 2px 8px rgba(37, 99, 235, 0.2),
+    0 1px 4px rgba(37, 99, 235, 0.15) !important;
+}
+
+.button-active:hover:not(:disabled),
+.canvas-toolbar .button-editor-mode.button-active:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%) !important;
+  border-color: #1D4ED8 !important;
+  transform: translateY(-1px);
+  box-shadow: 
+    0 4px 12px rgba(37, 99, 235, 0.3),
+    0 2px 6px rgba(37, 99, 235, 0.2) !important;
+}
+
+.canvas-toolbar .button-editor-mode:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* Readonly Button */

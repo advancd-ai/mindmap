@@ -2,7 +2,7 @@
  * MindMap Canvas - SVG-based mindmap renderer
  */
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useMindMapStore, type Node as NodeType, type Edge as EdgeType } from '../store/mindmap';
@@ -10,8 +10,11 @@ import { createMap, updateMap } from '../api/maps';
 import Node from './Node';
 import Edge from './Edge';
 import TemporaryEdge from './TemporaryEdge';
-import NodeEditor from './NodeEditor';
+import TextEditor from './editors/TextEditor';
+import RichEditorModal from './editors/RichEditorModal';
+import MarkdownEditorModal from './editors/MarkdownEditorModal';
 import RichEditor from './RichEditor';
+import NodeEditor from './NodeEditor';
 import EdgeEditor from './EdgeEditor';
 import ContextMenu, { type MenuItem } from './ContextMenu';
 import EmbedDialog from './EmbedDialog';
@@ -24,6 +27,7 @@ import { getNodeDisplayDimensions } from '../utils/nodeHelpers';
 import { getLabelPosition } from '../utils/edgeHelpers';
 import { optimisticVersionManager } from '../utils/optimisticUpdate';
 import AppleIcon from './AppleIcon';
+import DeleteConfirmDialog from './DeleteConfirmDialog';
 import './MindMapCanvas.css';
 
 interface MindMapCanvasProps {
@@ -31,13 +35,15 @@ interface MindMapCanvasProps {
   onRefreshToLatest?: () => void;
   isRefreshing?: boolean;
   refreshProgress?: number;
+  onSave?: (saveHandler: () => void) => void;
 }
 
 export default function MindMapCanvas({ 
   isReadOnly = false, 
   onRefreshToLatest,
   isRefreshing = false,
-  refreshProgress = 0
+  refreshProgress = 0,
+  onSave
 }: MindMapCanvasProps) {
   const { t } = useTranslation();
   
@@ -63,6 +69,7 @@ export default function MindMapCanvas({
   const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
   const [tempLineEnd, setTempLineEnd] = useState({ x: 0, y: 0 });
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
+  const [editorMode, setEditorMode] = useState<'text' | 'richeditor' | 'markdown' | null>(null);
   const [editingEdgeId, setEditingEdgeId] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{
     x: number;
@@ -89,6 +96,12 @@ export default function MindMapCanvas({
     w: 0, 
     h: 0 
   });
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    type: 'node' | 'edge';
+    label?: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   const map = useMindMapStore((state) => state.map);
   const selectedNodeId = useMindMapStore((state) => state.selectedNodeId);
@@ -145,9 +158,19 @@ export default function MindMapCanvas({
     },
   });
 
-  const handleSave = () => {
+  // Use useCallback to stabilize handleSave function
+  const handleSave = useCallback(() => {
     setShowJsonPreview(true);
-  };
+  }, []);
+
+  // Expose save handler to parent component
+  // Only call onSave when it changes (not on every render)
+  useEffect(() => {
+    if (onSave) {
+      onSave(handleSave);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onSave]); // Only depend on onSave, not handleSave (which is stable via useCallback)
 
   const handleConfirmSave = () => {
     saveMutation.mutate();
@@ -193,236 +216,7 @@ export default function MindMapCanvas({
     return { x: svgP.x, y: svgP.y };
   };
 
-  // Zoom functions
-  const handleZoomIn = () => {
-    const newZoom = Math.min(zoom * 1.2, 5.0); // Max 500%
-    const baseWidth = 1200;
-    const baseHeight = 800;
-    
-    // Calculate center point of current viewBox
-    const centerX = viewBox.x + viewBox.width / 2;
-    const centerY = viewBox.y + viewBox.height / 2;
-    
-    // Calculate new viewBox size (smaller viewBox = zoomed in)
-    const newWidth = baseWidth / newZoom;
-    const newHeight = baseHeight / newZoom;
-    
-    // Adjust viewBox to keep center point
-    setViewBox({
-      x: centerX - newWidth / 2,
-      y: centerY - newHeight / 2,
-      width: newWidth,
-      height: newHeight,
-    });
-    setZoom(newZoom);
-    console.log('🔍 Zoom in:', (newZoom * 100).toFixed(0) + '%');
-    
-    // Save view state
-    const newViewBox = {
-      x: centerX - newWidth / 2,
-      y: centerY - newHeight / 2,
-      width: newWidth,
-      height: newHeight,
-    };
-    updateViewState({ zoom: newZoom, viewBox: newViewBox });
-  };
-
-  const handleZoomOut = () => {
-    const newZoom = Math.max(zoom / 1.2, 0.1); // Min 10%
-    const baseWidth = 1200;
-    const baseHeight = 800;
-    
-    // Calculate center point of current viewBox
-    const centerX = viewBox.x + viewBox.width / 2;
-    const centerY = viewBox.y + viewBox.height / 2;
-    
-    // Calculate new viewBox size (larger viewBox = zoomed out)
-    const newWidth = baseWidth / newZoom;
-    const newHeight = baseHeight / newZoom;
-    
-    // Adjust viewBox to keep center point
-    setViewBox({
-      x: centerX - newWidth / 2,
-      y: centerY - newHeight / 2,
-      width: newWidth,
-      height: newHeight,
-    });
-    setZoom(newZoom);
-    console.log('🔍 Zoom out:', (newZoom * 100).toFixed(0) + '%');
-    
-    // Save view state
-    const newViewBox = {
-      x: centerX - newWidth / 2,
-      y: centerY - newHeight / 2,
-      width: newWidth,
-      height: newHeight,
-    };
-    updateViewState({ zoom: newZoom, viewBox: newViewBox });
-  };
-
-  const handleZoomReset = () => {
-    const resetViewBox = { x: 0, y: 0, width: 1200, height: 800 };
-    setZoom(1.0);
-    setViewBox(resetViewBox);
-    console.log('🔍 Zoom reset: 100%');
-    
-    // Save view state
-    updateViewState({ zoom: 1.0, viewBox: resetViewBox });
-  };
-
-  const handleScreenshot = async () => {
-    if (!svgRef.current || !map) return;
-    
-    console.log('📸 Taking screenshot...');
-
-    // Store original collapsed states
-    const originalStates = new Map<string, boolean>();
-    map.nodes.forEach(node => {
-      if (node.embedUrl && !node.collapsed) {
-        originalStates.set(node.id, false);
-      }
-    });
-
-    // Temporarily collapse all embed nodes for screenshot
-    if (originalStates.size > 0) {
-      console.log(`📸 Temporarily collapsing ${originalStates.size} embed nodes for screenshot...`);
-      originalStates.forEach((_, nodeId) => {
-        updateNode(nodeId, { collapsed: true });
-      });
-      
-      // Wait for React to re-render
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-
-    try {
-      const svgElement = svgRef.current;
-      
-      // Clone SVG to avoid modifying the original
-      const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement;
-      
-      // Remove all foreignObject elements (they don't render in canvas)
-      const foreignObjects = clonedSvg.querySelectorAll('foreignObject');
-      foreignObjects.forEach(fo => fo.remove());
-      
-      // Get SVG bounds
-      const bbox = svgElement.getBBox();
-      const padding = 50;
-      
-      // Set viewBox to fit all content
-      clonedSvg.setAttribute('viewBox', `${bbox.x - padding} ${bbox.y - padding} ${bbox.width + padding * 2} ${bbox.height + padding * 2}`);
-      clonedSvg.setAttribute('width', `${bbox.width + padding * 2}`);
-      clonedSvg.setAttribute('height', `${bbox.height + padding * 2}`);
-      
-      // Add white background
-      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      rect.setAttribute('x', `${bbox.x - padding}`);
-      rect.setAttribute('y', `${bbox.y - padding}`);
-      rect.setAttribute('width', `${bbox.width + padding * 2}`);
-      rect.setAttribute('height', `${bbox.height + padding * 2}`);
-      rect.setAttribute('fill', '#ffffff');
-      clonedSvg.insertBefore(rect, clonedSvg.firstChild);
-      
-      // Serialize SVG to string
-      const serializer = new XMLSerializer();
-      let svgString = serializer.serializeToString(clonedSvg);
-      
-      // Add XML declaration and DOCTYPE
-      svgString = '<?xml version="1.0" encoding="UTF-8"?>' + svgString;
-      
-      // Convert to blob
-      const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-      
-      // Create canvas
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Could not get canvas context');
-      
-      // Set canvas size (2x for better quality)
-      const scale = 2;
-      canvas.width = (bbox.width + padding * 2) * scale;
-      canvas.height = (bbox.height + padding * 2) * scale;
-      
-      // Create image from SVG
-      const img = new Image();
-      const url = URL.createObjectURL(blob);
-      
-      img.onload = () => {
-        // Draw white background
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Draw SVG
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        URL.revokeObjectURL(url);
-        
-        // Convert to PNG and download
-        canvas.toBlob((pngBlob) => {
-          if (!pngBlob) {
-            console.error('❌ Failed to create PNG blob');
-            return;
-          }
-          
-          const downloadUrl = URL.createObjectURL(pngBlob);
-          const link = document.createElement('a');
-          link.href = downloadUrl;
-          link.download = `${map.title || 'mindmap'}-${Date.now()}.png`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(downloadUrl);
-          
-          console.log('✅ Screenshot saved!');
-          
-          // Restore original states
-          if (originalStates.size > 0) {
-            console.log('📸 Restoring original node states...');
-            originalStates.forEach((wasCollapsed, nodeId) => {
-              updateNode(nodeId, { collapsed: wasCollapsed });
-            });
-          }
-        }, 'image/png');
-      };
-      
-      img.onerror = () => {
-        console.error('❌ Failed to load SVG image');
-        URL.revokeObjectURL(url);
-        
-        // Restore original states even on error
-        if (originalStates.size > 0) {
-          console.log('📸 Restoring original node states (after error)...');
-          originalStates.forEach((wasCollapsed, nodeId) => {
-            updateNode(nodeId, { collapsed: wasCollapsed });
-          });
-        }
-        
-        // Fallback: download SVG directly
-        const downloadUrl = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = `${map.title || 'mindmap'}-${Date.now()}.svg`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(downloadUrl);
-        console.log('⚠️ Downloaded as SVG instead');
-      };
-      
-      img.src = url;
-      
-    } catch (error) {
-      console.error('❌ Screenshot error:', error);
-      
-      // Restore original states on error
-      if (originalStates.size > 0) {
-        console.log('📸 Restoring original node states (after error)...');
-        originalStates.forEach((wasCollapsed, nodeId) => {
-          updateNode(nodeId, { collapsed: wasCollapsed });
-        });
-      }
-      
-      alert('Failed to take screenshot. Please try again.');
-    }
-  };
+  // Zoom functions removed (UI controls removed, mouse wheel zoom still works)
 
   // Mouse wheel zoom handler using native event for better preventDefault support
   useEffect(() => {
@@ -475,13 +269,18 @@ export default function MindMapCanvas({
       const newX = svgPoint.x - newWidth * mouseXPercent;
       const newY = svgPoint.y - newHeight * mouseYPercent;
       
-      setZoom(newZoom);
-      setViewBox({
+      const newViewBox = {
         x: newX,
         y: newY,
         width: newWidth,
         height: newHeight,
-      });
+      };
+      
+      setZoom(newZoom);
+      setViewBox(newViewBox);
+      
+      // Update view state in store
+      updateViewState({ zoom: newZoom, viewBox: newViewBox });
       
       console.log('🔍 Wheel zoom:', (newZoom * 100).toFixed(0) + '%');
     };
@@ -668,10 +467,27 @@ export default function MindMapCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isReadOnly, editingNodeId, editingEdgeId, lastMousePosition]);
 
+  // 모든 선택 및 편집 상태를 초기화하는 함수
+  const clearAllSelections = () => {
+    selectNode(null);
+    selectEdge(null);
+    setEditingNodeId(null);
+    setEditorMode(null);
+    setEditingEdgeId(null);
+    setIsConnecting(false);
+    setConnectingFrom(null);
+    setContextMenu(null);
+    console.log('🧹 All selections and edit states cleared');
+  };
+
   const handleCanvasClick = (e: React.MouseEvent<SVGSVGElement>) => {
     if (e.target === svgRef.current) {
-      selectNode(null);
-      selectEdge(null);
+      // 캔버스 클릭 시 SVG에 포커스하여 키보드 이벤트를 받을 수 있도록 함
+      if (svgRef.current) {
+        svgRef.current.focus();
+      }
+      // 모든 선택 및 편집 상태 초기화
+      clearAllSelections();
     }
   };
 
@@ -1041,12 +857,6 @@ export default function MindMapCanvas({
     }
   };
 
-  const handleDeleteNode = () => {
-    if (selectedNodeId) {
-      deleteNode(selectedNodeId);
-      selectNode(null);
-    }
-  };
 
   const handleStartConnection = (e: React.MouseEvent, nodeId: string) => {
     e.stopPropagation();
@@ -1103,25 +913,118 @@ export default function MindMapCanvas({
     e.stopPropagation();
     if (!isDragging) {
       selectNode(nodeId);
+      // 노드 선택 시 SVG에 포커스를 강제로 설정 (requestAnimationFrame으로 다음 프레임에서 실행)
+      requestAnimationFrame(() => {
+        if (svgRef.current) {
+          svgRef.current.focus();
+          if (import.meta.env.DEV) {
+            console.log('✅ SVG focused after node select:', document.activeElement === svgRef.current);
+          }
+        }
+      });
     }
   };
 
   const handleNodeDoubleClick = (e: React.MouseEvent, nodeId: string) => {
     e.stopPropagation();
     e.preventDefault();
-    console.log('✏️ Editing node:', nodeId);
+    
+    // 단일 클릭 타이머 취소 (더블 클릭인 경우)
+    const target = e.target as any;
+    if (target.__clickTimer) {
+      clearTimeout(target.__clickTimer);
+      delete target.__clickTimer;
+    }
+    
+    if (import.meta.env.DEV) {
+      console.log('🖱️ handleNodeDoubleClick called:', {
+        nodeId,
+        isReadOnly,
+        eventType: e.type,
+        detail: e.detail,
+        target: e.target,
+        timestamp: Date.now()
+      });
+    }
+    
+    // Readonly 모드이거나 노드가 접혀있으면 편집 불가
+    if (isReadOnly) {
+      if (import.meta.env.DEV) {
+        console.log('⏸️ Readonly mode, cannot edit node');
+      }
+      return;
+    }
+    
+    if (import.meta.env.DEV) {
+      console.log('✏️ Editing node:', nodeId);
+    }
+    
+    const node = map.nodes.find((n) => n.id === nodeId);
+    if (!node) {
+      console.error('❌ Node not found:', nodeId);
+      return;
+    }
+    
+    // 노드가 접혀있으면 편집 불가
+    if (node.collapsed) {
+      if (import.meta.env.DEV) {
+        console.log('⏸️ Node is collapsed, cannot edit');
+      }
+      return;
+    }
+    
+    // 더블 클릭 시 현재 contentType에 맞는 인라인 편집 시작 (팝업 없음)
+    // editorMode를 명시적으로 설정하지 않으면 현재 contentType 기반으로 인라인 편집됨
+    if (import.meta.env.DEV) {
+      console.log('📝 Starting inline edit for node:', nodeId, 'contentType:', node.contentType);
+      console.log('📝 Setting editorMode to null, editingNodeId to:', nodeId);
+    }
+    
+    setEditorMode(null); // 명시적 모드 없음 = 현재 contentType 기반 인라인 편집
     setEditingNodeId(nodeId);
+    
+    if (import.meta.env.DEV) {
+      console.log('✅ Double click handler completed');
+    }
   };
+
+  // editingNodeId 상태 변경 감지 (디버깅용)
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      if (editingNodeId) {
+        console.log('📌 editingNodeId changed to:', editingNodeId);
+        console.log('📌 editorMode:', editorMode);
+        
+        // 에디터가 렌더링되는지 확인
+        const editingNode = map.nodes.find((n) => n.id === editingNodeId);
+        if (editingNode) {
+          console.log('📌 Editing node found:', {
+            id: editingNode.id,
+            contentType: editingNode.contentType,
+            label: editingNode.label.substring(0, 50),
+            position: { x: editingNode.x, y: editingNode.y },
+            size: { w: editingNode.w, h: editingNode.h }
+          });
+        } else {
+          console.warn('⚠️ Editing node not found in map.nodes');
+        }
+      } else {
+        console.log('📌 editingNodeId cleared');
+      }
+    }
+  }, [editingNodeId, editorMode, map.nodes]);
 
   const handleSaveNodeLabel = (nodeId: string, newLabel: string) => {
     console.log('💾 Saving node label:', nodeId, newLabel);
     updateNode(nodeId, { label: newLabel });
     setEditingNodeId(null);
+    setEditorMode(null);
   };
 
   const handleCancelEdit = () => {
     console.log('❌ Edit cancelled');
     setEditingNodeId(null);
+    setEditorMode(null);
   };
 
   const handleEdgeSelect = (e: React.MouseEvent, edgeId: string) => {
@@ -1148,13 +1051,6 @@ export default function MindMapCanvas({
     setEditingEdgeId(null);
   };
 
-  const handleDeleteEdge = () => {
-    if (selectedEdgeId) {
-      console.log('🗑️ Deleting edge:', selectedEdgeId);
-      deleteEdge(selectedEdgeId);
-      selectEdge(null);
-    }
-  };
 
   const handleNodeContextMenu = (e: React.MouseEvent, nodeId: string) => {
     e.preventDefault();
@@ -1168,8 +1064,19 @@ export default function MindMapCanvas({
       {
         label: 'Edit Label',
         icon: <AppleIcon name="edit" size="medium" />,
-        onClick: () => setEditingNodeId(nodeId),
+        onClick: () => {
+          const node = map.nodes.find((n) => n.id === nodeId);
+          if (node) {
+            if (node.contentType === 'markdown') {
+              setEditorMode('markdown');
+            } else {
+              setEditorMode('richeditor');
+            }
+            setEditingNodeId(nodeId);
+          }
+        },
         disabled: isReadOnly,
+        shortcut: 'e',
       },
       {
         label: 'Connect to...',
@@ -1229,7 +1136,7 @@ export default function MindMapCanvas({
         onClick: () => {
           const node = map.nodes.find((n) => n.id === nodeId);
           if (node) {
-            // 현재 노드 아래 오른쪽에 새 노드 생성
+            // 현재 노드 아래 오른쪽에 새 노드 생성 (child node)
             const newNode: NodeType = {
               id: `n_${Date.now()}`,
               label: 'New Node',
@@ -1241,7 +1148,7 @@ export default function MindMapCanvas({
             };
             addNode(newNode);
             
-            // 자동으로 edge 연결
+            // 자동으로 edge 연결 (child node)
             const newEdge = {
               id: `e_${Date.now()}`,
               source: nodeId,
@@ -1252,6 +1159,8 @@ export default function MindMapCanvas({
             console.log('➕ Added child node and edge');
           }
         },
+        disabled: isReadOnly,
+        shortcut: 'a',
       },
       {
         label: 'Duplicate',
@@ -1271,6 +1180,7 @@ export default function MindMapCanvas({
             selectNode(newNode.id);
           }
         },
+        shortcut: navigator.platform.toLowerCase().includes('mac') ? 'Cmd+D' : 'Ctrl+D',
       },
       { divider: true } as MenuItem,
       {
@@ -1394,9 +1304,20 @@ export default function MindMapCanvas({
         label: 'Delete',
         icon: <AppleIcon name="delete" size="medium" />,
         onClick: () => {
-          deleteNode(nodeId);
-          selectNode(null);
+          const node = map?.nodes.find((n) => n.id === nodeId);
+          const nodeLabel = node?.label || '노드';
+          setDeleteConfirm({
+            isOpen: true,
+            type: 'node',
+            label: nodeLabel,
+            onConfirm: () => {
+              deleteNode(nodeId);
+              selectNode(null);
+              setDeleteConfirm(null);
+            },
+          });
         },
+        shortcut: 'd',
       },
     ];
 
@@ -1466,8 +1387,15 @@ export default function MindMapCanvas({
         label: 'Delete Edge',
         icon: <AppleIcon name="delete" size="medium" />,
         onClick: () => {
-          deleteEdge(edgeId);
-          selectEdge(null);
+          setDeleteConfirm({
+            isOpen: true,
+            type: 'edge',
+            onConfirm: () => {
+              deleteEdge(edgeId);
+              selectEdge(null);
+              setDeleteConfirm(null);
+            },
+          });
         },
       },
     ];
@@ -1650,6 +1578,9 @@ export default function MindMapCanvas({
 
   // Add global event listeners
   useEffect(() => {
+    // Zustand store에서 최신 상태를 가져오는 헬퍼
+    const getCurrentState = () => useMindMapStore.getState();
+    
     const handleGlobalMouseUp = () => {
       // End panning
       if (isPanning) {
@@ -1671,7 +1602,29 @@ export default function MindMapCanvas({
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // 텍스트 입력 중인지 확인
+      const activeElement = document.activeElement;
+      const isTextInputFocused = activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.getAttribute('contenteditable') === 'true'
+      );
+      
+      // IME(Input Method Editor) 입력 중인지 확인 (한글, 중국어, 일본어 등)
+      // isComposing이 true이면 IME 조합 중이므로 키보드 단축키 무시
+      if (e.isComposing) {
+        return;
+      }
+
+      // Escape 키는 key 속성 사용 (항상 'Escape')
       if (e.key === 'Escape') {
+        // 편집 중이 아닐 때만 전체 선택 상태 초기화
+        // (편집 중일 때는 각 에디터가 자체적으로 Escape 처리)
+        if (!editingNodeId && !editingEdgeId) {
+          e.preventDefault();
+          clearAllSelections();
+        }
+        
         if (isPanning) {
           console.log('❌ Panning cancelled (ESC key)');
           setIsPanning(false);
@@ -1688,19 +1641,235 @@ export default function MindMapCanvas({
           setResizeDirection(null);
         }
       }
+      // 'e' 키: 선택된 노드 편집 모드 진입
+      // e.code를 사용하여 물리적 키 위치를 감지 (한글/영어 구분 없음)
+      else if ((e.code === 'KeyE' || e.key.toLowerCase() === 'e') && !isTextInputFocused && !isReadOnly) {
+        // 최신 상태를 직접 가져옴 (클로저 문제 해결)
+        const currentState = getCurrentState();
+        const { selectedNodeId: currentSelectedNodeId, map: currentMap } = currentState;
+        // editingNodeId와 editingEdgeId는 컴포넌트 로컬 상태이므로 직접 참조
+        const currentEditingNodeId = editingNodeId;
+        const currentEditingEdgeId = editingEdgeId;
+        
+        // 디버깅: 조건 확인
+        if (import.meta.env.DEV) {
+          console.log('⌨️ e key pressed', {
+            selectedNodeId: currentSelectedNodeId,
+            editingNodeId: currentEditingNodeId,
+            editingEdgeId: currentEditingEdgeId,
+            hasMap: !!currentMap,
+            isTextInputFocused,
+            isReadOnly
+          });
+        }
+        
+        // 조기 반환으로 중첩 제거
+        if (!currentSelectedNodeId) {
+          return;
+        }
+        
+        if (currentEditingNodeId || currentEditingEdgeId) {
+          return;
+        }
+        
+        if (!currentMap) {
+          return;
+        }
+        
+        e.preventDefault();
+        e.stopPropagation(); // 이벤트 전파 방지
+        
+        const node = currentMap.nodes.find((n) => n.id === currentSelectedNodeId);
+        if (!node) {
+          console.warn('⚠️ Node not found:', currentSelectedNodeId);
+          useMindMapStore.getState().selectNode(null);
+          return;
+        }
+        
+        // contentType에 따라 모달 편집 모드 설정 (편집 버튼 클릭과 동일)
+        if (import.meta.env.DEV) {
+          console.log('⌨️ Edit mode via keyboard shortcut (e key):', currentSelectedNodeId);
+        }
+        
+        if (node.contentType === 'markdown') {
+          setEditorMode('markdown');
+        } else {
+          // richeditor 또는 미지정 시 Rich Editor 모달
+          setEditorMode('richeditor');
+        }
+        setEditingNodeId(currentSelectedNodeId);
+      }
+      // 'a' 키: 노드 추가
+      // e.code를 사용하여 물리적 키 위치를 감지 (한글/영어 구분 없음)
+      else if ((e.code === 'KeyA' || e.key.toLowerCase() === 'a') && !isTextInputFocused && !isReadOnly) {
+        // 편집 중일 때는 노드 추가 동작 안 함
+        if (editingNodeId || editingEdgeId) {
+          return;
+        }
+        
+        // 최신 상태를 직접 가져옴 (클로저 문제 해결)
+        const currentState = getCurrentState();
+        const { selectedNodeId: currentSelectedNodeId, map: currentMap } = currentState;
+        
+        if (!currentMap) {
+          return;
+        }
+        
+        e.preventDefault();
+        e.stopPropagation(); // 이벤트 전파 방지
+        
+        if (import.meta.env.DEV) {
+          console.log('⌨️ Adding node via keyboard shortcut (a key)');
+        }
+        
+        // 노드가 선택되어 있으면 child node로 생성 (엣지 자동 연결)
+        if (currentSelectedNodeId) {
+          const selectedNode = currentMap.nodes.find((n) => n.id === currentSelectedNodeId);
+          if (selectedNode) {
+            const newNode: NodeType = {
+              id: `n_${Date.now()}`,
+              label: 'New Node',
+              x: selectedNode.x + 180,
+              y: selectedNode.y + 100,
+              w: 150,
+              h: 80,
+              contentType: 'richeditor',
+            };
+            addNode(newNode);
+            
+            // 자동으로 edge 연결 (child node)
+            const newEdge = {
+              id: `e_${Date.now()}`,
+              source: currentSelectedNodeId,
+              target: newNode.id,
+            };
+            addEdge(newEdge);
+            selectNode(newNode.id);
+            
+            if (import.meta.env.DEV) {
+              console.log('➕ Added child node via a key');
+            }
+          }
+        } else {
+          // 노드가 선택되어 있지 않으면 일반 노드 생성 (엣지 없음)
+          handleAddNode();
+        }
+      }
+      // 'd' 키: 선택된 노드/엣지 삭제
+      // e.code를 사용하여 물리적 키 위치를 감지 (한글/영어 구분 없음)
+      else if ((e.code === 'KeyD' || e.key.toLowerCase() === 'd') && !isTextInputFocused && !isReadOnly) {
+        // 편집 중일 때는 삭제 동작 안 함
+        if (editingNodeId || editingEdgeId) {
+          return;
+        }
+        
+        // 최신 상태를 직접 가져옴 (클로저 문제 해결)
+        const currentState = getCurrentState();
+        const { selectedNodeId: currentSelectedNodeId, selectedEdgeId: currentSelectedEdgeId, map: currentMap } = currentState;
+        
+        if (currentSelectedNodeId || currentSelectedEdgeId) {
+          e.preventDefault();
+          e.stopPropagation(); // 이벤트 전파 방지
+          
+          if (currentSelectedNodeId) {
+            const node = currentMap?.nodes.find((n) => n.id === currentSelectedNodeId);
+            const nodeLabel = node?.label || '노드';
+            
+            setDeleteConfirm({
+              isOpen: true,
+              type: 'node',
+              label: nodeLabel,
+              onConfirm: () => {
+                if (import.meta.env.DEV) {
+                  console.log('🗑️ Deleting node via keyboard shortcut (d key):', currentSelectedNodeId);
+                }
+                deleteNode(currentSelectedNodeId);
+                selectNode(null);
+                setDeleteConfirm(null);
+              },
+            });
+          } else if (currentSelectedEdgeId) {
+            setDeleteConfirm({
+              isOpen: true,
+              type: 'edge',
+              onConfirm: () => {
+                if (import.meta.env.DEV) {
+                  console.log('🗑️ Deleting edge via keyboard shortcut (d key):', currentSelectedEdgeId);
+                }
+                deleteEdge(currentSelectedEdgeId);
+                selectEdge(null);
+                setDeleteConfirm(null);
+              },
+            });
+          }
+        }
+        return; // d 키 처리 완료
+      }
+      // Delete/Backspace 키: 선택된 노드/엣지 삭제 (기존 방식 유지)
+      else if ((e.key === 'Delete' || e.key === 'Backspace') && !isTextInputFocused && !isReadOnly) {
+        // 편집 중일 때는 삭제 동작 안 함
+        if (editingNodeId || editingEdgeId) {
+          return;
+        }
+        
+        if (selectedNodeId || selectedEdgeId) {
+          e.preventDefault();
+          
+          if (selectedNodeId) {
+            const node = map?.nodes.find((n) => n.id === selectedNodeId);
+            const nodeLabel = node?.label || '노드';
+            
+            setDeleteConfirm({
+              isOpen: true,
+              type: 'node',
+              label: nodeLabel,
+              onConfirm: () => {
+                console.log('🗑️ Deleting node via keyboard shortcut:', selectedNodeId);
+                deleteNode(selectedNodeId);
+                selectNode(null);
+                setDeleteConfirm(null);
+              },
+            });
+          } else if (selectedEdgeId) {
+            setDeleteConfirm({
+              isOpen: true,
+              type: 'edge',
+              onConfirm: () => {
+                console.log('🗑️ Deleting edge via keyboard shortcut:', selectedEdgeId);
+                deleteEdge(selectedEdgeId);
+                selectEdge(null);
+                setDeleteConfirm(null);
+              },
+            });
+          }
+        }
+      }
     };
 
     if (isDragging || isResizing || isPanning) {
       document.addEventListener('mouseup', handleGlobalMouseUp);
     }
     
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown, true); // 캡처 단계 사용
     
     return () => {
       document.removeEventListener('mouseup', handleGlobalMouseUp);
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown, true);
     };
-  }, [isDragging, isResizing, isConnecting, isPanning]);
+  }, [
+    isDragging, 
+    isResizing, 
+    isConnecting, 
+    isPanning, 
+    setEditorMode,
+    setEditingNodeId,
+    deleteNode, 
+    deleteEdge, 
+    selectNode, 
+    selectEdge, 
+    clearAllSelections,
+    isReadOnly
+  ]);
 
   return (
       <div className="mindmap-canvas-container">
@@ -1732,182 +1901,6 @@ export default function MindMapCanvas({
             </div>
           </div>
         )}
-        <div className="canvas-toolbar">
-        <button onClick={handleAddNode} className="button" disabled={isReadOnly}>
-          <AppleIcon name="add" size="medium" />
-          Add Node
-        </button>
-        {selectedNodeId && !selectedEdgeId && (
-          <>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setEditingNodeId(selectedNodeId);
-              }}
-              className="button"
-              disabled={isConnecting}
-            >
-              <AppleIcon name="edit" size="medium" />
-              Edit
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setEmbedTargetNodeId(selectedNodeId);
-                setShowEmbedDialog(true);
-              }}
-              className="button"
-            >
-              {(() => {
-                const node = map.nodes.find((n) => n.id === selectedNodeId);
-                if (node?.embedUrl) {
-                  return node.embedType === 'youtube' ? '🎥 Change' : '🌐 Change';
-                }
-                return '➕ Embed';
-              })()}
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (isConnecting) {
-                  // Cancel connection
-                  setIsConnecting(false);
-                  setConnectingFrom(null);
-                  console.log('❌ Connection cancelled');
-                } else {
-                  handleStartConnection(e, selectedNodeId);
-                }
-              }}
-              className={`button ${isConnecting ? 'button-secondary' : ''}`}
-              disabled={!!editingNodeId || isReadOnly}
-            >
-              {isConnecting && connectingFrom === selectedNodeId ? (
-                <>
-                  <AppleIcon name="close" size="medium" />
-                  Cancel Connection
-                </>
-              ) : (
-                <>
-                  <AppleIcon name="connect" size="medium" />
-                  Connect
-                </>
-              )}
-            </button>
-            <button 
-              onClick={handleDeleteNode} 
-              className="button button-secondary"
-              disabled={isConnecting || !!editingNodeId || isReadOnly}
-            >
-              <AppleIcon name="delete" size="medium" />
-              Delete
-            </button>
-          </>
-        )}
-
-        {selectedEdgeId && !selectedNodeId && (
-          <>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setEditingEdgeId(selectedEdgeId);
-              }}
-              className="button"
-              disabled={isReadOnly}
-            >
-              <AppleIcon name="edit" size="medium" />
-              Edit Label
-            </button>
-            <button 
-              onClick={handleDeleteEdge} 
-              className="button button-secondary"
-              disabled={isReadOnly}
-            >
-              <AppleIcon name="delete" size="medium" />
-              Delete Edge
-            </button>
-          </>
-        )}
-        <div className="zoom-controls">
-          <button onClick={handleZoomOut} className="button" title="Zoom Out (Ctrl + Scroll)">
-            <AppleIcon name="zoom-out" size="medium" />
-          </button>
-          <span className="zoom-level">{(zoom * 100).toFixed(0)}%</span>
-          <button onClick={handleZoomIn} className="button" title="Zoom In (Ctrl + Scroll)">
-            <AppleIcon name="zoom-in" size="medium" />
-          </button>
-          <button onClick={handleZoomReset} className="button" title="Reset Zoom (100%)">
-            <AppleIcon name="zoom-reset" size="medium" />
-          </button>
-        </div>
-        {/* Canvas Status Info */}
-        {(isPanning || isConnecting || isResizing || editingNodeId || editingEdgeId) && (
-          <div className="canvas-status">
-            {isPanning && (
-              <span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>
-                🖐️ Panning canvas...
-              </span>
-            )}
-            {isConnecting && (
-              <span style={{ color: 'var(--semantic-success)', fontWeight: 600 }}>
-                🔗 Connecting... Click target node
-              </span>
-            )}
-            {isResizing && (
-              <span style={{ color: 'var(--viz-decision)', fontWeight: 600 }}>
-                📐 Resizing...
-              </span>
-            )}
-            {editingNodeId && (
-              <span style={{ color: 'var(--semantic-warning)', fontWeight: 600 }}>
-                ✏️ Editing node...
-              </span>
-            )}
-            {editingEdgeId && (
-              <span style={{ color: 'var(--semantic-warning)', fontWeight: 600 }}>
-                ✏️ Editing edge label...
-              </span>
-            )}
-          </div>
-        )}
-        {isReadOnly ? (
-          <button 
-            className="button button-readonly" 
-            onClick={onRefreshToLatest}
-            disabled={isRefreshing}
-            title={t('editor.refreshToLatest')}
-          >
-            {isRefreshing ? (
-              <span className="refresh-indicator">
-                <AppleIcon name="loading" size="medium" className="refresh-spinner" />
-                <span className="refresh-text">{t('editor.refreshing')}</span>
-              </span>
-            ) : (
-              <>
-                <AppleIcon name="refresh" size="medium" />
-                {t('editor.refreshToLatest')}
-              </>
-            )}
-          </button>
-        ) : (
-          <button 
-            onClick={handleSave} 
-            className="button button-save" 
-            disabled={saveMutation.isPending}
-            title="Save mindmap"
-          >
-            <AppleIcon name="save" size="medium" />
-            {saveMutation.isPending ? t('editor.saving') : t('editor.save')}
-          </button>
-        )}
-        <button 
-          onClick={handleScreenshot} 
-          className="button button-screenshot" 
-          title="Save as image (PNG)"
-        >
-          <AppleIcon name="screenshot" size="medium" />
-          Screenshot
-        </button>
-      </div>
 
       <svg
         ref={svgRef}
@@ -2017,21 +2010,118 @@ export default function MindMapCanvas({
             onContextMenu={(e) => handleNodeContextMenu(e, node.id)}
             onResizeStart={(e, direction) => handleResizeStart(e, node.id, direction)}
             onToggleCollapse={(e) => handleToggleCollapse(e, node.id)}
+                 onSwitchToRichEditor={(nodeId) => {
+                   // Switch to Rich Editor mode
+                   updateNode(nodeId, { contentType: 'richeditor' });
+                   // Set editor mode and start editing
+                   setEditorMode('richeditor');
+                   setEditingNodeId(nodeId);
+                 }}
+                 onSwitchToMarkdown={(nodeId) => {
+                   // Switch to Markdown mode
+                   updateNode(nodeId, { contentType: 'markdown' });
+                   // Set editor mode and start editing
+                   setEditorMode('markdown');
+                   setEditingNodeId(nodeId);
+                 }}
+                 onEditClick={(nodeId) => {
+                   // 편집 버튼 클릭 시 모달 편집 시작
+                   console.log('✏️ Edit button clicked for node:', nodeId);
+                   const node = map.nodes.find((n) => n.id === nodeId);
+                   if (node) {
+                     // 현재 contentType에 맞는 모달 편집 모드 설정
+                     if (node.contentType === 'markdown') {
+                       setEditorMode('markdown');
+                     } else {
+                       // richeditor 또는 미지정 시 Rich Editor 모달
+                       setEditorMode('richeditor');
+                     }
+                     setEditingNodeId(nodeId);
+                   }
+                 }}
+                 showEditButton={true}
+                 isEditing={editingNodeId === node.id && editorMode === null}
+                 editorType={
+                   editingNodeId === node.id && editorMode === null
+                     ? (() => {
+                         const editingNode = map.nodes.find((n) => n.id === node.id);
+                         if (!editingNode) return undefined;
+                         if (editingNode.contentType === 'markdown') return 'markdown' as const;
+                         if (editingNode.contentType === 'richeditor') return 'richeditor' as const;
+                         if (editingNode.contentType === 'text') return 'text' as const;
+                         return 'richeditor' as const; // 기본값
+                       })()
+                     : undefined
+                 }
           />
         ))}
 
         {/* Node Editor (when editing) */}
         {editingNodeId && (() => {
           const editingNode = map.nodes.find((n) => n.id === editingNodeId);
-          if (!editingNode) return null;
+          if (!editingNode) {
+            if (import.meta.env.DEV) {
+              console.warn('⚠️ Editing node not found:', editingNodeId);
+            }
+            return null;
+          }
+
+          // Determine editor mode based on contentType and editorMode state
+          let actualEditorMode: 'text' | 'richeditor' | 'markdown';
+          let useModal = false; // 더블 클릭인지 버튼 클릭인지 구분
           
-          // Choose editor based on contentType (default: richeditor)
-          const isRichEditor = editingNode.contentType !== 'markdown';
+          if (editorMode) {
+            // Explicit mode set (from toolbar buttons or edit button) - 모달 사용
+            actualEditorMode = editorMode;
+            useModal = true;
+            if (import.meta.env.DEV) {
+              console.log('🎨 Editor mode explicitly set:', editorMode, '→ using modal');
+            }
+          } else if (editingNode.contentType === 'markdown') {
+            // Markdown mode: 더블 클릭 시 인라인 편집
+            actualEditorMode = 'markdown';
+            useModal = false;
+            if (import.meta.env.DEV) {
+              console.log('📝 Markdown inline editor (double-click)');
+            }
+          } else if (editingNode.contentType === 'richeditor') {
+            // Rich Editor mode: 더블 클릭 시 인라인 편집
+            actualEditorMode = 'richeditor';
+            useModal = false;
+            if (import.meta.env.DEV) {
+              console.log('✨ Rich Editor inline editor (double-click)');
+            }
+          } else if (editingNode.contentType === 'text') {
+            // Text mode: 인라인 편집
+            actualEditorMode = 'text';
+            useModal = false;
+            if (import.meta.env.DEV) {
+              console.log('📄 Text inline editor (double-click)');
+            }
+          } else {
+            // contentType이 미지정된 경우 Rich Editor 인라인 편집이 기본
+            actualEditorMode = 'richeditor';
+            useModal = false;
+            if (import.meta.env.DEV) {
+              console.log('✨ Default Rich Editor inline editor (no contentType)');
+            }
+          }
           
-          if (isRichEditor) {
+          if (import.meta.env.DEV) {
+            console.log('🎯 Rendering editor:', {
+              editingNodeId,
+              actualEditorMode,
+              useModal,
+              nodePosition: { x: editingNode.x, y: editingNode.y },
+              nodeSize: { w: editingNode.w, h: editingNode.h }
+            });
+          }
+
+          // Render appropriate editor
+          if (actualEditorMode === 'text') {
             return (
-              <RichEditor
-                key={`richeditor-${editingNodeId}`}
+              <TextEditor
+                key={`text-editor-${editingNodeId}`}
                 x={editingNode.x}
                 y={editingNode.y}
                 width={editingNode.w}
@@ -2040,29 +2130,81 @@ export default function MindMapCanvas({
                 textAlign={editingNode.textAlign}
                 onSave={(newLabel) => handleSaveNodeLabel(editingNodeId, newLabel)}
                 onCancel={handleCancelEdit}
-                onTextAlignChange={(align) => {
-                  updateNode(editingNodeId, { textAlign: align });
-                }}
               />
             );
+          } else if (actualEditorMode === 'richeditor') {
+            if (useModal) {
+              // 도구 상자 버튼 클릭 시 모달 사용
+              return (
+                <RichEditorModal
+                  key={`richeditor-modal-${editingNodeId}`}
+                  initialValue={editingNode.label}
+                  textAlign={editingNode.textAlign}
+                  onSave={(newLabel) => handleSaveNodeLabel(editingNodeId, newLabel)}
+                  onCancel={handleCancelEdit}
+                  onTextAlignChange={(align) => {
+                    updateNode(editingNodeId, { textAlign: align });
+                  }}
+                />
+              );
+            } else {
+              // 더블 클릭 시 인라인 편집
+              return (
+                <RichEditor
+                  key={`richeditor-inline-${editingNodeId}`}
+                  x={editingNode.x}
+                  y={editingNode.y}
+                  width={editingNode.w}
+                  height={editingNode.h}
+                  initialValue={editingNode.label}
+                  textAlign={editingNode.textAlign}
+                  onSave={(newLabel) => handleSaveNodeLabel(editingNodeId, newLabel)}
+                  onCancel={handleCancelEdit}
+                  onTextAlignChange={(align) => {
+                    updateNode(editingNodeId, { textAlign: align });
+                  }}
+                  editorType="richeditor"
+                />
+              );
+            }
+          } else if (actualEditorMode === 'markdown') {
+            if (useModal) {
+              // 도구 상자 버튼 클릭 시 모달 사용
+              return (
+                <MarkdownEditorModal
+                  key={`markdown-modal-${editingNodeId}`}
+                  initialValue={editingNode.label}
+                  textAlign={editingNode.textAlign}
+                  onSave={(newLabel) => handleSaveNodeLabel(editingNodeId, newLabel)}
+                  onCancel={handleCancelEdit}
+                  onTextAlignChange={(align) => {
+                    updateNode(editingNodeId, { textAlign: align });
+                  }}
+                />
+              );
+            } else {
+              // 더블 클릭 시 인라인 편집 (NodeEditor 사용)
+              return (
+                <NodeEditor
+                  key={`markdown-inline-${editingNodeId}`}
+                  x={editingNode.x}
+                  y={editingNode.y}
+                  width={editingNode.w}
+                  height={editingNode.h}
+                  initialValue={editingNode.label}
+                  textAlign={editingNode.textAlign}
+                  onSave={(newLabel) => handleSaveNodeLabel(editingNodeId, newLabel)}
+                  onCancel={handleCancelEdit}
+                  onTextAlignChange={(align) => {
+                    updateNode(editingNodeId, { textAlign: align });
+                  }}
+                  editorType="markdown"
+                />
+              );
+            }
           }
-          
-          return (
-            <NodeEditor
-              key={`editor-${editingNodeId}`}
-              x={editingNode.x}
-              y={editingNode.y}
-              width={editingNode.w}
-              height={editingNode.h}
-              initialValue={editingNode.label}
-              textAlign={editingNode.textAlign}
-              onSave={(newLabel) => handleSaveNodeLabel(editingNodeId, newLabel)}
-              onCancel={handleCancelEdit}
-              onTextAlignChange={(align) => {
-                updateNode(editingNodeId, { textAlign: align });
-              }}
-            />
-          );
+
+          return null;
         })()}
 
         {/* Edge Editor (when editing) */}
@@ -2204,6 +2346,17 @@ export default function MindMapCanvas({
           changeLog={getChangeLog()}
           onClose={() => setShowJsonPreview(false)}
           onConfirm={handleConfirmSave}
+        />
+      )}
+
+      {/* Delete Confirm Dialog */}
+      {deleteConfirm && (
+        <DeleteConfirmDialog
+          isOpen={deleteConfirm.isOpen}
+          type={deleteConfirm.type}
+          label={deleteConfirm.label}
+          onConfirm={deleteConfirm.onConfirm}
+          onCancel={() => setDeleteConfirm(null)}
         />
       )}
 

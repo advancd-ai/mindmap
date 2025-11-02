@@ -1,0 +1,145 @@
+/* Apple-style Modal Overlay */
+.delete-confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  animation: overlayFadeIn 0.25s ease-out;
+}
+
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Apple-style Dialog */
+.delete-confirm-dialog {
+  background: var(--bg);
+  border-radius: var(--radius-lg);
+  padding: 0;
+  box-shadow: var(--shadow-xl);
+  animation: dialogSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+}
+
+@keyframes dialogSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Actions */
+.delete-confirm-actions {
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.delete-confirm-actions .button {
+  min-width: 100px;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.delete-confirm-actions .button-secondary {
+  background: var(--bg-secondary);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.delete-confirm-actions .button-secondary:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.delete-confirm-actions .button-secondary:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.delete-confirm-actions .button-danger {
+  background: linear-gradient(135deg, #ff3b30 0%, #ff2d55 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 2px 8px rgba(255, 59, 48, 0.3);
+}
+
+.delete-confirm-actions .button-danger:hover {
+  background: linear-gradient(135deg, #ff2d55 0%, #ff3b30 100%);
+  box-shadow: 0 4px 12px rgba(255, 59, 48, 0.4);
+  transform: translateY(-1px);
+}
+
+.delete-confirm-actions .button-danger:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(255, 59, 48, 0.3);
+}
+
+.delete-confirm-actions .button-danger:focus {
+  outline: 2px solid rgba(255, 59, 48, 0.5);
+  outline-offset: 2px;
+}
+
+.delete-confirm-actions .button-secondary:focus {
+  outline: 2px solid rgba(0, 122, 255, 0.5);
+  outline-offset: 2px;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .delete-confirm-dialog {
+    background: var(--bg);
+    border-color: var(--border-light);
+  }
+
+  .delete-confirm-header {
+    border-bottom-color: var(--border-light);
+  }
+
+  .delete-confirm-icon {
+    background: linear-gradient(135deg, rgba(255, 59, 48, 0.15) 0%, rgba(255, 59, 48, 0.08) 100%);
+  }
+
+  .delete-confirm-warning {
+    background: rgba(255, 59, 48, 0.12);
+    border-left-color: rgba(255, 59, 48, 0.4);
+  }
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+  .delete-confirm-actions {
+    flex-direction: column-reverse;
+  }
+
+  .delete-confirm-actions .button {
+    width: 100%;
+    min-width: unset;
+  }
+}

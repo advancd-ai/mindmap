@@ -30,9 +30,10 @@ export default function RichEditorRenderer({
         'p', 'br', 'strong', 'em', 'u', 's', 'code', 'pre',
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
         'ul', 'ol', 'li', 'blockquote', 'hr',
-        'a', 'span', 'div',
+        'a', 'span', 'div', 'b', 'i', 'strike',
       ],
-      ALLOWED_ATTR: ['href', 'target', 'rel', 'style', 'class'],
+      ALLOWED_ATTR: ['href', 'target', 'rel'],
+      FORBID_ATTR: ['style', 'class', 'id'],
       ALLOW_DATA_ATTR: false,
       ADD_ATTR: ['target', 'rel'],
     });

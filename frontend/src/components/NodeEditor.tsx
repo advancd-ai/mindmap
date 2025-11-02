@@ -4,7 +4,6 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import MarkdownToolbar from './MarkdownToolbar';
 import './NodeEditor.css';
 
 interface NodeEditorProps {
@@ -17,6 +16,7 @@ interface NodeEditorProps {
   onSave: (newLabel: string) => void;
   onCancel: () => void;
   onTextAlignChange?: (align: 'left' | 'center' | 'right') => void;
+  editorType?: 'markdown' | 'richeditor' | 'text'; // 에디터 타입 (footer 라벨용)
 }
 
 export default function NodeEditor({
@@ -28,10 +28,11 @@ export default function NodeEditor({
   textAlign = 'left',
   onSave,
   onCancel,
+  // @ts-ignore - Not used but kept for API compatibility
   onTextAlignChange,
+  editorType = 'markdown',
 }: NodeEditorProps) {
   const [value, setValue] = useState(initialValue);
-  const [currentTextAlign, setCurrentTextAlign] = useState<'left' | 'center' | 'right'>(textAlign);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -48,11 +49,6 @@ export default function NodeEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Update currentTextAlign when textAlign prop changes
-  useEffect(() => {
-    setCurrentTextAlign(textAlign);
-  }, [textAlign]);
-
   const autoResize = () => {
     if (textareaRef.current) {
       // Reset height to auto to get scrollHeight
@@ -67,21 +63,6 @@ export default function NodeEditor({
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setValue(e.target.value);
     autoResize();
-  };
-
-  const handleInsert = (newValue: string, cursorOffset?: number) => {
-    setValue(newValue);
-    
-    // Set cursor position
-    if (textareaRef.current && cursorOffset !== undefined) {
-      setTimeout(() => {
-        textareaRef.current?.setSelectionRange(cursorOffset, cursorOffset);
-        textareaRef.current?.focus();
-        autoResize();
-      }, 0);
-    } else {
-      autoResize();
-    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -153,15 +134,6 @@ export default function NodeEditor({
       }}
     >
       <div className="node-editor-container">
-        <MarkdownToolbar 
-          textareaRef={textareaRef} 
-          onInsert={handleInsert}
-          textAlign={currentTextAlign}
-          onTextAlignChange={(align) => {
-            setCurrentTextAlign(align);
-            onTextAlignChange?.(align);
-          }}
-        />
         <textarea
           ref={textareaRef}
           value={value}
@@ -177,7 +149,7 @@ export default function NodeEditor({
             border: '2px solid #2563eb',
             borderRadius: '8px',
             outline: 'none',
-            textAlign: currentTextAlign,
+            textAlign: textAlign,
             background: '#ffffff',
             fontFamily: 'inherit',
             resize: 'none',
@@ -191,7 +163,13 @@ export default function NodeEditor({
         />
         <div className="node-editor-help">
           <span className="help-text">
-            <kbd>Alt</kbd> + <kbd>Enter</kbd> 저장 후 종료 • <kbd>Esc</kbd> 취소 • <kbd>Tab</kbd> 들여쓰기
+            <span className="editor-type-label">
+              {editorType === 'markdown' && 'Markdown'}
+              {editorType === 'richeditor' && 'Rich Editor'}
+              {editorType === 'text' && 'Text'}
+            </span>
+            <span className="separator">•</span>
+            <kbd>Alt</kbd> + <kbd>Enter</kbd> 저장 후 종료 • <kbd>Esc</kbd> 취소
           </span>
         </div>
       </div>

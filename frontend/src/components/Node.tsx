@@ -14,6 +14,7 @@ import ImageDisplay from './ImageDisplay';
 import PdfDisplay from './PdfDisplay';
 import MarkdownRenderer from './MarkdownRenderer';
 import RichEditorRenderer from './RichEditorRenderer';
+import AppleIcon from './AppleIcon';
 import { getNodeDisplayDimensions, getCollapsedTitle } from '../utils/nodeHelpers';
 import './Node.css';
 import './NodeShape.css';
@@ -32,6 +33,12 @@ interface NodeProps {
   onContextMenu?: (e: React.MouseEvent) => void;
   onResizeStart?: (e: React.MouseEvent, direction: ResizeDirection) => void;
   onToggleCollapse?: (e: React.MouseEvent) => void;
+  onSwitchToRichEditor?: (nodeId: string) => void;
+  onSwitchToMarkdown?: (nodeId: string) => void;
+  onEditClick?: (nodeId: string) => void;
+  showEditButton?: boolean; // 노드 편집 버튼 표시 여부
+  isEditing?: boolean; // 현재 편집 중인지
+  editorType?: 'text' | 'richeditor' | 'markdown'; // 편집 중인 에디터 타입
 }
 
 // Helper function to get YouTube video ID
@@ -54,8 +61,17 @@ export default function Node({
   onContextMenu,
   onResizeStart,
   onToggleCollapse,
+  onSwitchToRichEditor,
+  onSwitchToMarkdown,
+  onEditClick,
+  showEditButton = true, // 기본값: true (기존 동작 유지)
+  isEditing = false,
+  editorType,
 }: NodeProps) {
   const [showFallback, setShowFallback] = useState(false);
+  
+  // Check if node is in text mode (no contentType or contentType is not 'markdown'/'richeditor')
+  const isTextMode = !node.contentType || (node.contentType !== 'markdown' && node.contentType !== 'richeditor');
 
   // Calculate display dimensions
   const { w: displayWidth, h: displayHeight } = getNodeDisplayDimensions(node);
@@ -84,17 +100,34 @@ export default function Node({
         } ${node.collapsed ? 'collapsed' : ''}`}
         data-shape={node.nodeType || 'rect'}
         onClick={(e) => {
-          e.stopPropagation();
-          if (isConnecting) {
-            onCompleteConnection(e);
-          } else {
-            onSelect(e);
+          // 더블 클릭의 첫 번째 클릭인지 확인 (e.detail === 1)
+          // 더블 클릭의 경우 두 번째 클릭이므로 onClick을 처리하지 않음
+          if (e.detail === 1) {
+            e.stopPropagation();
+            if (isConnecting) {
+              onCompleteConnection(e);
+            } else {
+              onSelect(e);
+            }
           }
         }}
         onDoubleClick={(e) => {
           e.stopPropagation();
+          e.preventDefault();
+          if (import.meta.env.DEV) {
+            console.log('🖱️ Node onDoubleClick event:', node.id, {
+              target: e.target,
+              currentTarget: e.currentTarget,
+              detail: e.detail,
+              timestamp: Date.now()
+            });
+          }
           if (onDoubleClick) {
             onDoubleClick(e);
+          } else {
+            if (import.meta.env.DEV) {
+              console.warn('⚠️ onDoubleClick handler not provided for node:', node.id);
+            }
           }
         }}
         onContextMenu={(e) => {
@@ -138,12 +171,184 @@ export default function Node({
           strokeWidth={isSelected || isConnectionSource ? 2.5 : 2}
         />
 
-        {/* Node label with markdown support */}
-        <foreignObject
-          x={node.x}
-          y={node.y}
-          width={displayWidth}
-          height={displayHeight}
+        {/* Editor Type Label - 인라인 편집 중일 때 표시 */}
+        {isEditing && !node.collapsed && editorType && (
+          <foreignObject
+            x={node.x}
+            y={node.y + 8}
+            width={displayWidth}
+            height={28}
+            pointerEvents="none"
+            className="node-editor-type-label"
+          >
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+                padding: '4px 8px',
+                background: 'rgba(37, 99, 235, 0.1)',
+                borderBottom: '1px solid rgba(37, 99, 235, 0.2)',
+              }}
+              title={
+                editorType === 'markdown' ? 'Markdown Editor' :
+                editorType === 'richeditor' ? 'Rich Editor' :
+                editorType === 'text' ? 'Text Editor' : ''
+              }
+            >
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  color: '#2563eb',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                {editorType === 'markdown' && '📝'}
+                {editorType === 'richeditor' && '✨'}
+                {editorType === 'text' && '📄'}
+                <span>
+                  {editorType === 'markdown' && 'Markdown'}
+                  {editorType === 'richeditor' && 'Rich Editor'}
+                  {editorType === 'text' && 'Text'}
+                </span>
+              </span>
+            </div>
+          </foreignObject>
+        )}
+
+        {/* Edit Button - 표시되는 경우: 노드가 선택되었을 때, showEditButton이 true일 때, 인라인 편집 중이 아닐 때 */}
+        {isSelected && !node.collapsed && onEditClick && showEditButton && !isEditing && (
+          <foreignObject
+            x={node.x + displayWidth - 36}
+            y={node.y + 8}
+            width={32}
+            height={32}
+            pointerEvents="all"
+            className="node-edit-button-container"
+          >
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onEditClick(node.id);
+              }}
+              className="node-edit-button"
+              onMouseDown={(e) => e.stopPropagation()}
+              title="Edit (모달 편집)"
+            >
+              <AppleIcon name="edit" size="small" />
+            </button>
+          </foreignObject>
+        )}
+
+        {/* Node header - Editor mode switcher (only in text mode) */}
+        {isTextMode && isSelected && !node.collapsed && (onSwitchToRichEditor || onSwitchToMarkdown) && (
+          <foreignObject
+            x={node.x}
+            y={node.y + (onEditClick ? 36 : 0)}
+            width={displayWidth}
+            height={28}
+            pointerEvents="all"
+            className="node-header-container"
+          >
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                gap: '4px',
+                padding: '4px 8px',
+                background: 'rgba(255, 255, 255, 0.95)',
+                borderBottom: '1px solid #e5e7eb',
+              }}
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              {onSwitchToMarkdown && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    onSwitchToMarkdown(node.id);
+                  }}
+                  style={{
+                    padding: '2px 8px',
+                    fontSize: '11px',
+                    background: '#f3f4f6',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    color: '#374151',
+                    fontWeight: '500',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                  title="Switch to Markdown Editor"
+                >
+                  <span>📝</span>
+                  <span>Markdown</span>
+                </button>
+              )}
+              {onSwitchToRichEditor && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    onSwitchToRichEditor(node.id);
+                  }}
+                  style={{
+                    padding: '2px 8px',
+                    fontSize: '11px',
+                    background: '#f3f4f6',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    color: '#374151',
+                    fontWeight: '500',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                  title="Switch to Rich Editor"
+                >
+                  <span>✏️</span>
+                  <span>Rich</span>
+                </button>
+              )}
+            </div>
+          </foreignObject>
+        )}
+
+               {/* Node label with markdown support */}
+               <foreignObject
+                 x={node.x}
+                 y={
+                   isEditing && !node.collapsed
+                     ? node.y + 36
+                     : isSelected && !node.collapsed && onEditClick
+                     ? node.y + 36
+                     : isTextMode && isSelected && !node.collapsed
+                     ? node.y + 28
+                     : node.y + 8
+                 }
+                 width={displayWidth}
+                 height={
+                   isEditing && !node.collapsed
+                     ? displayHeight - 36
+                     : isSelected && !node.collapsed && onEditClick
+                     ? displayHeight - 36
+                     : isTextMode && isSelected && !node.collapsed
+                     ? displayHeight - 28
+                     : displayHeight - 8
+                 }
           pointerEvents="none"
           className="node-label-container"
         >
@@ -174,6 +379,27 @@ export default function Node({
                 }}
               >
                 {getCollapsedTitle(node.label)}
+              </div>
+            ) : isTextMode ? (
+              // Text mode: show plain text
+              <div
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: node.textVerticalAlign === 'top' ? 'flex-start' : 
+                             node.textVerticalAlign === 'bottom' ? 'flex-end' : 'center',
+                  justifyContent: node.textAlign === 'left' ? 'flex-start' :
+                                 node.textAlign === 'right' ? 'flex-end' : 'center',
+                  padding: '8px',
+                  fontSize: '14px',
+                  color: '#111827',
+                  textAlign: node.textAlign || 'left',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                }}
+              >
+                {node.label || 'Empty'}
               </div>
             ) : node.contentType === 'markdown' ? (
               // Expanded: show markdown

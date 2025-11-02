@@ -102,6 +102,57 @@
 }
 
 /* ============================================
+   KEYBOARD SHORTCUT
+   ============================================ */
+
+.context-menu-shortcut {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  margin-right: 8px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+.shortcut-separator {
+  color: var(--text-tertiary);
+  margin: 0 2px;
+  font-size: 10px;
+}
+
+.shortcut-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 3px;
+  color: var(--text-secondary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.context-menu-item:hover:not(.disabled) .shortcut-key {
+  background: var(--accent-light);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+/* Longer keys - adjusted automatically by content */
+.shortcut-key {
+  white-space: nowrap;
+}
+
+/* ============================================
    MENU DIVIDER
    ============================================ */
 

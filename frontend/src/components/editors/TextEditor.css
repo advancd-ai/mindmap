@@ -1,0 +1,63 @@
+/* TextEditor - Simple inline text editor */
+
+.text-editor-wrapper {
+  pointer-events: all;
+}
+
+.text-editor-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+}
+
+.text-editor-input,
+.text-editor-textarea {
+  transition: border-color 0.2s ease;
+}
+
+.text-editor-input:focus,
+.text-editor-textarea:focus {
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.text-editor-help {
+  padding: 2px 6px;
+  font-size: 10px;
+  color: #6b7280;
+  text-align: center;
+}
+
+.text-editor-help .help-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.text-editor-help .editor-type-label {
+  font-weight: 600;
+  color: #2563eb;
+  font-size: 10px;
+}
+
+.text-editor-help .separator {
+  color: #9ca3af;
+  margin: 0 1px;
+  font-size: 9px;
+}
+
+.text-editor-help kbd {
+  padding: 1px 4px;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 2px;
+  font-size: 9px;
+  font-family: monospace;
+  color: #374151;
+}
+
