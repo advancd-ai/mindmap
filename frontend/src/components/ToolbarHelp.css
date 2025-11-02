@@ -10,19 +10,19 @@
 
 .help-summary {
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--text-secondary);
-  padding: var(--space-sm) var(--space);
+  padding: 4px 8px;
   background: var(--bg-primary);
   border: 1px solid var(--border-primary);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   transition: var(--transition-fast);
   user-select: none;
   list-style: none;
   display: flex;
   align-items: center;
-  gap: var(--space-xs);
+  gap: 4px;
 }
 
 .help-summary::-webkit-details-marker {

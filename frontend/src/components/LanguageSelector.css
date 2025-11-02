@@ -10,12 +10,12 @@
 .language-selector-button {
   display: flex;
   align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-sm) var(--space);
+  gap: 4px;
+  padding: 4px 8px;
   background: var(--bg-primary);
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-sm);
-  font-size: 14px;
+  font-size: 12px;
   cursor: pointer;
   transition: var(--transition-fast);
 }
@@ -28,11 +28,11 @@
 }
 
 .language-selector-icon {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .language-selector-label {
-  font-size: 18px;
+  font-size: 14px;
 }
 
 /* Dropdown Menu */

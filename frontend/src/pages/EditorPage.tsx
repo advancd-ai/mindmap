@@ -32,6 +32,7 @@ export default function EditorPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshProgress, setRefreshProgress] = useState(0);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [zoom, setZoom] = useState(1.0); // Zoom level (1.0 = 100%)
 
   const map = useMindMapStore((state) => state.map);
   const isDirty = useMindMapStore((state) => state.isDirty);
@@ -404,6 +405,7 @@ export default function EditorPage() {
           isRefreshing={isRefreshing}
           refreshProgress={refreshProgress}
           onSave={handleSaveCallback}
+          onZoomChange={setZoom}
         />
       </div>
 
@@ -415,6 +417,10 @@ export default function EditorPage() {
           </div>
           
           <div className="editor-footer-center">
+            <span className="editor-footer-info">
+              🔍 {Math.round(zoom * 100)}%
+            </span>
+            <span className="editor-footer-separator">·</span>
             <span className="editor-footer-info">
               📊 {map.nodes.length} {t('canvas.nodes')}
             </span>

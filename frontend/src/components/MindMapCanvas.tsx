@@ -36,6 +36,7 @@ interface MindMapCanvasProps {
   isRefreshing?: boolean;
   refreshProgress?: number;
   onSave?: (saveHandler: () => void) => void;
+  onZoomChange?: (zoom: number) => void;
 }
 
 export default function MindMapCanvas({ 
@@ -43,7 +44,8 @@ export default function MindMapCanvas({
   onRefreshToLatest,
   isRefreshing = false,
   refreshProgress = 0,
-  onSave
+  onSave,
+  onZoomChange
 }: MindMapCanvasProps) {
   const { t } = useTranslation();
   
@@ -193,8 +195,17 @@ export default function MindMapCanvas({
       console.log('🔍 Loading saved view state:', map.viewState);
       setZoom(map.viewState.zoom);
       setViewBox(map.viewState.viewBox);
+      // Notify parent of initial zoom level
+      if (onZoomChange) {
+        onZoomChange(map.viewState.zoom);
+      }
+    } else {
+      // Default zoom level if no viewState
+      if (onZoomChange) {
+        onZoomChange(1.0);
+      }
     }
-  }, [map?.id]); // Only when map ID changes, not on every map update
+  }, [map?.id, onZoomChange]); // Only when map ID changes, not on every map update
 
   if (!map) {
     console.warn('⚠️ MindMapCanvas: No map data available');
@@ -281,6 +292,11 @@ export default function MindMapCanvas({
       
       // Update view state in store
       updateViewState({ zoom: newZoom, viewBox: newViewBox });
+      
+      // Notify parent component of zoom change
+      if (onZoomChange) {
+        onZoomChange(newZoom);
+      }
       
       console.log('🔍 Wheel zoom:', (newZoom * 100).toFixed(0) + '%');
     };
