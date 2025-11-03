@@ -252,9 +252,9 @@ export default function MindMapCanvas({
         return;
       }
       
-      const baseWidth = 1200;
-      const baseHeight = 800;
-      
+    const baseWidth = 1200;
+    const baseHeight = 800;
+    
       // Get mouse position in SVG coordinates before zoom
       const pt = svg.createSVGPoint();
       pt.x = e.clientX;
@@ -262,9 +262,9 @@ export default function MindMapCanvas({
       const svgPoint = pt.matrixTransform(svg.getScreenCTM()?.inverse());
       
       // Calculate new viewBox size
-      const newWidth = baseWidth / newZoom;
-      const newHeight = baseHeight / newZoom;
-      
+    const newWidth = baseWidth / newZoom;
+    const newHeight = baseHeight / newZoom;
+    
       // Calculate what percentage of the viewBox the mouse is at
       const currentViewBox = {
         x: parseFloat(svg.getAttribute('viewBox')?.split(' ')[0] || '0'),
@@ -280,18 +280,18 @@ export default function MindMapCanvas({
       const newX = svgPoint.x - newWidth * mouseXPercent;
       const newY = svgPoint.y - newHeight * mouseYPercent;
       
-      const newViewBox = {
+    const newViewBox = {
         x: newX,
         y: newY,
-        width: newWidth,
-        height: newHeight,
-      };
+      width: newWidth,
+      height: newHeight,
+    };
       
       setZoom(newZoom);
       setViewBox(newViewBox);
       
       // Update view state in store
-      updateViewState({ zoom: newZoom, viewBox: newViewBox });
+    updateViewState({ zoom: newZoom, viewBox: newViewBox });
       
       // Notify parent component of zoom change
       if (onZoomChange) {
@@ -419,13 +419,55 @@ export default function MindMapCanvas({
         const imageUrl = result.url;
 
         // Get image dimensions for node size
+        // Use fetch instead of Image to handle CORS and authentication properly
         const imageDimensions = await new Promise<{ width: number; height: number }>((resolve, reject) => {
-          const img = new Image();
-          img.onload = () => {
-            resolve({ width: img.width, height: img.height });
-          };
-          img.onerror = reject;
-          img.src = imageUrl;
+          // Get auth token for image download
+          const auth = localStorage.getItem('auth-storage');
+          let authToken = null;
+          if (auth) {
+            try {
+              const { token } = JSON.parse(auth).state;
+              authToken = token;
+            } catch (e) {
+              console.warn('Failed to parse auth token');
+            }
+          }
+
+          // Prepare headers
+          const headers: HeadersInit = {};
+          if (authToken) {
+            headers.Authorization = `Bearer ${authToken}`;
+          }
+
+          // Fetch image as blob first
+          fetch(imageUrl, {
+            mode: 'cors',
+            credentials: 'omit',
+            headers,
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error(`Failed to fetch image: ${response.status}`);
+              }
+              return response.blob();
+            })
+            .then((blob) => {
+              // Create object URL and load in Image object to get dimensions
+              const objectUrl = URL.createObjectURL(blob);
+              const img = new Image();
+              img.onload = () => {
+                resolve({ width: img.width, height: img.height });
+                URL.revokeObjectURL(objectUrl); // Clean up
+              };
+              img.onerror = () => {
+                URL.revokeObjectURL(objectUrl); // Clean up
+                reject(new Error('Failed to load image'));
+              };
+              img.src = objectUrl;
+            })
+            .catch((err) => {
+              reject(err);
+            });
         });
 
         // Calculate node size (max 600px width or height, maintain aspect ratio)
@@ -485,8 +527,8 @@ export default function MindMapCanvas({
 
   // 모든 선택 및 편집 상태를 초기화하는 함수
   const clearAllSelections = () => {
-    selectNode(null);
-    selectEdge(null);
+      selectNode(null);
+      selectEdge(null);
     setEditingNodeId(null);
     setEditorMode(null);
     setEditingEdgeId(null);
@@ -972,7 +1014,7 @@ export default function MindMapCanvas({
     }
     
     if (import.meta.env.DEV) {
-      console.log('✏️ Editing node:', nodeId);
+    console.log('✏️ Editing node:', nodeId);
     }
     
     const node = map.nodes.find((n) => n.id === nodeId);
@@ -1327,10 +1369,10 @@ export default function MindMapCanvas({
             type: 'node',
             label: nodeLabel,
             onConfirm: () => {
-              deleteNode(nodeId);
-              selectNode(null);
+          deleteNode(nodeId);
+          selectNode(null);
               setDeleteConfirm(null);
-            },
+        },
           });
         },
         shortcut: 'd',
@@ -1407,8 +1449,8 @@ export default function MindMapCanvas({
             isOpen: true,
             type: 'edge',
             onConfirm: () => {
-              deleteEdge(edgeId);
-              selectEdge(null);
+          deleteEdge(edgeId);
+          selectEdge(null);
               setDeleteConfirm(null);
             },
           });
@@ -2200,23 +2242,23 @@ export default function MindMapCanvas({
               );
             } else {
               // 더블 클릭 시 인라인 편집 (NodeEditor 사용)
-              return (
-                <NodeEditor
+          return (
+            <NodeEditor
                   key={`markdown-inline-${editingNodeId}`}
-                  x={editingNode.x}
-                  y={editingNode.y}
-                  width={editingNode.w}
-                  height={editingNode.h}
-                  initialValue={editingNode.label}
-                  textAlign={editingNode.textAlign}
-                  onSave={(newLabel) => handleSaveNodeLabel(editingNodeId, newLabel)}
-                  onCancel={handleCancelEdit}
+              x={editingNode.x}
+              y={editingNode.y}
+              width={editingNode.w}
+              height={editingNode.h}
+              initialValue={editingNode.label}
+              textAlign={editingNode.textAlign}
+              onSave={(newLabel) => handleSaveNodeLabel(editingNodeId, newLabel)}
+              onCancel={handleCancelEdit}
                   onTextAlignChange={(align) => {
                     updateNode(editingNodeId, { textAlign: align });
                   }}
                   editorType="markdown"
-                />
-              );
+            />
+          );
             }
           }
 
@@ -2300,17 +2342,17 @@ export default function MindMapCanvas({
               <div>Uploading...</div>
             </div>
           </foreignObject>
-        )}
+      )}
 
-        {/* Context Menu */}
-        {contextMenu && (
-          <ContextMenu
-            x={contextMenu.x}
-            y={contextMenu.y}
-            items={contextMenu.items}
-            onClose={closeContextMenu}
-          />
-        )}
+      {/* Context Menu */}
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          items={contextMenu.items}
+          onClose={closeContextMenu}
+        />
+      )}
 
       {/* Embed Dialog */}
       {showEmbedDialog && (
