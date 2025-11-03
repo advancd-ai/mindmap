@@ -46,6 +46,12 @@ spec:
             configMapKeyRef:
               name: mindmap-config
               key: FRONTEND_URL
+        - name: API_URL
+          valueFrom:
+            configMapKeyRef:
+              name: mindmap-config
+              key: API_URL
+              optional: true
         - name: CORS_ORIGIN
           valueFrom:
             configMapKeyRef:

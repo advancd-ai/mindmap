@@ -31,6 +31,10 @@ services:
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
       - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://localhost:3000/auth/callback}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      # API_URL: Base URL for image download endpoints (used to construct download URLs)
+      # If not set, will try to detect from request headers (X-Forwarded-Proto, Host)
+      # For production: set to https://your-api-domain.com
+      - API_URL=${API_URL:-}
       - GITHUB_TOKEN=${GITHUB_TOKEN:-}
       - GITHUB_OWNER=${GITHUB_OWNER:-}
       - GITHUB_ORG=${GITHUB_ORG:-}

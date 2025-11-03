@@ -11,7 +11,8 @@ export async function uploadFileToGitHub(
   mapId: string,
   filename: string,
   fileBuffer: Buffer,
-  mimeType: string
+  mimeType: string,
+  requestUrl?: string // Optional: request URL for dynamic protocol detection
 ): Promise<string> {
   const octokit = new Octokit({
     auth: process.env.GITHUB_TOKEN,
@@ -88,7 +89,37 @@ export async function uploadFileToGitHub(
     });
 
     // Return download API URL instead of direct GitHub URL
-    const apiUrl = process.env.API_URL || 'http://localhost:8787';
+    // Priority: requestUrl (from request headers) > API_URL env > FRONTEND_URL env > default
+    let apiUrl = process.env.API_URL || 'http://localhost:8787';
+    
+    // Try to extract from request URL (best for dynamic protocol detection)
+    if (requestUrl) {
+      try {
+        const url = new URL(requestUrl);
+        apiUrl = `${url.protocol}//${url.host}`;
+        console.log(`🔍 Using API URL from request: ${apiUrl}`);
+      } catch (e) {
+        console.warn('⚠️ Could not parse request URL, using environment variable');
+      }
+    }
+    
+    // Fallback: Use FRONTEND_URL if API_URL is not set (for production)
+    if (!process.env.API_URL && !requestUrl) {
+      const frontendUrl = process.env.FRONTEND_URL || process.env.PUBLIC_URL;
+      if (frontendUrl) {
+        try {
+          const url = new URL(frontendUrl);
+          apiUrl = `${url.protocol}//${url.host}`;
+          console.log(`🔍 Using API URL from FRONTEND_URL: ${apiUrl}`);
+        } catch (e) {
+          console.warn('⚠️ Could not parse FRONTEND_URL, using default');
+        }
+      }
+    }
+    
+    // Remove trailing slash if present
+    apiUrl = apiUrl.replace(/\/$/, '');
+    
     const fileUrl = `${apiUrl}/upload/download/${mapId}/${filename}`;
     console.log(`✅ File uploaded to map branch: ${fileUrl}`);
     

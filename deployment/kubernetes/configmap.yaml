@@ -9,6 +9,10 @@ data:
   PORT: "8787"
   REDIS_URL: "redis://redis-service:6379"
   FRONTEND_URL: "http://localhost:3000"
+  # API_URL: Base URL for image download endpoints (used to construct download URLs)
+  # If not set, will try to detect from request headers (X-Forwarded-Proto, Host)
+  # For production: set to https://your-api-domain.com or leave empty for auto-detection
+  API_URL: ""
   CORS_ORIGIN: "http://localhost:3000,https://yourdomain.com"
   DEV_MODE: "false"
   

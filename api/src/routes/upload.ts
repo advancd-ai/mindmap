@@ -71,13 +71,34 @@ upload.post('/', requireAuth(), async (c) => {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+    // Get request URL for dynamic protocol detection (HTTPS in production)
+    // Construct full URL from headers to support reverse proxy scenarios
+    let requestUrl: string | undefined;
+    try {
+      const host = c.req.header('Host') || c.req.header('X-Forwarded-Host');
+      const protocol = c.req.header('X-Forwarded-Proto') || 
+                      (c.req.url && new URL(c.req.url).protocol) || 
+                      'https';
+      
+      if (host) {
+        requestUrl = `${protocol}://${host}`;
+      } else if (c.req.url) {
+        // Fallback: try to parse from full URL
+        const url = new URL(c.req.url);
+        requestUrl = url.origin;
+      }
+    } catch (e) {
+      console.warn('⚠️ Could not construct request URL from headers:', e);
+    }
+    
     // Upload to GitHub (to the specific map's branch)
     const fileUrl = await uploadFileToGitHub(
       user,
       mapId,
       filename,
       buffer,
-      file.type
+      file.type,
+      requestUrl
     );
 
     console.log(`✅ File uploaded: ${filename} to map ${mapId} by user ${user.userId}`);
