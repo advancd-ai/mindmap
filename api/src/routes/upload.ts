@@ -159,11 +159,44 @@ upload.get('/download/:mapId/:filename', async (c) => {
       auth: process.env.GITHUB_TOKEN,
     });
 
-    // For public downloads, we use default repository from environment variables
-    // Files are stored in the same repository structure as maps
-    // TODO: In the future, we could store owner/repo in map metadata for better multi-repo support
-    const owner = process.env.GITHUB_OWNER || 'choonho';
-    const repo = process.env.GITHUB_REPO || 'guest';
+    // Try to get repository info from authenticated user if available
+    let owner: string | undefined;
+    let repo: string | undefined;
+    
+    // Check if user is authenticated (optional auth for download)
+    try {
+      const authHeader = c.req.header('Authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.slice(7);
+        // Try to get user from session cache
+        const { cache } = await import('../lib/redis.js');
+        const cacheKey = `session:${token}`;
+        const userJson = await cache.get(cacheKey);
+        
+        if (userJson) {
+          try {
+            const user = JSON.parse(userJson);
+            const { getGitHubRepoPath } = await import('../utils/github.js');
+            const repoPath = getGitHubRepoPath(user);
+            owner = repoPath.owner;
+            repo = repoPath.repo;
+            console.log(`🔍 Using authenticated user's repository: ${owner}/${repo}`);
+          } catch (e) {
+            console.warn('⚠️ Failed to parse user from session, using default');
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('⚠️ Auth check failed, using default repository');
+    }
+
+    // Fallback to default repository from environment variables
+    if (!owner || !repo) {
+      owner = process.env.GITHUB_OWNER || 'choonho';
+      repo = process.env.GITHUB_REPO || 'guest';
+      console.log(`📥 Using default repository: ${owner}/${repo}`);
+    }
+
     const branchName = `maps/${mapId}`;
     const path = `files/${filename}`;
 
