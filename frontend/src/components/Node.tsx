@@ -221,13 +221,13 @@ export default function Node({
           </foreignObject>
         )}
 
-        {/* Edit Button - 표시되는 경우: 노드가 선택되었을 때, showEditButton이 true일 때, 인라인 편집 중이 아닐 때 */}
+        {/* Edit Button - Overlay 구조: 노드가 선택되었을 때, showEditButton이 true일 때, 인라인 편집 중이 아닐 때 */}
         {isSelected && !node.collapsed && onEditClick && showEditButton && !isEditing && (
           <foreignObject
-            x={node.x + displayWidth - 36}
-            y={node.y + 8}
-            width={32}
-            height={32}
+            x={node.x + displayWidth - 28}
+            y={node.y + 6}
+            width={24}
+            height={24}
             pointerEvents="all"
             className="node-edit-button-container"
           >
@@ -237,7 +237,7 @@ export default function Node({
                 e.preventDefault();
                 onEditClick(node.id);
               }}
-              className="node-edit-button"
+              className="node-edit-button node-edit-button-overlay"
               onMouseDown={(e) => e.stopPropagation()}
               title="Edit (모달 편집)"
             >

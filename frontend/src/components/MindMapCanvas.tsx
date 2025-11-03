@@ -1757,6 +1757,75 @@ export default function MindMapCanvas({
         }
         setEditingNodeId(currentSelectedNodeId);
       }
+      // Enter 키: 선택된 노드 inline 편집 모드 진입 (더블 클릭과 동일)
+      // e.key를 사용하여 Enter 키 감지
+      else if (e.key === 'Enter' && !isTextInputFocused && !isReadOnly) {
+        // 최신 상태를 직접 가져옴 (클로저 문제 해결)
+        const currentState = getCurrentState();
+        const { selectedNodeId: currentSelectedNodeId, map: currentMap } = currentState;
+        // editingNodeId와 editingEdgeId는 컴포넌트 로컬 상태이므로 직접 참조
+        const currentEditingNodeId = editingNodeId;
+        const currentEditingEdgeId = editingEdgeId;
+        
+        // 디버깅: 조건 확인
+        if (import.meta.env.DEV) {
+          console.log('⌨️ Enter key pressed for inline edit', {
+            selectedNodeId: currentSelectedNodeId,
+            editingNodeId: currentEditingNodeId,
+            editingEdgeId: currentEditingEdgeId,
+            hasMap: !!currentMap,
+            isTextInputFocused,
+            isReadOnly
+          });
+        }
+        
+        // 조기 반환으로 중첩 제거
+        if (!currentSelectedNodeId) {
+          return;
+        }
+        
+        if (currentEditingNodeId || currentEditingEdgeId) {
+          return;
+        }
+        
+        if (!currentMap) {
+          return;
+        }
+        
+        e.preventDefault();
+        e.stopPropagation(); // 이벤트 전파 방지
+        
+        const node = currentMap.nodes.find((n) => n.id === currentSelectedNodeId);
+        if (!node) {
+          console.warn('⚠️ Node not found:', currentSelectedNodeId);
+          useMindMapStore.getState().selectNode(null);
+          return;
+        }
+        
+        // Readonly 모드이거나 노드가 접혀있으면 편집 불가
+        if (isReadOnly) {
+          if (import.meta.env.DEV) {
+            console.log('⏸️ Readonly mode, cannot edit node');
+          }
+          return;
+        }
+        
+        if (node.collapsed) {
+          if (import.meta.env.DEV) {
+            console.log('⏸️ Node is collapsed, cannot edit');
+          }
+          return;
+        }
+        
+        // Enter 키는 inline 편집 모드로 진입 (더블 클릭과 동일)
+        // editorMode를 null로 설정하면 현재 contentType 기반으로 인라인 편집됨
+        if (import.meta.env.DEV) {
+          console.log('⌨️ Starting inline edit via Enter key:', currentSelectedNodeId, 'contentType:', node.contentType);
+        }
+        
+        setEditorMode(null); // 명시적 모드 없음 = 현재 contentType 기반 인라인 편집
+        setEditingNodeId(currentSelectedNodeId);
+      }
       // 'a' 키: 노드 추가
       // e.code를 사용하여 물리적 키 위치를 감지 (한글/영어 구분 없음)
       else if ((e.code === 'KeyA' || e.key.toLowerCase() === 'a') && !isTextInputFocused && !isReadOnly) {
