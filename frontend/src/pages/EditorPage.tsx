@@ -39,10 +39,15 @@ export default function EditorPage() {
   const setMap = useMindMapStore((state) => state.setMap);
   const reset = useMindMapStore((state) => state.reset);
   const canvasSaveHandlerRef = useRef<(() => void) | null>(null);
+  const canvasForceSaveHandlerRef = useRef<(() => void) | null>(null);
+  const hasAutoSavedRef = useRef<string | null>(null); // Track which map ID has been auto-saved
 
   // Stable callback for onSave prop (must be outside JSX to avoid hook order issues)
-  const handleSaveCallback = useCallback((saveHandler: () => void) => {
+  const handleSaveCallback = useCallback((saveHandler: () => void, forceSaveHandler?: () => void) => {
     canvasSaveHandlerRef.current = saveHandler;
+    if (forceSaveHandler) {
+      canvasForceSaveHandlerRef.current = forceSaveHandler;
+    }
   }, []);
 
   const user = useAuthStore((state) => state.user);
@@ -266,6 +271,48 @@ export default function EditorPage() {
       navigate('/dashboard');
     }
   }, [mapId, map, navigate]);
+
+  // Auto-save new map with root node on initial load
+  useEffect(() => {
+    if (isNewMap && map && map.nodes.length === 1) {
+      // Check if this map has already been auto-saved
+      if (hasAutoSavedRef.current === map.id) {
+        return; // Already auto-saved this map
+      }
+      
+      // Check if this is the initial load (not after user edits)
+      // Only auto-save if map has exactly 1 node (root node) and no edges
+      if (map.edges.length === 0) {
+        console.log('💾 Auto-saving new map with root node (force save, no dialog)...', {
+          mapId: map.id,
+          nodeCount: map.nodes.length,
+          edgeCount: map.edges.length,
+          isDirty,
+          hasSaveHandler: !!canvasSaveHandlerRef.current,
+          hasForceSaveHandler: !!canvasForceSaveHandlerRef.current
+        });
+        
+        // Wait for force save handler to be ready, then auto-save without dialog
+        const checkAndSave = () => {
+          // Prefer force save handler (no dialog), fallback to regular save handler
+          const saveHandler = canvasForceSaveHandlerRef.current || canvasSaveHandlerRef.current;
+          
+          if (saveHandler && hasAutoSavedRef.current !== map.id) {
+            hasAutoSavedRef.current = map.id; // Mark this map as auto-saved
+            console.log('✅ Auto-save triggered for new map (force save:', !!canvasForceSaveHandlerRef.current, ')');
+            saveHandler();
+          } else if (!saveHandler) {
+            // Save handler not ready yet, try again after a short delay
+            setTimeout(checkAndSave, 200);
+          }
+        };
+        
+        // Start checking after a small delay to ensure canvas is initialized
+        const timer = setTimeout(checkAndSave, 300);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isNewMap, map, isDirty]);
 
 
   const handleBack = () => {

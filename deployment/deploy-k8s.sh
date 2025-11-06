@@ -100,3 +100,4 @@ echo "  - Port forward (testing): kubectl port-forward svc/mindmap-frontend-serv
 
 
 
+

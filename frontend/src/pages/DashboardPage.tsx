@@ -81,17 +81,30 @@ export default function DashboardPage() {
   const handleConfirmCreate = (title: string, tags: string[]) => {
     console.log('🎨 Creating new map:', { title, tags });
     
-    // Create new map with user-provided title and tags
+    // Create root node at center of default viewBox (1200x800)
+    const defaultViewBox = { x: 0, y: 0, width: 1200, height: 800 };
+    const rootNode = {
+      id: `n_${Date.now()}`,
+      label: title || 'Root Node',
+      x: defaultViewBox.x + defaultViewBox.width / 2 - 75, // Center horizontally (150/2 = 75)
+      y: defaultViewBox.y + defaultViewBox.height / 2 - 40, // Center vertically (80/2 = 40)
+      w: 150,
+      h: 80,
+      contentType: 'richeditor' as const,
+    };
+    
+    // Create new map with user-provided title, tags, and root node
     const newMap = {
       id: `map_${Date.now()}`,
       title: title,
       tags: tags,
-      nodes: [],
+      nodes: [rootNode],
       edges: [],
       updatedAt: new Date().toISOString(),
       version: 1,
     };
     
+    console.log('✅ Created new map with root node:', rootNode);
     setMap(newMap);
     setShowCreateDialog(false);
     navigate('/editor');

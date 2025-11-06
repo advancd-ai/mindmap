@@ -35,7 +35,7 @@ interface MindMapCanvasProps {
   onRefreshToLatest?: () => void;
   isRefreshing?: boolean;
   refreshProgress?: number;
-  onSave?: (saveHandler: () => void) => void;
+  onSave?: (saveHandler: () => void, forceSaveHandler?: () => void) => void;
   onZoomChange?: (zoom: number) => void;
 }
 
@@ -165,11 +165,17 @@ export default function MindMapCanvas({
     setShowJsonPreview(true);
   }, []);
 
+  // Force save without showing preview dialog
+  const handleForceSave = useCallback(() => {
+    console.log('💾 Force saving (skipping preview dialog)...');
+    saveMutation.mutate();
+  }, [saveMutation]);
+
   // Expose save handler to parent component
   // Only call onSave when it changes (not on every render)
   useEffect(() => {
     if (onSave) {
-      onSave(handleSave);
+      onSave(handleSave, handleForceSave);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onSave]); // Only depend on onSave, not handleSave (which is stable via useCallback)

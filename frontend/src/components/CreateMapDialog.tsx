@@ -57,7 +57,7 @@ export default function CreateMapDialog({ onConfirm, onCancel }: CreateMapDialog
         {/* Header with Gradient */}
         <div className="create-map-header">
           <div className="header-icon-wrapper">
-            <div className="header-icon">🧠</div>
+            <div className="header-icon">🌳</div>
           </div>
           <h2 className="create-map-title">{t('createMapDialog.title')}</h2>
           <p className="create-map-subtitle">
