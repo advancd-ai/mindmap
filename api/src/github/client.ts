@@ -834,6 +834,8 @@ export class GitHubClient {
     
     const branchName = `${BRANCH_PREFIX}${id}`;
 
+    let branchDeleted = false;
+
     try {
       // ==========================================
       // STEP 1: Delete the branch
@@ -844,30 +846,41 @@ export class GitHubClient {
         ref: `heads/${branchName}`,
       });
 
+      branchDeleted = true;
       console.log(`✅ Deleted branch ${branchName}`);
-
-      // ==========================================
-      // STEP 2: Remove from index.json in main branch
-      // ==========================================
-      console.log(`📋 Removing map from index.json`);
+    } catch (error: any) {
+      if (error.status === 422) {
+        throw new Error(`Cannot delete branch ${branchName}: it may be the default branch`);
+      }
+      if (error.status === 404) {
+        console.warn(`⚠️ Branch ${branchName} not found. Proceeding to clean up index.`);
+      } else {
+        throw error;
+      }
+    }
+    
+    // ==========================================
+    // STEP 2: Remove from index.json in main branch
+    // ==========================================
+    console.log(`📋 Removing map from index.json`);
+    
+    try {
+      const { data: indexFile } = await this.octokit.repos.getContent({
+        owner: this.owner,
+        repo: this.repo,
+        path: 'maps/index.json',
+        ref: 'main',
+      });
       
-      try {
-        const { data: indexFile } = await this.octokit.repos.getContent({
-          owner: this.owner,
-          repo: this.repo,
-          path: 'maps/index.json',
-          ref: 'main',
-        });
+      if ('content' in indexFile) {
+        const content = Buffer.from(indexFile.content, 'base64').toString('utf-8');
+        const currentIndex: Index = JSON.parse(content);
         
-        if ('content' in indexFile) {
-          const content = Buffer.from(indexFile.content, 'base64').toString('utf-8');
-          const currentIndex: Index = JSON.parse(content);
-          
-          // Remove the map from index
-          currentIndex.items = currentIndex.items.filter(item => item.id !== id);
+        const originalLength = currentIndex.items.length;
+        currentIndex.items = currentIndex.items.filter(item => item.id !== id);
+        if (currentIndex.items.length !== originalLength) {
           currentIndex.generatedAt = new Date().toISOString();
           
-          // Update index.json
           await this.octokit.repos.createOrUpdateFileContents({
             owner: this.owner,
             repo: this.repo,
@@ -879,25 +892,20 @@ export class GitHubClient {
           });
           
           console.log(`✅ Map removed from index: ${id}`);
+        } else {
+          console.warn(`⚠️ Map ${id} not found in index.json`);
         }
-      } catch (error: any) {
-        console.warn(`⚠️ Failed to update index: ${error.message}`);
-        // Continue even if index update fails
       }
-
-      return {
-        branch: branchName,
-        mapId: id,
-      };
     } catch (error: any) {
-      if (error.status === 422) {
-        throw new Error(`Cannot delete branch ${branchName}: it may be the default branch`);
-      }
-      if (error.status === 404) {
-        throw new Error(`Map ${id} not found in branch ${branchName}`);
-      }
-      throw error;
+      console.warn(`⚠️ Failed to update index during delete: ${error.message}`);
+      // Continue even if index update fails
     }
+
+    return {
+      branch: branchName,
+      mapId: id,
+      branchDeleted: branchDeleted,
+    };
   }
 
   /**

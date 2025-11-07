@@ -133,6 +133,7 @@ export interface PRTransaction {
   prNumber?: number; // Deprecated: No longer used with branch-based storage
   branch: string;
   mapId?: string;
+  branchDeleted?: boolean;
 }
 
 export interface ShareInfo {
