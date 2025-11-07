@@ -18,6 +18,8 @@ interface JsonPreviewDialogProps {
 export default function JsonPreviewDialog({ data, changeLog, onClose, onConfirm }: JsonPreviewDialogProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   
   const jsonString = JSON.stringify(data, null, 2);
 
@@ -55,8 +57,16 @@ export default function JsonPreviewDialog({ data, changeLog, onClose, onConfirm 
         {/* Actions - Moved to top, always visible */}
         {onConfirm && (
           <div className="json-preview-actions-top">
-            <button className="button" onClick={onConfirm}>
-              Confirm & Save
+            <button
+              className="button"
+              onClick={() => {
+                if (isConfirming) return;
+                setIsConfirming(true);
+                onConfirm?.();
+              }}
+              disabled={isConfirming}
+            >
+              Save
             </button>
             <button className="button button-secondary" onClick={onClose}>
               Cancel
@@ -116,13 +126,22 @@ export default function JsonPreviewDialog({ data, changeLog, onClose, onConfirm 
             <span>Edges: {data.edges?.length || 0}</span>
             <span>Size: {(jsonString.length / 1024).toFixed(1)} KB</span>
           </div>
+          <button
+            className="button button-secondary"
+            onClick={() => setIsExpanded(prev => !prev)}
+            style={{ marginLeft: 'auto' }}
+          >
+            {isExpanded ? '▾ Hide Details' : '▸ Show Details'}
+          </button>
         </div>
 
-        <div className="json-preview-content">
-          <pre className="json-preview-code">
-            <code>{jsonString}</code>
-          </pre>
-        </div>
+        {isExpanded && (
+          <div className="json-preview-content">
+            <pre className="json-preview-code">
+              <code>{jsonString}</code>
+            </pre>
+          </div>
+        )}
 
         {/* Bottom actions - only Cancel if no onConfirm */}
         {!onConfirm && (

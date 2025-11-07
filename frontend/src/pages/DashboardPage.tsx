@@ -15,6 +15,7 @@ import EditMapDialog from '../components/EditMapDialog';
 import Toast, { type ToastType } from '../components/Toast';
 import ProgressIndicator from '../components/ProgressIndicator';
 import ShareStatusBadge from '../components/ShareStatusBadge';
+import DeleteConfirmDialog from '../components/DeleteConfirmDialog';
 import './DashboardPage.css';
 
 export default function DashboardPage() {
@@ -29,6 +30,7 @@ export default function DashboardPage() {
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [showProgress, setShowProgress] = useState(false);
   const [progressSteps, setProgressSteps] = useState<Array<{ label: string; status: 'pending' | 'active' | 'completed' | 'error' }>>([]);
+  const [mapToDelete, setMapToDelete] = useState<MapListItem | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const user = useAuthStore((state) => state.user);
   const isGuest = useAuthStore((state) => state.isGuest);
@@ -128,13 +130,28 @@ export default function DashboardPage() {
     },
   });
 
-  const handleDeleteMap = (e: React.MouseEvent, mapId: string, mapTitle: string) => {
-    e.stopPropagation(); // Prevent card click
-    
-    if (confirm(`Are you sure you want to delete "${mapTitle}"?\n\nThis will delete the map branch and remove it from the index.`)) {
-      console.log('🗑️ Deleting map:', mapId);
-      deleteMutation.mutate(mapId);
+  const isDeletePending = deleteMutation.status === 'pending';
+
+  const handleDeleteMap = (e: React.MouseEvent, map: MapListItem) => {
+    e.stopPropagation();
+    setMapToDelete(map);
+  };
+
+  const handleConfirmDeleteMap = () => {
+    if (!mapToDelete) return;
+    console.log('🗑️ Deleting map:', mapToDelete.id);
+    deleteMutation.mutate(mapToDelete.id, {
+      onSettled: () => {
+        setMapToDelete(null);
+      },
+    });
+  };
+
+  const handleCancelDeleteMap = () => {
+    if (isDeletePending) {
+      return;
     }
+    setMapToDelete(null);
   };
 
   // Edit mutation
@@ -358,7 +375,7 @@ export default function DashboardPage() {
                 {/* Delete Button */}
                 <button
                   className="map-delete-btn"
-                  onClick={(e) => handleDeleteMap(e, map.id, map.title)}
+                  onClick={(e) => handleDeleteMap(e, map)}
                   title={`Delete ${map.title}`}
                 >
                   🗑️
@@ -439,6 +456,22 @@ export default function DashboardPage() {
           message={t('dashboard.updatingMap')}
         />
       )}
+
+      {/* Delete Map Dialog */}
+      <DeleteConfirmDialog
+        isOpen={!!mapToDelete}
+        type="map"
+        label={mapToDelete?.title}
+        description={mapToDelete ? t('deleteDialog.mapDescription', { title: mapToDelete.title }) : undefined}
+        stats={mapToDelete ? [
+          { icon: '📊', label: t('deleteDialog.mapInfoNodes'), value: String(mapToDelete.nodeCount ?? 0) },
+          { icon: '🔗', label: t('deleteDialog.mapInfoEdges'), value: String(mapToDelete.edgeCount ?? 0) },
+          { icon: '📅', label: t('deleteDialog.mapInfoUpdated'), value: new Date(mapToDelete.updatedAt).toLocaleString(i18n.language) },
+        ] : undefined}
+        onConfirm={handleConfirmDeleteMap}
+        onCancel={handleCancelDeleteMap}
+        isLoading={isDeletePending}
+      />
 
       {/* Toast Notification */}
       {toast && (

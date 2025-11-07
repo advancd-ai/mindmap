@@ -1,22 +1,35 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import AppleIcon from './AppleIcon';
 import './DeleteConfirmDialog.css';
 
 interface DeleteConfirmDialogProps {
   isOpen: boolean;
-  type: 'node' | 'edge';
+  type: 'node' | 'edge' | 'map';
   label?: string;
+  description?: string;
+  stats?: Array<{ label: string; value: string; icon?: string }>;
   onConfirm: () => void;
   onCancel: () => void;
+  isLoading?: boolean;
+  confirmLabel?: string;
+  cancelLabel?: string;
 }
 
 export default function DeleteConfirmDialog({
   isOpen,
   type,
+  label,
+  description,
+  stats,
   onConfirm,
   onCancel,
+  isLoading = false,
+  confirmLabel,
+  cancelLabel,
 }: DeleteConfirmDialogProps) {
+  const { t } = useTranslation();
   const dialogRef = useRef<HTMLDivElement>(null);
   const confirmButtonRef = useRef<HTMLButtonElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
@@ -94,7 +107,25 @@ export default function DeleteConfirmDialog({
 
   if (!isOpen) return null;
 
-  const title = type === 'node' ? '노드 삭제' : '엣지 삭제';
+  const titleMap: Record<'node' | 'edge' | 'map', string> = {
+    node: t('deleteDialog.nodeTitle', '노드 삭제'),
+    edge: t('deleteDialog.edgeTitle', '엣지 삭제'),
+    map: t('deleteDialog.mapTitle', '마인드맵 삭제'),
+  };
+
+  const defaultDescriptions: Record<'node' | 'edge' | 'map', string> = {
+    node: t('deleteDialog.nodeDescription', '선택한 노드와 연결된 엣지가 삭제됩니다.'),
+    edge: t('deleteDialog.edgeDescription', '선택한 연결이 삭제됩니다.'),
+    map: t('deleteDialog.mapDescription', {
+      title: label || t('deleteDialog.mapTitle', '마인드맵 삭제'),
+      defaultValue: '이 마인드맵을 삭제하면 브랜치와 기록이 모두 삭제됩니다. 이 작업은 되돌릴 수 없습니다.',
+    }),
+  };
+
+  const dialogTitle = titleMap[type];
+  const dialogDescription = description || defaultDescriptions[type];
+  const cancelText = cancelLabel || t('deleteDialog.cancel', '취소');
+  const confirmText = confirmLabel || t('deleteDialog.confirm', '삭제');
 
   return createPortal(
     <div className="delete-confirm-overlay" onClick={onCancel}>
@@ -103,31 +134,69 @@ export default function DeleteConfirmDialog({
         onClick={(e) => e.stopPropagation()}
         ref={dialogRef}
         role="dialog"
-        aria-label={title}
+        aria-label={dialogTitle}
       >
-        {/* Actions */}
+        <div className="delete-confirm-body">
+          <div className="delete-confirm-icon">
+            <AppleIcon name="delete" size="large" />
+          </div>
+          <div className="delete-confirm-message">
+            <h3 className="delete-confirm-title">{dialogTitle}</h3>
+            {label && type === 'map' && (
+              <p className="delete-confirm-label">{label}</p>
+            )}
+            <p className="delete-confirm-description">{dialogDescription}</p>
+            {stats && stats.length > 0 && (
+              <div className="delete-confirm-stats">
+                {stats.map((item, index) => (
+                  <div key={index} className="delete-confirm-stat">
+                    {item.icon && <span className="delete-confirm-stat-icon">{item.icon}</span>}
+                    <span className="delete-confirm-stat-label">{item.label}</span>
+                    <span className="delete-confirm-stat-value">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="delete-confirm-actions">
           <button
             ref={cancelButtonRef}
-            onClick={onCancel}
+            onClick={() => {
+              if (isLoading) return;
+              onCancel();
+            }}
             className="button button-secondary button-large"
             type="button"
           >
-            취소
+            {cancelText}
           </button>
           <button
             ref={confirmButtonRef}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
+              if (isLoading) return;
               onConfirm();
             }}
-            className="button button-danger button-large"
+            className={`button button-danger button-large${isLoading ? ' loading' : ''}`}
             type="button"
             autoFocus
+            disabled={isLoading}
+            aria-busy={isLoading}
           >
-            <AppleIcon name="delete" size="small" />
-            삭제
+            {isLoading ? (
+              <span className="delete-confirm-loading">
+                <AppleIcon name="refresh" size="small" className="spin" />
+                {confirmText}
+              </span>
+            ) : (
+              <>
+                <AppleIcon name="delete" size="small" />
+                {confirmText}
+              </>
+            )}
           </button>
         </div>
       </div>

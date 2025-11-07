@@ -43,10 +43,23 @@
     "updateError": "마인드맵 업데이트에 실패했습니다. 다시 시도해주세요.",
     "deleteError": "마인드맵 삭제에 실패했습니다. 다시 시도해주세요."
   },
+  "deleteDialog": {
+    "nodeTitle": "노드 삭제",
+    "nodeDescription": "선택한 노드와 연결된 엣지가 삭제됩니다.",
+    "edgeTitle": "엣지 삭제",
+    "edgeDescription": "선택한 연결이 삭제됩니다.",
+    "mapTitle": "마인드맵 삭제",
+    "mapDescription": "\"{{title}}\" 마인드맵을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+    "mapInfoNodes": "노드",
+    "mapInfoEdges": "엣지",
+    "mapInfoUpdated": "마지막 수정",
+    "cancel": "취소",
+    "confirm": "삭제"
+  },
   "progress": {
     "preparing": "업데이트 준비 중...",
     "updating": "메타데이터 업데이트 중...",
-    "refreshing": "대시보드 새로고침 중..."
+    "saving": "마인드맵 저장 중..."
   },
   "editor": {
     "back": "← Dashboard",
@@ -56,7 +69,6 @@
     "editTitle": "제목 편집",
     "editTitlePrompt": "새 제목을 입력하세요:",
     "save": "저장",
-    "saving": "저장 중...",
     "readonly": "읽기 전용",
     "readonlySubtitle": "이전 버전을 보고 있습니다",
     "refreshToLatest": "최신으로 새로고침",
@@ -164,7 +176,9 @@
     "edges": "엣지",
     "size": "크기",
     "cancel": "취소",
-    "confirmSave": "확인 및 저장"
+    "confirmSave": "저장",
+    "changeLogTitle": "이번 저장의 변경 사항:",
+    "noChanges": "변경 사항이 없습니다"
   },
   "help": {
     "title": "ℹ️ 도움말",
@@ -232,10 +246,6 @@
     "custom": "사용자 지정 색상",
     "apply": "적용",
     "cancel": "취소"
-  },
-  "jsonPreview": {
-    "changeLogTitle": "이번 저장의 변경사항:",
-    "noChanges": "추적된 변경사항 없음"
   },
   "versionHistory": {
     "title": "버전 히스토리",

@@ -43,10 +43,23 @@
     "updateError": "Failed to update mind map. Please try again.",
     "deleteError": "Failed to delete mind map. Please try again."
   },
+  "deleteDialog": {
+    "nodeTitle": "Delete Node",
+    "nodeDescription": "The selected node and its connections will be removed.",
+    "edgeTitle": "Delete Connection",
+    "edgeDescription": "The connection between nodes will be removed.",
+    "mapTitle": "Delete Mind Map",
+    "mapDescription": "Are you sure you want to delete \"{{title}}\"? This action permanently removes its branch and history.",
+    "mapInfoNodes": "Nodes",
+    "mapInfoEdges": "Edges",
+    "mapInfoUpdated": "Last updated",
+    "cancel": "Cancel",
+    "confirm": "Delete"
+  },
   "progress": {
     "preparing": "Preparing update...",
     "updating": "Updating metadata...",
-    "refreshing": "Refreshing dashboard..."
+    "saving": "Saving mind map..."
   },
   "editor": {
     "back": "← Dashboard",
@@ -56,7 +69,6 @@
     "editTitle": "Edit title",
     "editTitlePrompt": "Enter new title:",
     "save": "Save",
-    "saving": "Saving...",
     "readonly": "Read Only",
     "readonlySubtitle": "You are viewing an older version",
     "refreshToLatest": "Refresh to Latest",
@@ -164,7 +176,9 @@
     "edges": "Edges",
     "size": "Size",
     "cancel": "Cancel",
-    "confirmSave": "Confirm & Save"
+    "confirmSave": "Save",
+    "changeLogTitle": "Changes in this save:",
+    "noChanges": "No changes tracked"
   },
   "help": {
     "title": "ℹ️ Help",
@@ -232,10 +246,6 @@
     "custom": "Custom Color",
     "apply": "Apply",
     "cancel": "Cancel"
-  },
-  "jsonPreview": {
-    "changeLogTitle": "Changes in this save:",
-    "noChanges": "No changes tracked"
   },
   "versionHistory": {
     "title": "Version History",

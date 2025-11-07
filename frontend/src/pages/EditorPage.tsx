@@ -198,7 +198,8 @@ export default function EditorPage() {
             clearInterval(progressInterval);
             return prev;
           }
-          return prev + Math.random() * 10;
+          const next = prev + Math.random() * 10;
+          return Math.min(90, Math.max(prev, next));
         });
       }, 300);
 
@@ -209,7 +210,10 @@ export default function EditorPage() {
         (mapId) => fetchMapHistory(mapId), // No progress callback for polling
         (attempt, latestVersion, nextDelay) => {
           console.log(`⏳ Attempt ${attempt}: latest version ${latestVersion}, next check in ${nextDelay}ms`);
-          setRefreshProgress(Math.min(90, attempt * 10));
+          setRefreshProgress((prev) => {
+            const candidate = Math.min(90, attempt * 10);
+            return Math.max(prev, candidate);
+          });
         }
       );
 
@@ -247,7 +251,6 @@ export default function EditorPage() {
     } finally {
       setTimeout(() => {
         setIsRefreshing(false);
-        setRefreshProgress(0);
       }, 500);
     }
   };

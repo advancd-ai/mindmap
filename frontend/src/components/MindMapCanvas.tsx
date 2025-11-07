@@ -2296,19 +2296,19 @@ export default function MindMapCanvas({
           </div>
         )}
         {isRefreshing && (
-          <div className="refresh-overlay">
-            <div className="refresh-progress-container">
-              <div className="refresh-progress-header">
-                <span className="refresh-icon">🔄</span>
-                <span className="refresh-title">{t('editor.refreshing')}</span>
+          <div className="save-overlay">
+            <div className="save-progress-container">
+              <div className="save-progress-header">
+                <span className="save-icon">🔄</span>
+                <span className="save-title">{t('editor.saving')}</span>
               </div>
-              <div className="refresh-progress-bar">
+              <div className="save-progress-bar">
                 <div 
-                  className="refresh-progress-fill" 
+                  className="save-progress-fill" 
                   style={{ width: `${refreshProgress}%` }}
                 />
               </div>
-              <div className="refresh-progress-text">
+              <div className="save-progress-text">
                 {Math.round(refreshProgress)}%
               </div>
             </div>
