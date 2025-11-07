@@ -59,7 +59,7 @@
   "progress": {
     "preparing": "Preparing update...",
     "updating": "Updating metadata...",
-    "saving": "Saving mind map..."
+    "saving": "Saving..."
   },
   "editor": {
     "back": "← Dashboard",
@@ -69,6 +69,7 @@
     "editTitle": "Edit title",
     "editTitlePrompt": "Enter new title:",
     "save": "Save",
+    "saving": "Saving...",
     "readonly": "Read Only",
     "readonlySubtitle": "You are viewing an older version",
     "refreshToLatest": "Refresh to Latest",
@@ -178,7 +179,13 @@
     "cancel": "Cancel",
     "confirmSave": "Save",
     "changeLogTitle": "Changes in this save:",
-    "noChanges": "No changes tracked"
+    "noChanges": "No changes tracked",
+    "summaryTitle": "Save Summary",
+    "placeholder": "Show details to inspect JSON payload",
+    "hideDetails": "Hide Details",
+    "showDetails": "Show Details",
+    "hideHistory": "Hide History",
+    "showHistory": "Show History"
   },
   "help": {
     "title": "ℹ️ Help",

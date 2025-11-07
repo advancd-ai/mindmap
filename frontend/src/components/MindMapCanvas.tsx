@@ -120,6 +120,8 @@ export default function MindMapCanvas({
   const setDirty = useMindMapStore((state) => state.setDirty);
   const getChangeLog = useMindMapStore((state) => state.getChangeLog);
   const clearChangeLog = useMindMapStore((state) => state.clearChangeLog);
+  const isSaving = useMindMapStore((state) => state.isSaving);
+  const setIsSaving = useMindMapStore((state) => state.setIsSaving);
 
   // Save mutation
   const saveMutation = useMutation({
@@ -147,6 +149,7 @@ export default function MindMapCanvas({
           onRefreshToLatest();
         }, 500); // 더 빠른 refresh (optimistic update로 인해)
       }
+      setIsSaving(false);
     },
     onError: (error) => {
       console.error('Save error:', error);
@@ -157,13 +160,23 @@ export default function MindMapCanvas({
         optimisticVersionManager.failVersionUpdate(map.id);
         console.log(`❌ Optimistic version update failed for map ${map.id}`);
       }
+      setIsSaving(false);
     },
   });
 
   // Use useCallback to stabilize handleSave function
   const handleSave = useCallback(() => {
-    setShowJsonPreview(true);
-  }, []);
+    if (isSaving) {
+      if (import.meta.env.DEV) {
+        console.log('⏳ Save already in progress, ignoring duplicate request');
+      }
+      return;
+    }
+
+    console.log('💾 Saving without preview dialog...');
+    setIsSaving(true);
+    saveMutation.mutate();
+  }, [isSaving, saveMutation, setIsSaving]);
 
   // Force save without showing preview dialog
   const handleForceSave = useCallback(() => {

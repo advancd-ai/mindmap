@@ -72,6 +72,7 @@ interface MindMapState {
   selectedNodeId: string | null;
   selectedEdgeId: string | null;
   isDirty: boolean;
+  isSaving: boolean;
   changeLog: string[];
   
   // Actions
@@ -87,6 +88,7 @@ interface MindMapState {
   selectEdge: (id: string | null) => void;
   updateViewState: (viewState: ViewState) => void;
   setDirty: (dirty: boolean) => void;
+  setIsSaving: (saving: boolean) => void;
   getChangeLog: () => string[];
   clearChangeLog: () => void;
   reset: () => void;
@@ -97,6 +99,7 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
   selectedNodeId: null,
   selectedEdgeId: null,
   isDirty: false,
+  isSaving: false,
   changeLog: [],
 
   setMap: (map) => {
@@ -246,6 +249,7 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
     })),
 
   setDirty: (dirty) => set({ isDirty: dirty }),
+  setIsSaving: (saving) => set({ isSaving: saving }),
 
   getChangeLog: () => get().changeLog,
 

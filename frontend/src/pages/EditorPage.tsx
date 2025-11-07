@@ -35,8 +35,9 @@ export default function EditorPage() {
   const [zoom, setZoom] = useState(1.0); // Zoom level (1.0 = 100%)
 
   const map = useMindMapStore((state) => state.map);
-  const isDirty = useMindMapStore((state) => state.isDirty);
   const setMap = useMindMapStore((state) => state.setMap);
+  const isDirty = useMindMapStore((state) => state.isDirty);
+  const isSaving = useMindMapStore((state) => state.isSaving);
   const reset = useMindMapStore((state) => state.reset);
   const canvasSaveHandlerRef = useRef<(() => void) | null>(null);
   const canvasForceSaveHandlerRef = useRef<(() => void) | null>(null);
@@ -435,12 +436,16 @@ export default function EditorPage() {
             )}
             {(isNewMap || isLatestVersion) && (
               <button
-                className="button button-primary save-button"
-                onClick={() => canvasSaveHandlerRef.current?.()}
-                disabled={!isDirty || !canvasSaveHandlerRef.current}
+                className={`button button-primary save-button${isSaving ? ' saving' : ''}`}
+                onClick={() => {
+                  if (!isSaving) {
+                    canvasSaveHandlerRef.current?.();
+                  }
+                }}
+                disabled={!isDirty || !canvasSaveHandlerRef.current || isSaving}
                 title={!canvasSaveHandlerRef.current ? "Save handler not ready" : "Save mindmap"}
               >
-                💾 {t('editor.save')}
+                💾 {isSaving ? t('editor.saving') : t('editor.save')}
               </button>
             )}
             {isDirty && <span className="unsaved-indicator">{t('editor.unsavedChanges')}</span>}
