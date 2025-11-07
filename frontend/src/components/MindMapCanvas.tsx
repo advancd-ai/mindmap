@@ -277,9 +277,9 @@ export default function MindMapCanvas({
         return;
       }
       
-    const baseWidth = 1200;
-    const baseHeight = 800;
-    
+      const baseWidth = 1200;
+      const baseHeight = 800;
+      
       // Get mouse position in SVG coordinates before zoom
       const pt = svg.createSVGPoint();
       pt.x = e.clientX;
@@ -287,9 +287,9 @@ export default function MindMapCanvas({
       const svgPoint = pt.matrixTransform(svg.getScreenCTM()?.inverse());
       
       // Calculate new viewBox size
-    const newWidth = baseWidth / newZoom;
-    const newHeight = baseHeight / newZoom;
-    
+      const newWidth = baseWidth / newZoom;
+      const newHeight = baseHeight / newZoom;
+      
       // Calculate what percentage of the viewBox the mouse is at
       const currentViewBox = {
         x: parseFloat(svg.getAttribute('viewBox')?.split(' ')[0] || '0'),
@@ -308,8 +308,8 @@ export default function MindMapCanvas({
     const newViewBox = {
         x: newX,
         y: newY,
-      width: newWidth,
-      height: newHeight,
+        width: newWidth,
+        height: newHeight,
     };
       
       setZoom(newZoom);
@@ -943,10 +943,10 @@ export default function MindMapCanvas({
 
   const startConnectionFromNode = useCallback((nodeId: string) => {
     console.log('🔗 Starting connection from node:', nodeId);
-
+    
     setIsConnecting(true);
     setConnectingFrom(nodeId);
-
+    
     const { map: latestMap } = useMindMapStore.getState();
     const sourceMap = latestMap || map;
     const node = sourceMap?.nodes.find((n) => n.id === nodeId);
@@ -1191,8 +1191,8 @@ export default function MindMapCanvas({
         label: 'Remove Embed',
         icon: <AppleIcon name="delete" size="medium" />,
         onClick: () => {
-          updateNode(nodeId, {
-            embedUrl: undefined,
+          updateNode(nodeId, { 
+            embedUrl: undefined, 
             embedType: undefined,
             collapsed: false,
             w: 150,
@@ -1203,27 +1203,27 @@ export default function MindMapCanvas({
       },
       ...(node?.embedUrl || node?.collapsed
         ? [
-            { divider: true } as MenuItem,
-            {
-              label: node?.collapsed ? '📂 Expand' : '📁 Collapse',
-              icon: node?.collapsed ? '📂' : '📁',
-              onClick: () => {
+        { divider: true } as MenuItem,
+        {
+          label: node?.collapsed ? '📂 Expand' : '📁 Collapse',
+          icon: node?.collapsed ? '📂' : '📁',
+          onClick: () => {
                 const { map: currentMap } = useMindMapStore.getState();
                 const targetNode = currentMap?.nodes.find((n) => n.id === nodeId);
                 if (!targetNode) {
                   return;
                 }
                 const newCollapsed = !targetNode.collapsed;
-                console.log('Menu: Toggling collapse to', newCollapsed, 'for node:', nodeId);
-                updateNode(nodeId, { collapsed: newCollapsed });
-
+            console.log('Menu: Toggling collapse to', newCollapsed, 'for node:', nodeId);
+            updateNode(nodeId, { collapsed: newCollapsed });
+            
                 const connectedEdges = currentMap?.edges.filter(
                   (edge) => edge.source === nodeId || edge.target === nodeId
                 ) || [];
-                if (connectedEdges.length > 0) {
-                  console.log(`  → ${connectedEdges.length} connected edges will update`);
-                }
-              },
+            if (connectedEdges.length > 0) {
+              console.log(`  → ${connectedEdges.length} connected edges will update`);
+            }
+          },
             },
           ]
         : []),
@@ -1238,25 +1238,25 @@ export default function MindMapCanvas({
             return;
           }
 
-          const newNode: NodeType = {
-            id: `n_${Date.now()}`,
-            label: 'New Node',
+            const newNode: NodeType = {
+              id: `n_${Date.now()}`,
+              label: 'New Node',
             x: parentNode.x + 180,
             y: parentNode.y + 100,
-            w: 150,
-            h: 80,
+              w: 150,
+              h: 80,
             contentType: 'richeditor',
-          };
-          addNode(newNode);
-
-          const newEdge = {
-            id: `e_${Date.now()}`,
-            source: nodeId,
-            target: newNode.id,
-          };
-          addEdge(newEdge);
-          selectNode(newNode.id);
-          console.log('➕ Added child node and edge');
+            };
+            addNode(newNode);
+            
+            const newEdge = {
+              id: `e_${Date.now()}`,
+              source: nodeId,
+              target: newNode.id,
+            };
+            addEdge(newEdge);
+            selectNode(newNode.id);
+            console.log('➕ Added child node and edge');
         },
         disabled: isReadOnly,
         shortcut: 'a',
@@ -1271,15 +1271,15 @@ export default function MindMapCanvas({
             return;
           }
 
-          const newNode: NodeType = {
+            const newNode: NodeType = {
             ...targetNode,
-            id: `n_${Date.now()}`,
+              id: `n_${Date.now()}`,
             x: targetNode.x + 30,
             y: targetNode.y + 30,
             contentType: targetNode.contentType || 'richeditor',
-          };
-          addNode(newNode);
-          selectNode(newNode.id);
+            };
+            addNode(newNode);
+            selectNode(newNode.id);
         },
         shortcut: isMacPlatform ? 'Cmd+D' : 'Ctrl+D',
       },
@@ -1413,8 +1413,8 @@ export default function MindMapCanvas({
             type: 'node',
             label: nodeLabel,
             onConfirm: () => {
-              deleteNode(nodeId);
-              selectNode(null);
+          deleteNode(nodeId);
+          selectNode(null);
               setDeleteConfirm(null);
             },
           });
@@ -1716,6 +1716,149 @@ export default function MindMapCanvas({
     });
   };
 
+  type DirectionKey = 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight';
+
+  const directionVectors: Record<DirectionKey, { x: number; y: number }> = {
+    ArrowUp: { x: 0, y: -1 },
+    ArrowDown: { x: 0, y: 1 },
+    ArrowLeft: { x: -1, y: 0 },
+    ArrowRight: { x: 1, y: 0 },
+  };
+
+  const getNodeCenter = useCallback((node: NodeType) => ({
+    x: node.x + node.w / 2,
+    y: node.y + node.h / 2,
+  }), []);
+
+  type GraphSnapshot = {
+    nodes: NodeType[];
+    edges: EdgeType[];
+  };
+
+  const findDirectionalNeighbor = useCallback(
+    (snapshot: GraphSnapshot, nodeId: string, direction: DirectionKey) => {
+      const node = snapshot.nodes.find((n) => n.id === nodeId);
+      if (!node) {
+        return null;
+      }
+
+      const origin = getNodeCenter(node);
+      const dir = directionVectors[direction];
+
+      const candidates = snapshot.edges.reduce<Array<{ nodeId: string; edgeId: string; dot: number; distance: number }>>(
+        (acc, edge) => {
+          if (edge.source !== nodeId && edge.target !== nodeId) {
+            return acc;
+          }
+
+          const neighborId = edge.source === nodeId ? edge.target : edge.source;
+          const neighbor = snapshot.nodes.find((n) => n.id === neighborId);
+          if (!neighbor) {
+            return acc;
+          }
+
+          const target = getNodeCenter(neighbor);
+          const dx = target.x - origin.x;
+          const dy = target.y - origin.y;
+          const distance = Math.hypot(dx, dy);
+          if (distance === 0) {
+            return acc;
+          }
+
+          const dot = (dx * dir.x + dy * dir.y) / distance;
+          acc.push({ nodeId: neighborId, edgeId: edge.id, dot, distance });
+          return acc;
+        },
+        []
+      );
+
+      if (candidates.length === 0) {
+        return null;
+      }
+
+      const threshold = 0.2;
+      const filtered = candidates.filter((item) => item.dot > threshold);
+      const list = filtered.length > 0 ? filtered : candidates;
+
+      list.sort((a, b) => {
+        if (b.dot !== a.dot) {
+          return b.dot - a.dot;
+        }
+        return a.distance - b.distance;
+      });
+
+      const best = list[0];
+      if (!best || best.dot <= 0) {
+        return null;
+      }
+
+      return { nodeId: best.nodeId, edgeId: best.edgeId };
+    },
+    [directionVectors, getNodeCenter]
+  );
+
+  const handleNodeDirectionalNavigation = useCallback(
+    (direction: DirectionKey) => {
+      const { map: currentMap, selectedNodeId } = useMindMapStore.getState();
+      if (!currentMap || !currentMap.nodes || !currentMap.edges || !selectedNodeId) {
+        return;
+      }
+
+      const neighbor = findDirectionalNeighbor(
+        { nodes: currentMap.nodes, edges: currentMap.edges },
+        selectedNodeId,
+        direction
+      );
+
+      if (neighbor) {
+        if (import.meta.env.DEV) {
+          console.log('➡️ Navigating to node via arrow key', direction, neighbor);
+        }
+        selectNode(neighbor.nodeId);
+      } else if (import.meta.env.DEV) {
+        console.log('⏸️ No directional neighbor found for', selectedNodeId, direction);
+      }
+    },
+    [findDirectionalNeighbor, selectNode]
+  );
+
+  const handleEdgeDirectionalNavigation = useCallback(
+    (direction: DirectionKey) => {
+      const { map: currentMap, selectedEdgeId } = useMindMapStore.getState();
+      if (!currentMap || !currentMap.nodes || !currentMap.edges || !selectedEdgeId) {
+        return;
+      }
+
+      const edge = currentMap.edges.find((e) => e.id === selectedEdgeId);
+      if (!edge) {
+        return;
+      }
+
+      const sourceNode = currentMap.nodes.find((n) => n.id === edge.source);
+      const targetNode = currentMap.nodes.find((n) => n.id === edge.target);
+      if (!sourceNode || !targetNode) {
+        return;
+      }
+
+      const source = getNodeCenter(sourceNode);
+      const target = getNodeCenter(targetNode);
+
+      const vector = { x: target.x - source.x, y: target.y - source.y };
+      const magnitude = Math.hypot(vector.x, vector.y) || 1;
+      const dir = directionVectors[direction];
+      const alignment = (vector.x * dir.x + vector.y * dir.y) / magnitude;
+
+      const nextNode = alignment >= 0 ? targetNode : sourceNode;
+
+      if (import.meta.env.DEV) {
+        console.log('➡️ Edge navigation', direction, 'selecting node', nextNode.id);
+      }
+
+      selectNode(nextNode.id);
+    },
+    [directionVectors, getNodeCenter, selectNode]
+  );
+
   // Add global event listeners
   useEffect(() => {
     // Zustand store에서 최신 상태를 가져오는 헬퍼
@@ -1743,7 +1886,7 @@ export default function MindMapCanvas({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (contextMenu) {
-        if (e.key === 'Escape') {
+      if (e.key === 'Escape') {
           e.preventDefault();
           e.stopPropagation();
           setContextMenu(null);
@@ -2087,6 +2230,28 @@ export default function MindMapCanvas({
         const { x: screenX, y: screenY } = svgToScreen(node.x + node.w + offset, node.y + offset);
         showNodeContextMenu(currentSelectedNodeId, { x: screenX, y: screenY });
       }
+      else if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        const direction = e.key as DirectionKey;
+        const currentState = getCurrentState();
+        const { selectedNodeId: currentSelectedNodeId, selectedEdgeId: currentSelectedEdgeId } = currentState;
+
+        if (!currentSelectedNodeId && !currentSelectedEdgeId) {
+          return;
+        }
+
+        if (editingNodeId || editingEdgeId) {
+          return;
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (currentSelectedEdgeId) {
+          handleEdgeDirectionalNavigation(direction);
+        } else if (currentSelectedNodeId) {
+          handleNodeDirectionalNavigation(direction);
+        }
+      }
     };
 
     if (isDragging || isResizing || isPanning) {
@@ -2100,21 +2265,23 @@ export default function MindMapCanvas({
       document.removeEventListener('keydown', handleKeyDown, true);
     };
   }, [
-    isDragging, 
-    isResizing, 
-    isConnecting, 
-    isPanning, 
+    isDragging,
+    isResizing,
+    isConnecting,
+    isPanning,
     setEditorMode,
     setEditingNodeId,
-    deleteNode, 
-    deleteEdge, 
-    selectNode, 
-    selectEdge, 
+    deleteNode,
+    deleteEdge,
+    selectNode,
+    selectEdge,
     clearAllSelections,
     isReadOnly,
     showNodeContextMenu,
     svgToScreen,
-    contextMenu
+    contextMenu,
+    handleNodeDirectionalNavigation,
+    handleEdgeDirectionalNavigation,
   ]);
 
   return (
