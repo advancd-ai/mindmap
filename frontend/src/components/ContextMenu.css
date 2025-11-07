@@ -73,6 +73,11 @@
   color: var(--accent-primary);
 }
 
+.context-menu-item.focused:not(.disabled) {
+  background: var(--accent-light);
+  color: var(--accent-primary);
+}
+
 .context-menu-item:active:not(.disabled) {
   background: var(--accent-lighter);
   transform: scale(0.98);
@@ -142,6 +147,12 @@
 }
 
 .context-menu-item:hover:not(.disabled) .shortcut-key {
+  background: var(--accent-light);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.context-menu-item.focused:not(.disabled) .shortcut-key {
   background: var(--accent-light);
   border-color: var(--accent-primary);
   color: var(--accent-primary);

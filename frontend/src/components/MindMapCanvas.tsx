@@ -233,6 +233,25 @@ export default function MindMapCanvas({
     return { x: svgP.x, y: svgP.y };
   };
 
+  const svgToScreen = useCallback((svgX: number, svgY: number) => {
+    const svg = svgRef.current;
+    if (!svg) {
+      return { x: svgX, y: svgY };
+    }
+
+    const pt = svg.createSVGPoint();
+    pt.x = svgX;
+    pt.y = svgY;
+
+    const ctm = svg.getScreenCTM();
+    if (!ctm) {
+      return { x: svgX, y: svgY };
+    }
+
+    const screenPoint = pt.matrixTransform(ctm);
+    return { x: screenPoint.x, y: screenPoint.y };
+  }, []);
+
   // Zoom functions removed (UI controls removed, mouse wheel zoom still works)
 
   // Mouse wheel zoom handler using native event for better preventDefault support
@@ -922,22 +941,28 @@ export default function MindMapCanvas({
   };
 
 
-  const handleStartConnection = (e: React.MouseEvent, nodeId: string) => {
-    e.stopPropagation();
-    e.preventDefault();
-    
+  const startConnectionFromNode = useCallback((nodeId: string) => {
     console.log('🔗 Starting connection from node:', nodeId);
-    
+
     setIsConnecting(true);
     setConnectingFrom(nodeId);
-    
-    const node = map.nodes.find((n) => n.id === nodeId);
+
+    const { map: latestMap } = useMindMapStore.getState();
+    const sourceMap = latestMap || map;
+    const node = sourceMap?.nodes.find((n) => n.id === nodeId);
     if (node) {
       setTempLineEnd({
         x: node.x + node.w / 2,
         y: node.y + node.h / 2,
       });
     }
+  }, [map]);
+
+  const handleStartConnection = (e: React.MouseEvent, nodeId: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    startConnectionFromNode(nodeId);
   };
 
   const handleCompleteConnection = (e: React.MouseEvent, targetNodeId: string) => {
@@ -1115,23 +1140,27 @@ export default function MindMapCanvas({
     setEditingEdgeId(null);
   };
 
+  const buildNodeContextMenuItems = useCallback((nodeId: string): MenuItem[] => {
+    const { map: latestMap } = useMindMapStore.getState();
+    const sourceMap = latestMap || map;
 
-  const handleNodeContextMenu = (e: React.MouseEvent, nodeId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    console.log('📋 Node context menu:', nodeId);
-    selectNode(nodeId);
+    if (!sourceMap) {
+      console.warn('⚠️ Node context menu requested without map');
+      return [];
+    }
 
-    const node = map.nodes.find((n) => n.id === nodeId);
+    const node = sourceMap.nodes.find((n) => n.id === nodeId);
+    const isMacPlatform = navigator.platform?.toLowerCase().includes('mac');
+
     const menuItems: MenuItem[] = [
       {
         label: 'Edit Label',
         icon: <AppleIcon name="edit" size="medium" />,
         onClick: () => {
-          const node = map.nodes.find((n) => n.id === nodeId);
-          if (node) {
-            if (node.contentType === 'markdown') {
+          const { map: currentMap } = useMindMapStore.getState();
+          const targetNode = currentMap?.nodes.find((n) => n.id === nodeId);
+          if (targetNode) {
+            if (targetNode.contentType === 'markdown') {
               setEditorMode('markdown');
             } else {
               setEditorMode('richeditor');
@@ -1145,7 +1174,7 @@ export default function MindMapCanvas({
       {
         label: 'Connect to...',
         icon: <AppleIcon name="connect" size="medium" />,
-        onClick: () => handleStartConnection(e, nodeId),
+        onClick: () => startConnectionFromNode(nodeId),
         disabled: isReadOnly,
       },
       { divider: true } as MenuItem,
@@ -1162,66 +1191,72 @@ export default function MindMapCanvas({
         label: 'Remove Embed',
         icon: <AppleIcon name="delete" size="medium" />,
         onClick: () => {
-          updateNode(nodeId, { 
-            embedUrl: undefined, 
+          updateNode(nodeId, {
+            embedUrl: undefined,
             embedType: undefined,
             collapsed: false,
             w: 150,
-            h: 80 
+            h: 80,
           });
         },
         disabled: !node?.embedUrl || isReadOnly,
       },
-      // Only show collapse/expand option for nodes with embeds
-      ...(node?.embedUrl || node?.collapsed ? [
-        { divider: true } as MenuItem,
-        {
-          label: node?.collapsed ? '📂 Expand' : '📁 Collapse',
-          icon: node?.collapsed ? '📂' : '📁',
-          onClick: () => {
-            const newCollapsed = !node?.collapsed;
-            console.log('Menu: Toggling collapse to', newCollapsed, 'for node:', nodeId);
-            updateNode(nodeId, { collapsed: newCollapsed });
-            
-            // Log connected edges
-            const connectedEdges = map.edges.filter(
-              e => e.source === nodeId || e.target === nodeId
-            );
-            if (connectedEdges.length > 0) {
-              console.log(`  → ${connectedEdges.length} connected edges will update`);
-            }
-          },
-        }
-      ] : []),
+      ...(node?.embedUrl || node?.collapsed
+        ? [
+            { divider: true } as MenuItem,
+            {
+              label: node?.collapsed ? '📂 Expand' : '📁 Collapse',
+              icon: node?.collapsed ? '📂' : '📁',
+              onClick: () => {
+                const { map: currentMap } = useMindMapStore.getState();
+                const targetNode = currentMap?.nodes.find((n) => n.id === nodeId);
+                if (!targetNode) {
+                  return;
+                }
+                const newCollapsed = !targetNode.collapsed;
+                console.log('Menu: Toggling collapse to', newCollapsed, 'for node:', nodeId);
+                updateNode(nodeId, { collapsed: newCollapsed });
+
+                const connectedEdges = currentMap?.edges.filter(
+                  (edge) => edge.source === nodeId || edge.target === nodeId
+                ) || [];
+                if (connectedEdges.length > 0) {
+                  console.log(`  → ${connectedEdges.length} connected edges will update`);
+                }
+              },
+            },
+          ]
+        : []),
       { divider: true } as MenuItem,
       {
         label: 'Add Child Node',
         icon: <AppleIcon name="add" size="medium" />,
         onClick: () => {
-          const node = map.nodes.find((n) => n.id === nodeId);
-          if (node) {
-            // 현재 노드 아래 오른쪽에 새 노드 생성 (child node)
-            const newNode: NodeType = {
-              id: `n_${Date.now()}`,
-              label: 'New Node',
-              x: node.x + 180,
-              y: node.y + 100,
-              w: 150,
-              h: 80,
-              contentType: 'richeditor', // 기본 타입을 richeditor로 설정
-            };
-            addNode(newNode);
-            
-            // 자동으로 edge 연결 (child node)
-            const newEdge = {
-              id: `e_${Date.now()}`,
-              source: nodeId,
-              target: newNode.id,
-            };
-            addEdge(newEdge);
-            selectNode(newNode.id);
-            console.log('➕ Added child node and edge');
+          const { map: currentMap } = useMindMapStore.getState();
+          const parentNode = currentMap?.nodes.find((n) => n.id === nodeId);
+          if (!parentNode) {
+            return;
           }
+
+          const newNode: NodeType = {
+            id: `n_${Date.now()}`,
+            label: 'New Node',
+            x: parentNode.x + 180,
+            y: parentNode.y + 100,
+            w: 150,
+            h: 80,
+            contentType: 'richeditor',
+          };
+          addNode(newNode);
+
+          const newEdge = {
+            id: `e_${Date.now()}`,
+            source: nodeId,
+            target: newNode.id,
+          };
+          addEdge(newEdge);
+          selectNode(newNode.id);
+          console.log('➕ Added child node and edge');
         },
         disabled: isReadOnly,
         shortcut: 'a',
@@ -1230,21 +1265,23 @@ export default function MindMapCanvas({
         label: 'Duplicate',
         icon: <AppleIcon name="copy" size="medium" />,
         onClick: () => {
-          const node = map.nodes.find((n) => n.id === nodeId);
-          if (node) {
-            // 겹치지 않도록 offset 추가
-            const newNode: NodeType = {
-              ...node,
-              id: `n_${Date.now()}`,
-              x: node.x + 30,
-              y: node.y + 30,
-              contentType: node.contentType || 'richeditor', // 기본 타입을 richeditor로 설정 (기존 노드 타입 유지)
-            };
-            addNode(newNode);
-            selectNode(newNode.id);
+          const { map: currentMap } = useMindMapStore.getState();
+          const targetNode = currentMap?.nodes.find((n) => n.id === nodeId);
+          if (!targetNode) {
+            return;
           }
+
+          const newNode: NodeType = {
+            ...targetNode,
+            id: `n_${Date.now()}`,
+            x: targetNode.x + 30,
+            y: targetNode.y + 30,
+            contentType: targetNode.contentType || 'richeditor',
+          };
+          addNode(newNode);
+          selectNode(newNode.id);
         },
-        shortcut: navigator.platform.toLowerCase().includes('mac') ? 'Cmd+D' : 'Ctrl+D',
+        shortcut: isMacPlatform ? 'Cmd+D' : 'Ctrl+D',
       },
       { divider: true } as MenuItem,
       {
@@ -1368,28 +1405,67 @@ export default function MindMapCanvas({
         label: 'Delete',
         icon: <AppleIcon name="delete" size="medium" />,
         onClick: () => {
-          const node = map?.nodes.find((n) => n.id === nodeId);
-          const nodeLabel = node?.label || '노드';
+          const { map: currentMap } = useMindMapStore.getState();
+          const targetNode = currentMap?.nodes.find((n) => n.id === nodeId);
+          const nodeLabel = targetNode?.label || '노드';
           setDeleteConfirm({
             isOpen: true,
             type: 'node',
             label: nodeLabel,
             onConfirm: () => {
-          deleteNode(nodeId);
-          selectNode(null);
+              deleteNode(nodeId);
+              selectNode(null);
               setDeleteConfirm(null);
-        },
+            },
           });
         },
         shortcut: 'd',
       },
     ];
 
+    return menuItems;
+  }, [
+    map,
+    isReadOnly,
+    startConnectionFromNode,
+    setEmbedTargetNodeId,
+    setShowEmbedDialog,
+    updateNode,
+    setColorTargetNodeId,
+    setShowColorPicker,
+    setShapeTargetNodeId,
+    setShowShapeSelector,
+    setContextMenu,
+    addNode,
+    addEdge,
+    selectNode,
+    setEditorMode,
+    setEditingNodeId,
+    deleteNode,
+    setDeleteConfirm
+  ]);
+
+  const showNodeContextMenu = useCallback((nodeId: string, position: { x: number; y: number }) => {
+    const menuItems = buildNodeContextMenuItems(nodeId);
+    if (menuItems.length === 0) {
+      return;
+    }
+
+    console.log('📋 Node context menu:', nodeId);
+    selectNode(nodeId);
+
     setContextMenu({
-      x: e.clientX,
-      y: e.clientY,
+      x: position.x,
+      y: position.y,
       items: menuItems,
     });
+  }, [buildNodeContextMenuItems, selectNode, setContextMenu]);
+
+  const handleNodeContextMenu = (e: React.MouseEvent, nodeId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    showNodeContextMenu(nodeId, { x: e.clientX, y: e.clientY });
   };
 
   const handleEdgeContextMenu = (e: React.MouseEvent, edgeId: string) => {
@@ -1666,6 +1742,15 @@ export default function MindMapCanvas({
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (contextMenu) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopPropagation();
+          setContextMenu(null);
+        }
+        return;
+      }
+      
       // 텍스트 입력 중인지 확인
       const activeElement = document.activeElement;
       const isTextInputFocused = activeElement && (
@@ -1977,6 +2062,31 @@ export default function MindMapCanvas({
           }
         }
       }
+      // 'm' 키: 노드 컨텍스트 메뉴 열기
+      else if ((e.code === 'KeyM' || e.key.toLowerCase() === 'm') && !isTextInputFocused) {
+        if (editingNodeId || editingEdgeId) {
+          return;
+        }
+
+        const currentState = getCurrentState();
+        const { selectedNodeId: currentSelectedNodeId, map: currentMap } = currentState;
+
+        if (!currentSelectedNodeId || !currentMap) {
+          return;
+        }
+
+        const node = currentMap.nodes.find((n) => n.id === currentSelectedNodeId);
+        if (!node) {
+          return;
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const offset = 16;
+        const { x: screenX, y: screenY } = svgToScreen(node.x + node.w + offset, node.y + offset);
+        showNodeContextMenu(currentSelectedNodeId, { x: screenX, y: screenY });
+      }
     };
 
     if (isDragging || isResizing || isPanning) {
@@ -2001,7 +2111,10 @@ export default function MindMapCanvas({
     selectNode, 
     selectEdge, 
     clearAllSelections,
-    isReadOnly
+    isReadOnly,
+    showNodeContextMenu,
+    svgToScreen,
+    contextMenu
   ]);
 
   return (

@@ -70,8 +70,9 @@
 
 .login-language {
   position: absolute;
-  top: 24px;
-  right: 24px;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 10;
 }
 
