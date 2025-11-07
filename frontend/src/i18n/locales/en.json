@@ -1,4 +1,7 @@
 {
+  "common": {
+    "about": "About"
+  },
   "app": {
     "title": "Open Mindmap",
     "subtitle": "Visual thinking tool for organizing ideas"
@@ -274,6 +277,39 @@
       "processingVersion": "Processing version {{version}}...",
       "foundVersions": "Found {{count}} versions"
     }
+  },
+  "about": {
+    "badge": "Mindmap Ziin",
+    "heroTitle": "Map ideas with git",
+    "heroSubtitle": "Mindmap Ziin stores every map as a dedicated Git branch so your work is versioned, reviewable, and ready to collaborate.",
+    "heroCta": "Open dashboard",
+    "heroSecondaryCta": "Jump to editor",
+    "sectionFeaturesTitle": "Why teams choose Mindmap Ziin",
+    "featureEditorTitle": "Focused editor",
+    "featureEditorCopy": "Arrange nodes, collapse sections, and edit inline without breaking your flow.",
+    "featureBranchTitle": "Branch-per-map",
+    "featureBranchCopy": "Each map lives in its own Git branch for clean history and safe merging.",
+    "featureShareTitle": "Share instantly",
+    "featureShareCopy": "Generate read-only links or invite collaborators through GitHub.",
+    "featureGuestTitle": "Guest friendly",
+    "featureGuestCopy": "Explore the editor without signing in—your data stays local until you save.",
+    "sectionArchitectureTitle": "Architecture highlights",
+    "architectureBranchesTitle": "Branch architecture",
+    "architectureBranchesCopy": "A documented workflow that keeps every map isolated while remaining easy to diff and merge.",
+    "architectureIndexTitle": "Smart index",
+    "architectureIndexCopy": "A lightweight index.json powers search, filtering, and dashboard performance.",
+    "architectureDeployTitle": "Own your deployment",
+    "architectureDeployCopy": "Run locally, on Docker, or Kubernetes with the official deployment guides.",
+    "learnMore": "Learn more",
+    "sectionWorkflowTitle": "From idea to shareable map",
+    "workflowCreateTitle": "Create",
+    "workflowCreateCopy": "Start from the dashboard or editor with an auto-generated root node.",
+    "workflowCollaborateTitle": "Iterate",
+    "workflowCollaborateCopy": "Use inline edit, keyboard shortcuts, and image embeds to enrich your map.",
+    "workflowShareTitle": "Share",
+    "workflowShareCopy": "Save to GitHub, review history, and publish share links instantly.",
+    "sectionCommunityTitle": "Built in the open",
+    "sectionCommunityCopy": "Mindmap Ziin is community-driven. Read the docs, file an issue, or submit a pull request—everyone is welcome."
   }
 }
 

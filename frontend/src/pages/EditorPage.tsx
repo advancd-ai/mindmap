@@ -3,7 +3,7 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useMindMapStore } from '../store/mindmap';
@@ -468,7 +468,9 @@ export default function EditorPage() {
       <footer className="editor-footer">
         <div className="editor-footer-content">
           <div className="editor-footer-left">
-            {/* Empty or add other info later */}
+            <Link to="/about" className="editor-footer-link">
+              {t('common.about')}
+            </Link>
           </div>
           
           <div className="editor-footer-center">

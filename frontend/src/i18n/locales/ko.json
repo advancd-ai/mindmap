@@ -1,4 +1,7 @@
 {
+  "common": {
+    "about": "About"
+  },
   "app": {
     "title": "오픈 마인드맵",
     "subtitle": "아이디어 정리를 위한 시각적 사고 도구"
@@ -274,6 +277,39 @@
       "processingVersion": "버전 {{version}} 처리 중...",
       "foundVersions": "{{count}}개 버전 발견"
     }
+  },
+  "about": {
+    "badge": "Mindmap Ziin",
+    "heroTitle": "아이디어를 깃으로 정리하세요",
+    "heroSubtitle": "Mindmap Ziin은 각 마인드맵을 Git 브랜치로 저장하여 버전 관리와 협업을 자연스럽게 만들어 줍니다.",
+    "heroCta": "대시보드 열기",
+    "heroSecondaryCta": "에디터로 바로 이동",
+    "sectionFeaturesTitle": "Mindmap Ziin이 사랑받는 이유",
+    "featureEditorTitle": "집중력 있는 에디터",
+    "featureEditorCopy": "노드를 정리하고, 접고, 바로 수정하며 흐름을 끊지 않고 작업하세요.",
+    "featureBranchTitle": "맵별 브랜치",
+    "featureBranchCopy": "각 마인드맵은 전용 Git 브랜치에 저장되어 비교와 머지가 간편합니다.",
+    "featureShareTitle": "즉시 공유",
+    "featureShareCopy": "읽기 전용 링크를 만들거나 GitHub를 통해 협업자를 초대하세요.",
+    "featureGuestTitle": "게스트 모드 지원",
+    "featureGuestCopy": "로그인 없이도 에디터를 체험하고, 저장하기 전까지 데이터는 로컬에 남습니다.",
+    "sectionArchitectureTitle": "아키텍처 한눈에 보기",
+    "architectureBranchesTitle": "브랜치 구조",
+    "architectureBranchesCopy": "문서로 정리된 워크플로를 통해 각 맵을 격리하면서도 쉬운 비교와 통합을 제공합니다.",
+    "architectureIndexTitle": "스마트 인덱스",
+    "architectureIndexCopy": "가벼운 index.json이 검색, 필터링, 대시보드 성능을 책임집니다.",
+    "architectureDeployTitle": "내 환경에 배포",
+    "architectureDeployCopy": "공식 배포 가이드로 로컬, Docker, Kubernetes 어디에서나 운영할 수 있습니다.",
+    "learnMore": "자세히 보기",
+    "sectionWorkflowTitle": "아이디어에서 공유까지",
+    "workflowCreateTitle": "생성",
+    "workflowCreateCopy": "대시보드나 에디터에서 자동 생성되는 루트 노드로 빠르게 시작하세요.",
+    "workflowCollaborateTitle": "정리",
+    "workflowCollaborateCopy": "인라인 편집, 단축키, 이미지 첨부로 마인드맵을 풍부하게 만들 수 있습니다.",
+    "workflowShareTitle": "공유",
+    "workflowShareCopy": "GitHub에 저장하고, 히스토리를 확인하며, 바로 공유 링크를 발행하세요.",
+    "sectionCommunityTitle": "커뮤니티와 함께",
+    "sectionCommunityCopy": "Mindmap Ziin은 오픈 소스 프로젝트입니다. 문서를 읽고 이슈를 올리거나 PR을 보내 주세요. 함께 발전하길 기대합니다."
   }
 }
 

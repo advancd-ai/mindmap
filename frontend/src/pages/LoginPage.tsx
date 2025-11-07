@@ -3,7 +3,7 @@
  */
 
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/auth';
 import LanguageSelector from '../components/LanguageSelector';
@@ -146,6 +146,12 @@ export default function LoginPage() {
       
       <div className="login-language">
         <LanguageSelector />
+      </div>
+
+      <div className="login-about">
+        <Link to="/about" className="login-about-link">
+          {t('common.about')}
+        </Link>
       </div>
       
       <div className="login-container">

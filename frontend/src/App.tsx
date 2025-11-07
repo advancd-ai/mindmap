@@ -3,6 +3,7 @@ import { useAuthStore } from './store/auth';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import EditorPage from './pages/EditorPage';
+import AboutPage from './pages/AboutPage';
 import AuthCallback from './pages/AuthCallback';
 import SharePage from './pages/SharePage';
 import './App.css';
@@ -21,6 +22,7 @@ function App() {
         
         {/* Share page - no auth required */}
         <Route path="/share/:token" element={<SharePage />} />
+        <Route path="/about" element={<AboutPage />} />
         
         <Route
           path="/dashboard"

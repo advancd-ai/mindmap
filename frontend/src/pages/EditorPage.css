@@ -411,6 +411,16 @@
   font-family: 'SF Mono', Menlo, Monaco, Consolas, monospace;
 }
 
+.editor-footer-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s ease;
+}
+
+.editor-footer-link:hover {
+  color: var(--text-primary);
+}
 
 /* Loading Page */
 .loading-page {

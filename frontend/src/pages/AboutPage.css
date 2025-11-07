@@ -1,0 +1,219 @@
+.about-page {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  min-height: 100vh;
+  color: #0f172a;
+}
+
+.about-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  padding: 80px clamp(32px, 5vw, 96px);
+  gap: 40px;
+}
+
+.about-hero-content h1 {
+  font-size: clamp(32px, 5vw, 48px);
+  margin: 16px 0;
+  letter-spacing: -0.02em;
+}
+
+.about-hero-content p {
+  font-size: 18px;
+  line-height: 1.6;
+  color: #475569;
+  max-width: 560px;
+}
+
+.about-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563eb;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-weight: 600;
+}
+
+.about-cta {
+  display: flex;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.about-hero-illustration {
+  position: relative;
+  height: 320px;
+  border-radius: 32px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(99, 102, 241, 0.15) 50%, rgba(56, 189, 248, 0.15) 100%);
+  overflow: hidden;
+  box-shadow: 0 30px 60px rgba(15, 23, 42, 0.15);
+}
+
+.about-hero-grid {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.25) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.25) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.8;
+}
+
+.about-section {
+  padding: 64px clamp(24px, 5vw, 80px);
+}
+
+.about-section h2 {
+  font-size: 28px;
+  margin-bottom: 32px;
+  text-align: center;
+  letter-spacing: -0.01em;
+}
+
+.about-feature-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.about-card {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 20px;
+  padding: 24px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: 0 15px 30px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(16px);
+}
+
+.about-card h3 {
+  margin: 16px 0 12px;
+  font-size: 18px;
+}
+
+.about-card p {
+  margin: 0;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.about-card-icon {
+  color: #2563eb;
+}
+
+.about-architecture {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.about-architecture-card {
+  background: rgba(15, 23, 42, 0.85);
+  color: #e2e8f0;
+  border-radius: 24px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 25px 45px rgba(15, 23, 42, 0.25);
+}
+
+.about-architecture-card h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.about-architecture-card p {
+  margin: 0;
+  color: rgba(226, 232, 240, 0.85);
+  line-height: 1.6;
+}
+
+.about-architecture-card a {
+  color: #93c5fd;
+  font-weight: 600;
+}
+
+.about-section-timeline {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.about-timeline {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  display: grid;
+  gap: 24px;
+  max-width: 720px;
+}
+
+.about-timeline li {
+  display: flex;
+  gap: 18px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 20px;
+  padding: 20px 24px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.about-timeline-step {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: #2563eb;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.about-cta-card {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(56, 189, 248, 0.12) 100%);
+  border-radius: 28px;
+  padding: 36px clamp(24px, 5vw, 60px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.about-cta-card h2 {
+  margin: 0 0 12px;
+  text-align: left;
+}
+
+.about-cta-card p {
+  margin: 0;
+  color: #475569;
+}
+
+.about-cta-links {
+  display: flex;
+  gap: 16px;
+}
+
+@media (max-width: 960px) {
+  .about-hero {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .about-hero-content p,
+  .about-cta {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .about-hero-illustration {
+    height: 260px;
+  }
+
+  .about-cta-card {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
