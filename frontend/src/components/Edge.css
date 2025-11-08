@@ -70,37 +70,33 @@
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.02em;
-  color: #ffffff;
-  line-height: 1.5;
+  color: rgba(71, 85, 105, 0.92);
+  line-height: 1.45;
   white-space: pre-wrap;
   word-break: break-word;
-  padding: 2px 12px;
+  padding: 3px 14px;
   border-radius: 999px;
   display: inline-block;
   background:
-    linear-gradient(135deg, rgba(59, 130, 246, 0.32), rgba(79, 70, 229, 0.32));
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  text-shadow:
-    0 1px 8px rgba(15, 23, 42, 0.32),
-    0 0 1px rgba(15, 23, 42, 0.6);
-  -webkit-text-stroke: 0.2px rgba(15, 23, 42, 0.5);
+    linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(14, 165, 233, 0.18));
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  backdrop-filter: blur(3px);
+  text-shadow: none;
 }
 
 .edge-label-card.selected {
-  filter: drop-shadow(0 6px 16px rgba(37, 99, 235, 0.32));
+  filter: drop-shadow(0 6px 16px rgba(37, 99, 235, 0.18));
 }
 
 .edge-label-card[data-kind='relationship'] {
-  color: #fff5f7;
+  color: rgba(80, 33, 59, 0.88);
   background:
-    linear-gradient(135deg, rgba(236, 72, 153, 0.34), rgba(190, 24, 93, 0.34));
-  border: 1px solid rgba(236, 72, 153, 0.26);
-  -webkit-text-stroke: 0.2px rgba(76, 5, 44, 0.4);
+    linear-gradient(135deg, rgba(236, 72, 153, 0.16), rgba(236, 72, 153, 0.26));
+  border: 1px solid rgba(236, 72, 153, 0.24);
 }
 
 .edge-label-card.selected[data-kind='relationship'] {
-  filter: drop-shadow(0 8px 20px rgba(244, 63, 94, 0.4));
+  filter: drop-shadow(0 8px 20px rgba(244, 63, 94, 0.26));
 }
 }
 
