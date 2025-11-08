@@ -31,6 +31,7 @@ import { optimisticVersionManager } from '../utils/optimisticUpdate';
 import AppleIcon from './AppleIcon';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
 import './MindMapCanvas.css';
+import { getNodeAnchorPosition } from '../utils/anchorHelpers';
 
 interface MindMapCanvasProps {
   isReadOnly?: boolean;
@@ -74,7 +75,7 @@ export default function MindMapCanvas({
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
-  const [tempLineEnd, setTempLineEnd] = useState({ x: 0, y: 0 });
+  const [tempLineEnd, setTempLineEnd] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [editorMode, setEditorMode] = useState<'text' | 'richeditor' | 'markdown' | null>(null);
   const [editingEdgeId, setEditingEdgeId] = useState<string | null>(null);
@@ -121,6 +122,8 @@ export default function MindMapCanvas({
       prev && prev.width === size.width && prev.height === size.height ? prev : size
     );
   }, []);
+  const [connectingFromAnchor, setConnectingFromAnchor] = useState<number | null>(null);
+  const [hoverAnchor, setHoverAnchor] = useState<{ nodeId: string; anchor: number } | null>(null);
 
   const map = useMindMapStore((state) => state.map);
   const selectedNodeId = useMindMapStore((state) => state.selectedNodeId);
@@ -960,7 +963,7 @@ export default function MindMapCanvas({
     }
 
     // Handle connection line preview
-    if (isConnecting) {
+    if (isConnecting && connectingFromAnchor !== null && !hoverAnchor) {
       setTempLineEnd(svgCoords);
     }
   };
@@ -992,6 +995,8 @@ export default function MindMapCanvas({
       console.log('❌ Connection cancelled (clicked canvas)');
       setIsConnecting(false);
       setConnectingFrom(null);
+      setConnectingFromAnchor(null);
+      setHoverAnchor(null);
     }
   };
 
@@ -1001,6 +1006,8 @@ export default function MindMapCanvas({
     
     setIsConnecting(true);
     setConnectingFrom(nodeId);
+    setConnectingFromAnchor(null);
+    setHoverAnchor(null);
     
     const { map: latestMap } = useMindMapStore.getState();
     const sourceMap = latestMap || map;
@@ -1018,39 +1025,6 @@ export default function MindMapCanvas({
     e.preventDefault();
 
     startConnectionFromNode(nodeId);
-  };
-
-  const handleCompleteConnection = (e: React.MouseEvent, targetNodeId: string) => {
-    e.stopPropagation();
-    e.preventDefault();
-    
-    console.log('🔗 Completing connection to node:', targetNodeId, 'from:', connectingFrom);
-    
-    if (isConnecting && connectingFrom && connectingFrom !== targetNodeId) {
-      // Check if edge already exists
-      const edgeExists = map.edges.some(
-        (edge) =>
-          (edge.source === connectingFrom && edge.target === targetNodeId) ||
-          (edge.source === targetNodeId && edge.target === connectingFrom)
-      );
-
-      if (!edgeExists) {
-        const newEdge: EdgeType = {
-          id: `e_${Date.now()}`,
-          source: connectingFrom,
-          target: targetNodeId,
-        };
-        console.log('✅ Edge created:', newEdge);
-        addEdge(newEdge);
-      } else {
-        console.log('⚠️ Edge already exists');
-      }
-    } else if (connectingFrom === targetNodeId) {
-      console.log('⚠️ Cannot connect node to itself');
-    }
-    
-    setIsConnecting(false);
-    setConnectingFrom(null);
   };
 
   const handleNodeSelect = (e: React.MouseEvent, nodeId: string) => {
@@ -2358,6 +2332,80 @@ export default function MindMapCanvas({
     handleEdgeDirectionalNavigation,
   ]);
 
+  const handleAnchorClick = useCallback(
+    (nodeId: string, anchorIndex: number) => {
+      const node = map.nodes.find((n) => n.id === nodeId);
+      if (!node) return;
+
+      const anchorPos = getNodeAnchorPosition(node, Math.max(0, Math.min(11, anchorIndex)));
+
+      if (!isConnecting || !connectingFrom) {
+        startConnectionFromNode(nodeId);
+        setConnectingFromAnchor(anchorIndex);
+        setTempLineEnd(anchorPos.edgePoint);
+        return;
+      }
+
+      if (connectingFromAnchor === null) {
+        if (nodeId !== connectingFrom) return;
+        setConnectingFromAnchor(anchorIndex);
+        setTempLineEnd(anchorPos.edgePoint);
+        return;
+      }
+
+      if (nodeId === connectingFrom) {
+        setConnectingFromAnchor(anchorIndex);
+        setTempLineEnd(anchorPos.edgePoint);
+        return;
+      }
+
+      const edgeExists = map.edges.some(
+        (edge) =>
+          (edge.source === connectingFrom && edge.target === nodeId) ||
+          (edge.source === nodeId && edge.target === connectingFrom)
+      );
+
+      if (edgeExists) {
+        console.log('⚠️ Edge already exists');
+      } else {
+        const newEdge: EdgeType = {
+          id: `e_${Date.now()}`,
+          source: connectingFrom,
+          target: nodeId,
+          sourceAnchor: connectingFromAnchor ?? undefined,
+          targetAnchor: anchorIndex,
+        };
+        addEdge(newEdge);
+      }
+
+      setIsConnecting(false);
+      setConnectingFrom(null);
+      setConnectingFromAnchor(null);
+      setHoverAnchor(null);
+      setTempLineEnd(anchorPos.edgePoint);
+    },
+    [map, isConnecting, connectingFrom, connectingFromAnchor, addEdge, startConnectionFromNode]
+  );
+
+  const handleAnchorEnter = useCallback(
+    (nodeId: string, anchorIndex: number) => {
+      const node = map.nodes.find((n) => n.id === nodeId);
+      if (!node) return;
+      const anchorPos = getNodeAnchorPosition(node, Math.max(0, Math.min(11, anchorIndex)));
+      setHoverAnchor({ nodeId, anchor: anchorIndex });
+      setTempLineEnd(anchorPos.edgePoint);
+    },
+    [map]
+  );
+
+  const handleAnchorLeave = useCallback(() => {
+    setHoverAnchor(null);
+    if (connectingFromAnchor !== null && lastMousePosition) {
+      const svgCoords = screenToSVG(lastMousePosition.x, lastMousePosition.y);
+      setTempLineEnd(svgCoords);
+    }
+  }, [connectingFromAnchor, lastMousePosition]);
+
   return (
       <div ref={containerRef} className="mindmap-canvas-container">
         {isReadOnly && (
@@ -2480,15 +2528,21 @@ export default function MindMapCanvas({
         })}
 
         {/* Temporary connection line */}
-        {isConnecting && connectingFrom && (() => {
+        {isConnecting && connectingFrom && connectingFromAnchor !== null && (() => {
           const sourceNode = map.nodes.find((n) => n.id === connectingFrom);
           if (!sourceNode) return null;
-          
+
+          const anchorPosition = getNodeAnchorPosition(
+            sourceNode,
+            Math.max(0, Math.min(11, connectingFromAnchor))
+          );
+
           return (
             <TemporaryEdge
               key="temp-edge"
               sourceNode={sourceNode}
               endPoint={tempLineEnd}
+              startPoint={anchorPosition.edgePoint}
             />
           );
         })()}
@@ -2505,54 +2559,38 @@ export default function MindMapCanvas({
             onSelect={(e) => handleNodeSelect(e, node.id)}
             onDragStart={(e) => handleNodeDrag(e, node.id)}
             onStartConnection={(e) => handleStartConnection(e, node.id)}
-            onCompleteConnection={(e) => handleCompleteConnection(e, node.id)}
             onDoubleClick={(e) => handleNodeDoubleClick(e, node.id)}
             onContextMenu={(e) => handleNodeContextMenu(e, node.id)}
             onResizeStart={(e, direction) => handleResizeStart(e, node.id, direction)}
             onToggleCollapse={(e) => handleToggleCollapse(e, node.id)}
-                 onSwitchToRichEditor={(nodeId) => {
-                   // Switch to Rich Editor mode
-                   updateNode(nodeId, { contentType: 'richeditor' });
-                   // Set editor mode and start editing
-                   setEditorMode('richeditor');
-                   setEditingNodeId(nodeId);
-                 }}
-                 onSwitchToMarkdown={(nodeId) => {
-                   // Switch to Markdown mode
-                   updateNode(nodeId, { contentType: 'markdown' });
-                   // Set editor mode and start editing
-                   setEditorMode('markdown');
-                   setEditingNodeId(nodeId);
-                 }}
-                 onEditClick={(nodeId) => {
-                   // 편집 버튼 클릭 시 모달 편집 시작
-                   console.log('✏️ Edit button clicked for node:', nodeId);
-                   const node = map.nodes.find((n) => n.id === nodeId);
-                   if (node) {
-                     // 현재 contentType에 맞는 모달 편집 모드 설정
-                     if (node.contentType === 'markdown') {
-                       setEditorMode('markdown');
-                     } else {
-                       // richeditor 또는 미지정 시 Rich Editor 모달
-                       setEditorMode('richeditor');
-                     }
-                     setEditingNodeId(nodeId);
-                   }
-                 }}
-                 showEditButton={true}
-                 isEditing={editingNodeId === node.id && editorMode === null}
-                 editorType={
-                   editingNodeId === node.id && editorMode === null
-                     ? (() => {
-                         const editingNode = map.nodes.find((n) => n.id === node.id);
-                         if (!editingNode) return undefined;
-                         if (editingNode.contentType === 'markdown') return 'markdown' as const;
-                         if (editingNode.contentType === 'richeditor') return 'richeditor' as const;
-                         if (editingNode.contentType === 'text') return 'text' as const;
-                         return 'richeditor' as const; // 기본값
-                       })()
-                     : undefined
-                 }
+            showEditButton={true}
+            isEditing={editingNodeId === node.id && editorMode === null}
+            editorType={
+              editingNodeId === node.id && editorMode === null
+                ? (() => {
+                    const editingNode = map.nodes.find((n) => n.id === node.id);
+                    if (!editingNode) return undefined;
+                    if (editingNode.contentType === 'markdown') return 'markdown' as const;
+                    if (editingNode.contentType === 'richeditor') return 'richeditor' as const;
+                    if (editingNode.contentType === 'text') return 'text' as const;
+                    return 'richeditor' as const; // 기본값
+                  })()
+                : undefined
+            }
+            showAnchors={
+              isConnecting &&
+              ((connectingFrom === node.id) || (connectingFromAnchor !== null))
+            }
+            anchorInteractive={
+              isConnecting &&
+              ((connectingFromAnchor === null && connectingFrom === node.id) ||
+                (connectingFromAnchor !== null && connectingFrom !== null))
+            }
+            activeAnchor={connectingFrom === node.id ? connectingFromAnchor : null}
+            hoveredAnchor={hoverAnchor?.nodeId === node.id ? hoverAnchor.anchor : null}
+            onAnchorClick={(anchorIndex) => handleAnchorClick(node.id, anchorIndex)}
+            onAnchorEnter={(anchorIndex) => handleAnchorEnter(node.id, anchorIndex)}
+            onAnchorLeave={handleAnchorLeave}
           />
         ))}
 

@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react';
 import { type Node as NodeType } from '../store/mindmap';
 import ConnectionHandles from './ConnectionHandles';
+import NodeAnchors from './NodeAnchors';
 import ResizeHandles, { type ResizeDirection } from './ResizeHandles';
 import EmbedFallback from './EmbedFallback';
 import NodeTypeIcon from './NodeTypeIcon';
@@ -28,7 +29,6 @@ interface NodeProps {
   onSelect: (e: React.MouseEvent) => void;
   onDragStart: (e: React.MouseEvent) => void;
   onStartConnection: (e: React.MouseEvent) => void;
-  onCompleteConnection: (e: React.MouseEvent) => void;
   onDoubleClick?: (e: React.MouseEvent) => void;
   onContextMenu?: (e: React.MouseEvent) => void;
   onResizeStart?: (e: React.MouseEvent, direction: ResizeDirection) => void;
@@ -39,6 +39,13 @@ interface NodeProps {
   showEditButton?: boolean; // 노드 편집 버튼 표시 여부
   isEditing?: boolean; // 현재 편집 중인지
   editorType?: 'text' | 'richeditor' | 'markdown'; // 편집 중인 에디터 타입
+  showAnchors?: boolean;
+  anchorInteractive?: boolean;
+  activeAnchor?: number | null;
+  hoveredAnchor?: number | null;
+  onAnchorClick?: (anchorIndex: number) => void;
+  onAnchorEnter?: (anchorIndex: number) => void;
+  onAnchorLeave?: () => void;
 }
 
 // Helper function to get YouTube video ID
@@ -56,7 +63,6 @@ export default function Node({
   onSelect,
   onDragStart,
   onStartConnection,
-  onCompleteConnection,
   onDoubleClick,
   onContextMenu,
   onResizeStart,
@@ -67,6 +73,13 @@ export default function Node({
   showEditButton = true, // 기본값: true (기존 동작 유지)
   isEditing = false,
   editorType,
+  showAnchors = false,
+  anchorInteractive = false,
+  activeAnchor = null,
+  hoveredAnchor = null,
+  onAnchorClick,
+  onAnchorEnter,
+  onAnchorLeave,
 }: NodeProps) {
   const [showFallback, setShowFallback] = useState(false);
 
@@ -104,13 +117,9 @@ export default function Node({
         } ${node.collapsed ? 'collapsed' : ''}`}
         data-shape={node.nodeType || 'rect'}
         onClick={(e) => {
-          // 더블 클릭의 첫 번째 클릭인지 확인 (e.detail === 1)
-          // 더블 클릭의 경우 두 번째 클릭이므로 onClick을 처리하지 않음
           if (e.detail === 1) {
             e.stopPropagation();
-            if (isConnecting) {
-              onCompleteConnection(e);
-            } else {
+            if (!isConnecting) {
               onSelect(e);
             }
           }
@@ -545,6 +554,17 @@ export default function Node({
           </foreignObject>
         )}
       </g>
+
+      <NodeAnchors
+        node={{ ...node, w: displayWidth, h: displayHeight }}
+        visible={showAnchors}
+        activeAnchor={activeAnchor}
+        hoveredAnchor={hoveredAnchor}
+        interactive={anchorInteractive}
+        onAnchorClick={onAnchorClick}
+        onAnchorEnter={onAnchorEnter}
+        onAnchorLeave={onAnchorLeave}
+      />
 
       {/* Collapse/Expand Button - only show for embed nodes or already collapsed nodes */}
       {onToggleCollapse && (node.embedUrl || node.collapsed) && (

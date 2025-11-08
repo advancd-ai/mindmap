@@ -146,6 +146,8 @@ export interface Edge {
   style?: EdgeStyle;
   summary?: SummaryEdgeData;
   boundary?: BoundaryEdgeData;
+  sourceAnchor?: number;
+  targetAnchor?: number;
   decorators?: EdgeDecorator[];
   meta?: Record<string, any>;
 }

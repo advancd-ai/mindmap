@@ -164,6 +164,10 @@ const normalizeEdge = (edge: Edge): Edge => {
       : DEFAULT_BRANCH_STYLE;
 
   const style = edge.style ?? {};
+  const normalizeAnchor = (value: number | undefined): number | undefined =>
+    typeof value === 'number' && Number.isFinite(value) && value >= 0 && value < 12
+      ? Math.floor(value)
+      : undefined;
   const routing: EdgeRouting =
     category === 'boundary' || category === 'summary'
       ? 'organic'
@@ -181,6 +185,8 @@ const normalizeEdge = (edge: Edge): Edge => {
     routing,
     labelPosition,
     labelOffset,
+    sourceAnchor: normalizeAnchor(edge.sourceAnchor),
+    targetAnchor: normalizeAnchor(edge.targetAnchor),
     style: {
       strokeColor: style.strokeColor ?? baseStyle.strokeColor,
       strokeWidth: style.strokeWidth ?? baseStyle.strokeWidth,
@@ -212,6 +218,8 @@ export interface Edge {
   boundary?: BoundaryEdgeData;
   decorators?: EdgeDecorator[];
   meta?: Record<string, any>;
+  sourceAnchor?: number;
+  targetAnchor?: number;
 }
 
 export interface ViewState {
@@ -445,6 +453,8 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
                   summary: mergedSummary,
                   boundary: mergedBoundary,
                   decorators: mergedDecorators,
+                  sourceAnchor: updates.sourceAnchor !== undefined ? normalizeAnchor(updates.sourceAnchor) : e.sourceAnchor,
+                  targetAnchor: updates.targetAnchor !== undefined ? normalizeAnchor(updates.targetAnchor) : e.targetAnchor,
                 };
 
                 return normalizeEdge(mergedEdge);

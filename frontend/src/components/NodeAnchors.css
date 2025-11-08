@@ -1,0 +1,25 @@
+.node-anchors {
+  pointer-events: none;
+}
+
+.node-anchor {
+  pointer-events: auto;
+  fill: rgba(37, 99, 235, 0.15);
+  stroke: rgba(37, 99, 235, 0.6);
+  stroke-width: 1.5px;
+  transition: fill 120ms ease, stroke 120ms ease, r 120ms ease;
+  cursor: pointer;
+}
+
+.node-anchor:hover,
+.node-anchor.hovered {
+  fill: rgba(37, 99, 235, 0.35);
+  stroke: rgba(37, 99, 235, 0.85);
+}
+
+.node-anchor.active {
+  fill: rgba(37, 99, 235, 0.6);
+  stroke: rgba(30, 64, 175, 0.95);
+  r: 8px;
+  filter: drop-shadow(0 0 8px rgba(37, 99, 235, 0.35));
+}

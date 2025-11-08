@@ -9,6 +9,7 @@ import {
   type Node,
 } from '../store/mindmap';
 import { getEdgePath, getLabelPosition } from '../utils/edgeHelpers';
+import { getNodeAnchorPosition } from '../utils/anchorHelpers';
 import { getNodeDisplayDimensions } from '../utils/nodeHelpers';
 import MarkdownRenderer from './MarkdownRenderer';
 import './Edge.css';
@@ -39,10 +40,26 @@ export default function Edge({
   const sourceDim = getNodeDisplayDimensions(sourceNode);
   const targetDim = getNodeDisplayDimensions(targetNode);
 
-  const x1 = sourceNode.x + sourceDim.w / 2;
-  const y1 = sourceNode.y + sourceDim.h / 2;
-  const x2 = targetNode.x + targetDim.w / 2;
-  const y2 = targetNode.y + targetDim.h / 2;
+  const defaultSource = {
+    x: sourceNode.x + sourceDim.w / 2,
+    y: sourceNode.y + sourceDim.h / 2,
+  };
+  const defaultTarget = {
+    x: targetNode.x + targetDim.w / 2,
+    y: targetNode.y + targetDim.h / 2,
+  };
+
+  const sourceAnchor =
+    typeof edge.sourceAnchor === 'number'
+      ? getNodeAnchorPosition(sourceNode, Math.max(0, Math.min(11, edge.sourceAnchor)))
+      : null;
+  const targetAnchor =
+    typeof edge.targetAnchor === 'number'
+      ? getNodeAnchorPosition(targetNode, Math.max(0, Math.min(11, edge.targetAnchor)))
+      : null;
+
+  const startPoint = sourceAnchor?.edgePoint ?? defaultSource;
+  const endPoint = targetAnchor?.edgePoint ?? defaultTarget;
 
   const category = edge.category ?? 'branch';
   const routing = edge.routing ?? 'organic';
@@ -73,25 +90,29 @@ export default function Edge({
     markerEnd !== 'none' ? `edge-marker-end-${edge.id}` : undefined;
 
   const pathData = getEdgePath(
-    x1,
-    y1,
-    x2,
-    y2,
+    startPoint.x,
+    startPoint.y,
+    endPoint.x,
+    endPoint.y,
     pathType,
-    sourceDim.w, sourceDim.h,
-    targetDim.w, targetDim.h,
+    sourceAnchor ? undefined : sourceDim.w,
+    sourceAnchor ? undefined : sourceDim.h,
+    targetAnchor ? undefined : targetDim.w,
+    targetAnchor ? undefined : targetDim.h,
     edge.controlPoints
   );
 
   // Calculate label position on the curve using node boundaries
   const labelPos = getLabelPosition(
-    x1,
-    y1,
-    x2,
-    y2,
+    startPoint.x,
+    startPoint.y,
+    endPoint.x,
+    endPoint.y,
     pathType,
-    sourceDim.w, sourceDim.h,
-    targetDim.w, targetDim.h,
+    sourceAnchor ? undefined : sourceDim.w,
+    sourceAnchor ? undefined : sourceDim.h,
+    targetAnchor ? undefined : targetDim.w,
+    targetAnchor ? undefined : targetDim.h,
     edge.labelPosition,
     edge.labelOffset,
     edge.controlPoints

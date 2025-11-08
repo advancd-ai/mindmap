@@ -15,14 +15,17 @@ function getNodeDisplayDimensions(node: Node): { w: number; h: number } {
 interface TemporaryEdgeProps {
   sourceNode: Node;
   endPoint: { x: number; y: number };
+  startPoint?: { x: number; y: number };
 }
 
-export default function TemporaryEdge({ sourceNode, endPoint }: TemporaryEdgeProps) {
+export default function TemporaryEdge({ sourceNode, endPoint, startPoint }: TemporaryEdgeProps) {
   // Consider collapsed state
   const { w: displayW, h: displayH } = getNodeDisplayDimensions(sourceNode);
   
-  const x1 = sourceNode.x + displayW / 2;
-  const y1 = sourceNode.y + displayH / 2;
+  const defaultX = sourceNode.x + displayW / 2;
+  const defaultY = sourceNode.y + displayH / 2;
+  const x1 = startPoint?.x ?? defaultX;
+  const y1 = startPoint?.y ?? defaultY;
 
   return (
     <line

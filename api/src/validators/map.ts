@@ -81,6 +81,8 @@ const mapSchema = {
               markerEnd: { type: 'string', enum: ['none', 'arrow', 'circle'] },
             },
           },
+          sourceAnchor: { type: 'integer', minimum: 0, maximum: 11 },
+          targetAnchor: { type: 'integer', minimum: 0, maximum: 11 },
           summary: {
             type: 'object',
             properties: {
