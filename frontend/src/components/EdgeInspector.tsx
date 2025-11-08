@@ -103,14 +103,9 @@ export default function EdgeInspector({
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const dragStateRef = useRef<{ x: number; y: number } | null>(null);
   const category = edge.category ?? 'branch';
-  const isSummary = category === 'summary';
   const isBoundary = category === 'boundary';
-  const isStandard = !isSummary && !isBoundary;
-
+  const isStandard = !isBoundary;
   const [labelDraft, setLabelDraft] = useState(edge.label ?? '');
-  const [summaryTitle, setSummaryTitle] = useState(edge.summary?.title ?? '');
-  const [summaryHeight, setSummaryHeight] = useState(edge.summary?.height ?? 64);
-  const [summaryCollapsed, setSummaryCollapsed] = useState(edge.summary?.collapsed ?? false);
   const [boundaryTitle, setBoundaryTitle] = useState(edge.boundary?.title ?? '');
   const [boundaryPadding, setBoundaryPadding] = useState(edge.boundary?.padding ?? 36);
   const [boundaryTheme, setBoundaryTheme] = useState<'default' | 'info' | 'success' | 'warning'>(
@@ -127,9 +122,6 @@ export default function EdgeInspector({
 
   useEffect(() => {
     setLabelDraft(edge.label ?? '');
-    setSummaryTitle(edge.summary?.title ?? '');
-    setSummaryHeight(edge.summary?.height ?? 64);
-    setSummaryCollapsed(edge.summary?.collapsed ?? false);
     setBoundaryTitle(edge.boundary?.title ?? '');
     setBoundaryPadding(edge.boundary?.padding ?? 36);
     const nextTheme =
@@ -144,9 +136,6 @@ export default function EdgeInspector({
   }, [
     edge.id,
     edge.label,
-    edge.summary?.title,
-    edge.summary?.height,
-    edge.summary?.collapsed,
     edge.boundary?.title,
     edge.boundary?.padding,
     edge.boundary?.theme,
@@ -193,7 +182,7 @@ export default function EdgeInspector({
     return () => {
       ro.disconnect();
     };
-  }, [onLayout, edge.id, labelDraft, summaryHeight, summaryCollapsed, boundaryPadding]);
+  }, [onLayout, edge.id, labelDraft, boundaryPadding]);
 
   const handleLabelCommit = () => {
     const trimmed = labelDraft.trim();
@@ -203,15 +192,6 @@ export default function EdgeInspector({
     } else if (trimmed !== (edge.label ?? '').trim()) {
       onChange({ label: trimmed });
     }
-  };
-
-  const handleSummaryCommit = (patch: Partial<NonNullable<Edge['summary']>>) => {
-    onChange({
-      summary: {
-        ...(edge.summary ?? { nodeIds: [] }),
-        ...patch,
-      },
-    });
   };
 
   const handleBoundaryCommit = (patch: Partial<NonNullable<Edge['boundary']>>) => {
@@ -545,53 +525,6 @@ export default function EdgeInspector({
               )}
             </section>
           </>
-        )}
-
-        {isSummary && (
-          <section className="edge-inspector__section edge-inspector__section--stacked">
-            <label className="edge-inspector__label">Summary title</label>
-            <input
-              className="edge-inspector__input"
-              value={summaryTitle}
-              onChange={(e) => setSummaryTitle(e.target.value)}
-              onBlur={() =>
-                handleSummaryCommit({ title: summaryTitle.trim() || undefined })
-              }
-              placeholder="Summary heading"
-              maxLength={80}
-              disabled={disabled}
-            />
-            <label className="edge-inspector__label">Arc height</label>
-            <input
-              type="range"
-              min={24}
-              max={160}
-              step={4}
-              value={summaryHeight}
-              onChange={(e) => {
-                const value = Number(e.target.value);
-                setSummaryHeight(value);
-                handleSummaryCommit({ height: value });
-              }}
-              disabled={disabled}
-            />
-            <span className="edge-inspector__value">{summaryHeight}px</span>
-            <div className="edge-inspector__row">
-              <label className="edge-inspector__label">State</label>
-              <button
-                type="button"
-                className={`edge-inspector__toggle ${summaryCollapsed ? 'active' : ''}`}
-                onClick={() => {
-                  const next = !summaryCollapsed;
-                  setSummaryCollapsed(next);
-                  handleSummaryCommit({ collapsed: next });
-                }}
-                disabled={disabled}
-              >
-                {summaryCollapsed ? 'Collapsed' : 'Expanded'}
-              </button>
-            </div>
-          </section>
         )}
 
         {isBoundary && (

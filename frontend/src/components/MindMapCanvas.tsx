@@ -9,7 +9,6 @@ import { useMindMapStore, type Node as NodeType, type Edge as EdgeType } from '.
 import { createMap, updateMap } from '../api/maps';
 import Node from './Node';
 import Edge from './Edge';
-import SummaryEdge from './SummaryEdge';
 import BoundaryEdge from './BoundaryEdge';
 import EdgeInspector from './EdgeInspector';
 import TemporaryEdge from './TemporaryEdge';
@@ -42,8 +41,6 @@ interface MindMapCanvasProps {
   onZoomChange?: (zoom: number) => void;
 }
 
-const SUMMARY_DEFAULT_HEIGHT = 64;
-const SUMMARY_DEFAULT_PADDING = 28;
 const BOUNDARY_DEFAULT_PADDING = 36;
 
 export default function MindMapCanvas({ 
@@ -263,9 +260,8 @@ export default function MindMapCanvas({
   console.log('🖼️ Rendering canvas with', map.nodes.length, 'nodes and', map.edges.length, 'edges');
 
   const boundaryEdges = map.edges.filter((edge) => edge.category === 'boundary');
-  const summaryEdges = map.edges.filter((edge) => edge.category === 'summary');
   const standardEdges = map.edges.filter(
-    (edge) => edge.category !== 'summary' && edge.category !== 'boundary'
+    (edge) => edge.category !== 'boundary'
   );
 
   // Convert screen coordinates to SVG coordinates
@@ -1202,59 +1198,6 @@ export default function MindMapCanvas({
     setEditingEdgeId(null);
   };
 
-  const handleCreateSummaryForChildren = useCallback(
-    (parentId: string) => {
-      const { map: currentMap } = useMindMapStore.getState();
-      if (!currentMap) return;
-
-      const parentNode = currentMap.nodes.find((n) => n.id === parentId);
-      if (!parentNode) return;
-
-      const childEdges = currentMap.edges.filter(
-        (edge) =>
-          edge.source === parentId &&
-          edge.category !== 'summary' &&
-          edge.category !== 'boundary'
-      );
-      const childNodes = childEdges
-        .map((edge) => currentMap.nodes.find((node) => node.id === edge.target))
-        .filter((node): node is NodeType => Boolean(node));
-
-      if (childNodes.length < 2) {
-        console.warn('⚠️ Not enough child nodes to create summary');
-        return;
-      }
-
-      const summaryTitle = `${parentNode.label} Summary`;
-      const newEdge: EdgeType = {
-        id: `e_summary_${Date.now()}`,
-        source: childNodes[0].id,
-        target: childNodes[childNodes.length - 1].id,
-        category: 'summary',
-        summary: {
-          nodeIds: childNodes.map((node) => node.id),
-          title: summaryTitle,
-          height: SUMMARY_DEFAULT_HEIGHT,
-          padding: SUMMARY_DEFAULT_PADDING,
-          collapsed: false,
-        },
-        style: {
-          strokeColor: '#60a5fa',
-          strokeWidth: 2,
-        },
-      };
-
-      addEdge(newEdge);
-      selectEdge(newEdge.id);
-      setEdgeInspectorState({
-        edgeId: newEdge.id,
-        x: parentNode.x,
-        y: parentNode.y,
-      });
-    },
-    [addEdge, selectEdge]
-  );
-
   const handleCreateBoundaryAroundFamily = useCallback(
     (rootId: string) => {
       const { map: currentMap } = useMindMapStore.getState();
@@ -1266,7 +1209,6 @@ export default function MindMapCanvas({
       const childEdges = currentMap.edges.filter(
         (edge) =>
           edge.source === rootId &&
-          edge.category !== 'summary' &&
           edge.category !== 'boundary'
       );
       const childNodes = childEdges
@@ -1340,21 +1282,6 @@ export default function MindMapCanvas({
         icon: <AppleIcon name="connect" size="medium" />,
         onClick: () => startConnectionFromNode(nodeId),
         disabled: isReadOnly,
-      },
-      {
-        label: 'Add Summary of Children',
-        icon: <AppleIcon name="success" size="medium" />,
-        onClick: () => handleCreateSummaryForChildren(nodeId),
-        disabled:
-          isReadOnly ||
-          !node ||
-          !map ||
-          map.edges.filter(
-            (edge) =>
-              edge.source === nodeId &&
-              edge.category !== 'summary' &&
-              edge.category !== 'boundary'
-          ).length < 2,
       },
       {
         label: 'Add Boundary Group',
@@ -1613,7 +1540,6 @@ export default function MindMapCanvas({
     map,
     isReadOnly,
     startConnectionFromNode,
-    handleCreateSummaryForChildren,
     handleCreateBoundaryAroundFamily,
     setEmbedTargetNodeId,
     setShowEmbedDialog,
@@ -1674,7 +1600,6 @@ export default function MindMapCanvas({
       foundEdge: !!edge,
       category: edge?.category,
       hasBoundary: !!edge?.boundary,
-      hasSummary: !!edge?.summary,
       hasSource: !!source,
       hasTarget: !!target,
       edge,
@@ -2534,19 +2459,6 @@ export default function MindMapCanvas({
           />
         ))}
 
-        {/* Summary arcs */}
-        {summaryEdges.map((edge) => (
-          <SummaryEdge
-            key={edge.id}
-            edge={edge}
-            nodes={map.nodes}
-            isSelected={selectedEdgeId === edge.id}
-            onClick={(e) => handleEdgeSelect(e, edge.id)}
-            onDoubleClick={(e) => handleEdgeDoubleClick(e, edge.id)}
-            onContextMenu={(e) => handleEdgeContextMenu(e, edge.id)}
-          />
-        ))}
-
         {/* Edges */}
         {standardEdges.map((edge) => {
           const source = map.nodes.find((n) => n.id === edge.source);
@@ -3017,27 +2929,6 @@ export default function MindMapCanvas({
 
             anchorX = (left + right) / 2;
             anchorY = top - 24;
-          }
-        } else if (inspectorEdge.category === 'summary' && inspectorEdge.summary) {
-          const targetNodes = inspectorEdge.summary.nodeIds
-            .map((id) => map.nodes.find((node) => node.id === id))
-            .filter((node): node is NodeType => Boolean(node));
-
-          if (targetNodes.length > 0) {
-            const rects = targetNodes.map((node) => {
-              const { w, h } = getNodeDisplayDimensions(node);
-              return { x: node.x, y: node.y, w, h };
-            });
-            const padding = inspectorEdge.summary.padding ?? SUMMARY_DEFAULT_PADDING;
-            const arcHeight = inspectorEdge.summary.height ?? SUMMARY_DEFAULT_HEIGHT;
-            const left = Math.min(...rects.map((r) => r.x));
-            const right = Math.max(...rects.map((r) => r.x + r.w));
-            const top = Math.min(...rects.map((r) => r.y));
-            const baseY = top - padding;
-            const apexY = baseY - arcHeight;
-
-            anchorX = (left + right) / 2;
-            anchorY = apexY - 20;
           }
         } else {
           const source = map.nodes.find((n) => n.id === inspectorEdge.source);
