@@ -3,7 +3,6 @@ import {
   type Edge,
   type EdgeMarker,
   type EdgeStyle,
-  type EdgeLabelPosition,
   type EdgeRouting,
 } from '../store/mindmap';
 import AppleIcon from './AppleIcon';
@@ -30,56 +29,50 @@ const DASH_PRESETS: Record<DashPreset, number[] | undefined> = {
   dotted: [3, 6],
 };
 
-const MARKER_OPTIONS: EdgeMarker[] = ['none', 'arrow', 'circle'];
-const LABEL_POSITIONS: EdgeLabelPosition[] = ['source', 'middle', 'target'];
 const ROUTING_OPTIONS: Array<{
   value: EdgeRouting;
   label: string;
-  description: string;
-  icon: string;
 }> = [
   {
     value: 'organic',
     label: 'Organic',
-    description: 'Natural bezier sweep for mind map branches.',
-    icon: '🌿',
   },
   {
     value: 'straight',
     label: 'Direct',
-    description: 'Shortest line between nodes.',
-    icon: '—',
   },
   {
     value: 'radial',
     label: 'Radial',
-    description: 'Arc that fans around the source node.',
-    icon: '◴',
   },
   {
     value: 'spline',
     label: 'Spline',
-    description: 'Soft S-curve for weaving through dense clusters.',
-    icon: '∿',
   },
   {
     value: 'bundle',
     label: 'Bundle',
-    description: 'Shared trunk with a gentle fan-out.',
-    icon: '≋',
   },
   {
     value: 'orthogonal',
     label: 'Right Angle',
-    description: 'L-shaped elbows ideal for diagrams.',
-    icon: '┐',
   },
   {
     value: 'hierarchical',
     label: 'Hierarchical',
-    description: 'Tiered top-to-bottom alignment.',
-    icon: '⇵',
   },
+];
+
+const DASH_OPTIONS: Array<{ value: DashPreset; label: string }> = [
+  { value: 'solid', label: 'Solid' },
+  { value: 'dashed', label: 'Dashed' },
+  { value: 'dotted', label: 'Dotted' },
+];
+
+const MARKER_SELECT_OPTIONS: Array<{ value: EdgeMarker; label: string }> = [
+  { value: 'none', label: 'None' },
+  { value: 'arrow', label: 'Arrow' },
+  { value: 'circle', label: 'Circle' },
 ];
 
 function EdgePreview({
@@ -88,18 +81,28 @@ function EdgePreview({
   dash,
   markerStart,
   markerEnd,
+  variant = 'default',
 }: {
   color: string;
   width: number;
   dash?: number[];
   markerStart: EdgeMarker;
   markerEnd: EdgeMarker;
+  variant?: 'default' | 'compact';
 }) {
   const strokeDasharray = dash ? dash.join(' ') : undefined;
   const markerStartId = markerStart !== 'none' ? `edge-preview-marker-${markerStart}` : undefined;
   const markerEndId = markerEnd !== 'none' ? `edge-preview-marker-${markerEnd}` : undefined;
+  const size = variant === 'compact' ? { width: 60, height: 26 } : { width: 80, height: 32 };
+  const padding = variant === 'compact' ? 6 : 8;
+  const centerY = size.height / 2;
   return (
-    <svg className="edge-preview" width={80} height={32} viewBox="0 0 80 32">
+    <svg
+      className={`edge-preview edge-preview--${variant}`}
+      width={size.width}
+      height={size.height}
+      viewBox={`0 0 ${size.width} ${size.height}`}
+    >
       <defs>
         <marker
           id="edge-preview-marker-arrow"
@@ -125,10 +128,10 @@ function EdgePreview({
         </marker>
       </defs>
       <line
-        x1={8}
-        y1={16}
-        x2={72}
-        y2={16}
+        x1={padding}
+        y1={centerY}
+        x2={size.width - padding}
+        y2={centerY}
         stroke={color}
         strokeWidth={width}
         strokeDasharray={strokeDasharray}
@@ -168,8 +171,6 @@ export default function EdgeInspector({
   const [boundaryShape, setBoundaryShape] = useState<'rounded' | 'organic'>(
     edge.boundary?.shape === 'organic' ? 'organic' : 'rounded'
   );
-  const [showAdvanced, setShowAdvanced] = useState(false);
-
   useEffect(() => {
     setLabelDraft(edge.label ?? '');
     setBoundaryTitle(edge.boundary?.title ?? '');
@@ -206,9 +207,6 @@ export default function EdgeInspector({
   const markerStart = edge.style?.markerStart ?? 'none';
   const markerEnd = edge.style?.markerEnd ?? 'arrow';
   const routing = edge.routing ?? 'straight';
-  const activeRouting = ROUTING_OPTIONS.find((option) => option.value === routing) ?? ROUTING_OPTIONS[0];
-  const labelPosition = edge.labelPosition ?? 'middle';
-  const offset = edge.labelOffset ?? { x: 0, y: 0 };
 
   const widthPercent = useMemo(() => {
     const ratio = (strokeWidth - strokeMin) / (strokeMax - strokeMin);
@@ -263,19 +261,6 @@ export default function EdgeInspector({
     });
   };
 
-  const applyLabelPosition = (position: EdgeLabelPosition) => {
-    onChange({ labelPosition: position });
-  };
-
-  const nudgeLabel = (dx: number, dy: number) => {
-    onChange({
-      labelOffset: {
-        x: (edge.labelOffset?.x ?? 0) + dx,
-        y: (edge.labelOffset?.y ?? 0) + dy,
-      },
-    });
-  };
-
   useEffect(() => {
     const handlePointerMove = (event: PointerEvent) => {
       if (!dragStateRef.current || !onDrag) return;
@@ -303,28 +288,16 @@ export default function EdgeInspector({
     };
   }, [onDrag]);
 
-  const markerButton = (value: EdgeMarker, current: EdgeMarker, onSelect: (val: EdgeMarker) => void) => (
-    <button
-      key={value}
-      type="button"
-      className={`edge-inspector__toggle edge-inspector__toggle--compact ${current === value ? 'active' : ''}`}
-      onClick={() => onSelect(value)}
-      disabled={disabled}
-    >
-      {value}
-    </button>
-  );
-
   return (
     <div
       ref={wrapperRef}
       className="edge-inspector-wrapper"
       style={{ top: position.top, left: position.left }}
     >
-      <div className="edge-inspector">
-        <header className="edge-inspector__header edge-inspector__header--modern">
+      <div className="edge-inspector edge-inspector--compact">
+        <header className="edge-inspector__header edge-inspector__header--compact">
           <div
-            className="edge-inspector__title-block"
+            className="edge-inspector__title-block edge-inspector__title-block--compact"
             onPointerDown={(e) => {
               if (e.button !== 0 || !onDrag) return;
               dragStateRef.current = { x: e.clientX, y: e.clientY };
@@ -349,17 +322,14 @@ export default function EdgeInspector({
             }}
           >
             <AppleIcon name="bolt" size="medium" className="edge-inspector__title-icon" />
-            <div>
-              <div className="edge-inspector__title-text">Edge Style</div>
-              <div className="edge-inspector__meta-row">
-                <span className="edge-inspector__pill">{category}</span>
-                {isStandard && (
-                  <>
-                    <span className="edge-inspector__meta-dot" style={{ backgroundColor: strokeColor }} />
-                    <span className="edge-inspector__meta-chip">{strokeWidth.toFixed(2)}px</span>
-                  </>
-                )}
-              </div>
+            <div className="edge-inspector__meta-row">
+              <span className="edge-inspector__pill">{category}</span>
+              {isStandard && (
+                <>
+                  <span className="edge-inspector__meta-dot" style={{ backgroundColor: strokeColor }} />
+                  <span className="edge-inspector__meta-chip">{strokeWidth.toFixed(1)}px</span>
+                </>
+              )}
             </div>
           </div>
           {isStandard && (
@@ -369,6 +339,7 @@ export default function EdgeInspector({
               dash={edge.style?.dashPattern}
               markerStart={markerStart}
               markerEnd={markerEnd}
+              variant="compact"
             />
           )}
           <button
@@ -381,8 +352,120 @@ export default function EdgeInspector({
           </button>
         </header>
 
-        <section className="edge-inspector__section">
-          <label className="edge-inspector__label edge-inspector__label--caps">Label</label>
+        {isStandard && (
+          <section className="edge-inspector__section edge-inspector__section--compact edge-inspector__section--quick">
+            <div className="edge-inspector__section-heading">
+              <span className="edge-inspector__section-title">Quick Style</span>
+            </div>
+
+            <div className="edge-inspector__field">
+              <div className="edge-inspector__field-header">
+                <span className="edge-inspector__chip-label">Color</span>
+              </div>
+              <input
+                type="color"
+                className="edge-inspector__color"
+                value={strokeColor}
+                onChange={(e) => applyStyle({ strokeColor: e.target.value })}
+                disabled={disabled}
+              />
+            </div>
+
+            <div className="edge-inspector__field">
+              <div className="edge-inspector__field-header">
+                <span className="edge-inspector__chip-label">Width</span>
+                <span className="edge-inspector__field-value">{strokeWidth.toFixed(1)}px</span>
+              </div>
+              <input
+                type="range"
+                min={strokeMin}
+                max={strokeMax}
+                step={0.25}
+                value={strokeWidth}
+                onChange={(e) =>
+                  applyStyle({
+                    strokeWidth: Math.min(strokeMax, Math.max(strokeMin, Number(e.target.value))),
+                  })
+                }
+                disabled={disabled}
+                className="edge-inspector__range edge-inspector__range--slim"
+                style={{
+                  background: `linear-gradient(90deg, #2563eb ${widthPercent}%, rgba(148, 163, 184, 0.25) ${widthPercent}%)`,
+                }}
+                aria-valuemin={strokeMin}
+                aria-valuemax={strokeMax}
+                aria-valuenow={strokeWidth}
+                aria-label="Edge width"
+              />
+            </div>
+
+            <div className="edge-inspector__field">
+              <div className="edge-inspector__field-header">
+                <span className="edge-inspector__chip-label">Dash</span>
+              </div>
+              <select
+                id="edge-dash-select"
+                className="edge-inspector__select edge-inspector__select--inline"
+                value={dashPreset}
+                onChange={(e) => {
+                  const preset = e.target.value as DashPreset;
+                  applyStyle({ dashPattern: DASH_PRESETS[preset] ?? [] });
+                }}
+                disabled={disabled}
+              >
+                {DASH_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="edge-inspector__field">
+              <div className="edge-inspector__field-header">
+                <span className="edge-inspector__chip-label">Markers</span>
+              </div>
+              <div className="edge-inspector__marker-select-group" role="group" aria-label="Markers">
+                <label className="edge-inspector__marker-select">
+                  <span className="edge-inspector__marker-label">Start</span>
+                  <select
+                    className="edge-inspector__select edge-inspector__select--inline"
+                    value={markerStart}
+                    onChange={(e) => applyStyle({ markerStart: e.target.value as EdgeMarker })}
+                    disabled={disabled}
+                  >
+                    {MARKER_SELECT_OPTIONS.map((option) => (
+                      <option key={`marker-start-${option.value}`} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="edge-inspector__marker-select">
+                  <span className="edge-inspector__marker-label">End</span>
+                  <select
+                    className="edge-inspector__select edge-inspector__select--inline"
+                    value={markerEnd}
+                    onChange={(e) => applyStyle({ markerEnd: e.target.value as EdgeMarker })}
+                    disabled={disabled}
+                  >
+                    {MARKER_SELECT_OPTIONS.map((option) => (
+                      <option key={`marker-end-${option.value}`} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </div>
+          </section>
+        )}
+
+        <section className="edge-inspector__section edge-inspector__section--compact">
+          <div className="edge-inspector__section-heading edge-inspector__section-heading--tight">
+            <span className="edge-inspector__section-title">Label</span>
+            {/* Subtitle intentionally removed for compact layout */}
+          </div>
           <textarea
             className="edge-inspector__textarea"
             value={labelDraft}
@@ -397,202 +480,32 @@ export default function EdgeInspector({
                 setLabelDraft(edge.label ?? '');
               }
             }}
-            placeholder="Describe the relationship (Markdown supported)"
-            rows={3}
+            placeholder="Describe the relationship"
+            rows={2}
             maxLength={200}
             disabled={disabled}
           />
         </section>
 
         {isStandard && (
-          <section className="edge-inspector__section">
-            <div className="edge-inspector__dash-row">
-              <label className="edge-inspector__label edge-inspector__label--caps">Dash</label>
-              <div className="edge-inspector__toggle-group" role="group" aria-label="Dash pattern">
-                {(Object.keys(DASH_PRESETS) as DashPreset[]).map((preset) => (
-                  <button
-                    key={preset}
-                    type="button"
-                    className={`edge-inspector__toggle edge-inspector__toggle--compact ${dashPreset === preset ? 'active' : ''}`}
-                    onClick={() =>
-                      applyStyle({
-                        dashPattern: DASH_PRESETS[preset] ?? [],
-                      })
-                    }
-                    disabled={disabled}
-                  >
-                    {preset.charAt(0).toUpperCase() + preset.slice(1)}
-                  </button>
-                ))}
-              </div>
+          <section className="edge-inspector__section edge-inspector__section--stacked">
+            <div className="edge-inspector__label-row">
+              <span className="edge-inspector__label edge-inspector__label--caps">Routing</span>
             </div>
-
-            <div className="edge-inspector__row edge-inspector__row--appearance">
-              <label className="edge-inspector__label edge-inspector__label--caps">Color</label>
-              <input
-                type="color"
-                className="edge-inspector__color"
-                value={strokeColor}
-                onChange={(e) => applyStyle({ strokeColor: e.target.value })}
-                disabled={disabled}
-              />
-            </div>
-
-            <div className="edge-inspector__width-section">
-              <div className="edge-inspector__label-row edge-inspector__label-row--tight">
-                <span className="edge-inspector__label edge-inspector__label--caps">Width</span>
-                <span className="edge-inspector__label-value">{strokeWidth.toFixed(2)}px</span>
-              </div>
-              <div className="edge-inspector__range-wrapper">
-                <input
-                  type="range"
-                  min={strokeMin}
-                  max={strokeMax}
-                  step={0.25}
-                  value={strokeWidth}
-                  onChange={(e) =>
-                    applyStyle({
-                      strokeWidth: Math.min(strokeMax, Math.max(strokeMin, Number(e.target.value))),
-                    })
-                  }
-                  disabled={disabled}
-                  className="edge-inspector__range"
-                  style={{
-                    background: `linear-gradient(90deg, #2563eb ${widthPercent}%, rgba(148, 163, 184, 0.3) ${widthPercent}%)`,
-                  }}
-                  aria-valuemin={strokeMin}
-                  aria-valuemax={strokeMax}
-                  aria-valuenow={strokeWidth}
-                  aria-label="Edge width"
-                />
-                <div className="edge-inspector__range-marks">
-                  <span>{`${strokeMin.toFixed(1)}px`}</span>
-                  <span className="edge-inspector__range-value">{strokeWidth.toFixed(2)}px</span>
-                  <span>{`${strokeMax.toFixed(0)}px`}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="edge-inspector__markers-inline" role="group" aria-label="Markers">
-              <span className="edge-inspector__label edge-inspector__label--caps">Start</span>
-              {MARKER_OPTIONS.map((option) =>
-                markerButton(option, markerStart, (value) => applyStyle({ markerStart: value })),
-              )}
-              <span className="edge-inspector__label edge-inspector__label--caps edge-inspector__label--markers">End</span>
-              {MARKER_OPTIONS.map((option) =>
-                markerButton(option, markerEnd, (value) => applyStyle({ markerEnd: value })),
-              )}
-            </div>
+            <select
+              className="edge-inspector__select edge-inspector__select--inline"
+              value={routing}
+              onChange={(e) => onChange({ routing: e.target.value as EdgeRouting })}
+              disabled={disabled}
+              aria-label="Routing style"
+            >
+              {ROUTING_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </section>
-        )}
-
-        {isStandard && (
-          <>
-            <section className="edge-inspector__section edge-inspector__section--stacked">
-              <div className="edge-inspector__label-row">
-                <span className="edge-inspector__label edge-inspector__label--caps">Routing</span>
-                <span className="edge-inspector__label-hint">Choose how this edge flows between nodes.</span>
-              </div>
-              <div className="edge-inspector__routing-grid" role="list">
-                {ROUTING_OPTIONS.map((option) => {
-                  const isActive = routing === option.value;
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      className={`edge-inspector__routing-option ${isActive ? 'active' : ''}`}
-                      onClick={() => {
-                        if (option.value !== routing) {
-                          onChange({ routing: option.value });
-                        }
-                      }}
-                      disabled={disabled}
-                      aria-pressed={isActive}
-                    >
-                      <span className="edge-inspector__routing-icon" aria-hidden="true">
-                        {option.icon}
-                      </span>
-                      <span className="edge-inspector__routing-text">
-                        <span className="edge-inspector__routing-label">{option.label}</span>
-                        <span className="edge-inspector__routing-description">{option.description}</span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="edge-inspector__routing-summary" aria-live="polite">
-                <span className="edge-inspector__routing-summary-label">{activeRouting.icon}</span>
-                <div>
-                  <div className="edge-inspector__routing-summary-title">{activeRouting.label}</div>
-                  <div className="edge-inspector__routing-summary-hint">{activeRouting.description}</div>
-                </div>
-              </div>
-            </section>
-
-            <section className="edge-inspector__section edge-inspector__section--stacked">
-              <div className="edge-inspector__label-row">
-                <span className="edge-inspector__label edge-inspector__label--caps">Label Position</span>
-                <span className="edge-inspector__label-hint">Adjust anchor and offsets</span>
-              </div>
-              <div className="edge-inspector__segmented edge-inspector__segmented--full" role="group" aria-label="Label Position">
-                {LABEL_POSITIONS.map((position) => (
-                  <button
-                    key={position}
-                    type="button"
-                    className={labelPosition === position ? 'active' : ''}
-                    onClick={() => applyLabelPosition(position)}
-                    disabled={disabled}
-                  >
-                    {position.charAt(0).toUpperCase() + position.slice(1)}
-                  </button>
-                ))}
-              </div>
-
-              <div className="edge-inspector__nudgers" aria-label="Offset controls">
-                <button type="button" onClick={() => nudgeLabel(0, -6)} disabled={disabled}>
-                  ↑
-                </button>
-                <div className="edge-inspector__nudgers-middle">
-                  <button type="button" onClick={() => nudgeLabel(-6, 0)} disabled={disabled}>
-                    ←
-                  </button>
-                  <span className="edge-inspector__offset">
-                    {offset.x}, {offset.y}
-                  </span>
-                  <button type="button" onClick={() => nudgeLabel(6, 0)} disabled={disabled}>
-                    →
-                  </button>
-                </div>
-                <button type="button" onClick={() => nudgeLabel(0, 6)} disabled={disabled}>
-                  ↓
-                </button>
-              </div>
-
-              <button
-                type="button"
-                className="edge-inspector__reset-button"
-                onClick={() => onChange({ labelOffset: { x: 0, y: 0 } })}
-                disabled={disabled}
-              >
-                <AppleIcon name="refresh" size="small" /> Reset offset
-              </button>
-
-              <button
-                type="button"
-                className="edge-inspector__advanced-toggle"
-                onClick={() => setShowAdvanced((prev) => !prev)}
-                aria-expanded={showAdvanced}
-              >
-                <AppleIcon name={showAdvanced ? 'chevron.up' : 'chevron.down'} size="small" />
-                Advanced label controls
-              </button>
-              {showAdvanced && (
-                <div className="edge-inspector__advanced">
-                  <p className="edge-inspector__helper">Use the nudgers or enter precise offsets above.</p>
-                </div>
-              )}
-            </section>
-          </>
         )}
 
         {isBoundary && (
@@ -671,7 +584,7 @@ export default function EdgeInspector({
             onClick={onDelete}
             disabled={disabled || !onDelete}
           >
-            <AppleIcon name="delete" size="small" /> Delete Edge
+            <AppleIcon name="delete" size="small" /> Delete
           </button>
         </footer>
       </div>
