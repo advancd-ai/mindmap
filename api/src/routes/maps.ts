@@ -194,25 +194,30 @@ mapsRouter.put('/:id', async (c) => {
   body.updatedAt = new Date().toISOString();
   body.version = (body.version || 0) + 1;
 
-  // Validate schema
-  const validation = validateMap(body);
-  if (!validation.valid) {
-    return c.json(
-      {
-        ok: false,
-        error: {
-          code: 'MAP_400_SCHEMA',
-          message: 'Schema validation failed',
-          details: validation.errors,
-        },
-      },
-      400
-    );
-  }
-
   const github = createGitProvider(user);
 
   try {
+    // Validate schema
+    const validation = validateMap(body);
+    if (!validation.valid) {
+      console.error('❌ Map validation failed:', {
+        mapId: id,
+        errors: validation.errors,
+        payload: body,
+      });
+      return c.json(
+        {
+          ok: false,
+          error: {
+            code: 'MAP_400_SCHEMA',
+            message: 'Schema validation failed',
+            details: validation.errors,
+          },
+        },
+        400
+      );
+    }
+
     // Update via PR transaction
     const pr = await github.updateMap(body);
 
@@ -231,7 +236,13 @@ mapsRouter.put('/:id', async (c) => {
       202
     );
   } catch (error: any) {
-    console.error('Error updating map:', error);
+    console.error('❌ Error updating map:', {
+      mapId: id,
+      error: error?.message,
+      stack: error?.stack,
+      status: error?.status,
+      response: error?.response?.data,
+    });
     throw error;
   }
 });

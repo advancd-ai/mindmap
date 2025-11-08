@@ -37,12 +37,180 @@ export interface Node {
 
 export type EdgeType = 'straight' | 'curved' | 'bezier';
 
+export type EdgeCategory = 'branch' | 'relationship' | 'summary' | 'boundary';
+export type EdgeRouting = 'organic' | 'orthogonal';
+export type EdgeMarker = 'none' | 'arrow' | 'circle';
+
+export interface EdgeStyle {
+  strokeColor?: string;
+  strokeWidth?: number;
+  dashPattern?: number[];
+  markerStart?: EdgeMarker;
+  markerEnd?: EdgeMarker;
+}
+
+export type EdgeLabelPosition = 'source' | 'middle' | 'target';
+
+export interface EdgeLabelOffset {
+  x: number;
+  y: number;
+}
+
+export interface EdgeControlPoint {
+  x: number;
+  y: number;
+}
+
+export interface EdgeDecorator {
+  type: 'icon' | 'highlight';
+  position?: number;
+  icon?: string;
+  label?: string;
+  color?: string;
+  length?: number;
+}
+
+export interface SummaryEdgeData {
+  nodeIds: string[];
+  title?: string;
+  padding?: number;
+  height?: number;
+  collapsed?: boolean;
+}
+
+export interface BoundaryEdgeData {
+  nodeIds: string[];
+  title?: string;
+  padding?: number;
+  theme?: 'default' | 'info' | 'success' | 'warning';
+  shape?: 'rounded' | 'organic';
+}
+
+const DEFAULT_BRANCH_STYLE: Readonly<EdgeStyle> = Object.freeze({
+  strokeColor: '#94a3b8',
+  strokeWidth: 1.5,
+  markerStart: 'none',
+  markerEnd: 'arrow',
+});
+
+const DEFAULT_RELATIONSHIP_STYLE: Readonly<EdgeStyle> = Object.freeze({
+  strokeColor: '#f97316',
+  strokeWidth: 1.75,
+  dashPattern: [8, 4],
+  markerStart: 'none',
+  markerEnd: 'arrow',
+});
+
+const DEFAULT_SUMMARY_STYLE: Readonly<EdgeStyle> = Object.freeze({
+  strokeColor: '#60a5fa',
+  strokeWidth: 2,
+  markerStart: 'none',
+  markerEnd: 'none',
+});
+
+const DEFAULT_BOUNDARY_STYLE: Readonly<EdgeStyle> = Object.freeze({
+  strokeColor: '#3b82f6',
+  strokeWidth: 1.5,
+  markerStart: 'none',
+  markerEnd: 'none',
+});
+
+const EDGE_ID_PATTERN = /^e_[A-Za-z0-9_-]{4,}$/;
+
+const createEdgeId = (category: EdgeCategory) => {
+  const prefix = category ? category.replace(/[^A-Za-z0-9]+/g, '') : 'edge';
+  const random = Math.random().toString(36).slice(2, 8);
+  const timestamp = Date.now().toString(36);
+  return `e_${prefix}_${timestamp}_${random}`;
+};
+
+const cloneDashPattern = (pattern?: number[]) =>
+  pattern ? [...pattern] : undefined;
+
+const cloneSummary = (summary?: SummaryEdgeData): SummaryEdgeData | undefined =>
+  summary
+    ? {
+        nodeIds: [...summary.nodeIds],
+        title: summary.title,
+        padding: summary.padding,
+        height: summary.height,
+        collapsed: summary.collapsed ?? false,
+      }
+    : undefined;
+
+const cloneBoundary = (boundary?: BoundaryEdgeData): BoundaryEdgeData | undefined =>
+  boundary
+    ? {
+        nodeIds: [...boundary.nodeIds],
+        title: boundary.title,
+        padding: boundary.padding,
+        theme: boundary.theme ?? 'default',
+        shape: boundary.shape ?? 'rounded',
+      }
+    : undefined;
+
+const normalizeEdge = (edge: Edge): Edge => {
+  const category: EdgeCategory = edge.category ?? 'branch';
+  let normalizedId = EDGE_ID_PATTERN.test(edge.id)
+    ? edge.id
+    : createEdgeId(category);
+  const baseStyle =
+    category === 'relationship'
+      ? DEFAULT_RELATIONSHIP_STYLE
+      : category === 'summary'
+      ? DEFAULT_SUMMARY_STYLE
+      : category === 'boundary'
+      ? DEFAULT_BOUNDARY_STYLE
+      : DEFAULT_BRANCH_STYLE;
+
+  const style = edge.style ?? {};
+  const routing: EdgeRouting =
+    category === 'boundary' || category === 'summary'
+      ? 'organic'
+      : edge.routing ?? 'organic';
+  const labelPosition: EdgeLabelPosition =
+    category === 'boundary' ? 'middle' : edge.labelPosition ?? 'middle';
+  const labelOffset: EdgeLabelOffset = edge.labelOffset
+    ? { ...edge.labelOffset }
+    : { x: 0, y: 0 };
+
+  return {
+    ...edge,
+    id: normalizedId,
+    category,
+    routing,
+    labelPosition,
+    labelOffset,
+    style: {
+      strokeColor: style.strokeColor ?? baseStyle.strokeColor,
+      strokeWidth: style.strokeWidth ?? baseStyle.strokeWidth,
+      dashPattern: cloneDashPattern(
+        style.dashPattern ?? baseStyle.dashPattern
+      ),
+      markerStart: style.markerStart ?? baseStyle.markerStart ?? 'none',
+      markerEnd: style.markerEnd ?? baseStyle.markerEnd ?? 'arrow',
+    },
+    summary: category === 'summary' ? cloneSummary(edge.summary) : undefined,
+    boundary: category === 'boundary' ? cloneBoundary(edge.boundary) : undefined,
+    decorators: edge.decorators ? edge.decorators.map((decorator) => ({ ...decorator })) : undefined,
+  };
+};
+
 export interface Edge {
   id: string;
   source: string;
   target: string;
   label?: string;
+  labelPosition?: EdgeLabelPosition;
+  labelOffset?: EdgeLabelOffset;
   edgeType?: EdgeType;
+  category?: EdgeCategory;
+  routing?: EdgeRouting;
+  controlPoints?: EdgeControlPoint[];
+  style?: EdgeStyle;
+  summary?: SummaryEdgeData;
+  boundary?: BoundaryEdgeData;
+  decorators?: EdgeDecorator[];
   meta?: Record<string, any>;
 }
 
@@ -104,7 +272,14 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
 
   setMap: (map) => {
     console.log('📝 Setting map in store:', map);
-    set({ map, isDirty: false, changeLog: [] });
+
+    const normalizedEdges = (map.edges || []).map(normalizeEdge);
+    const normalizedMap: MindMap = {
+      ...map,
+      edges: normalizedEdges,
+    };
+
+    set({ map: normalizedMap, isDirty: false, changeLog: [] });
   },
 
   updateTitle: (title) =>
@@ -161,7 +336,11 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
           ? {
               ...state.map,
               nodes: state.map.nodes.filter((n) => n.id !== id),
-              edges: state.map.edges.filter((e) => e.source !== id && e.target !== id),
+              edges: state.map.edges.filter((e) => {
+                const summaryContains = e.summary?.nodeIds?.includes(id) ?? false;
+                const boundaryContains = e.boundary?.nodeIds?.includes(id) ?? false;
+                return e.source !== id && e.target !== id && !summaryContains && !boundaryContains;
+              }),
             }
           : null,
         isDirty: true,
@@ -176,9 +355,10 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
       const edgeDesc = sourceNode && targetNode 
         ? `"${sourceNode.label}" → "${targetNode.label}"`
         : 'New edge';
+      const normalizedEdge = normalizeEdge(edge);
       
       return {
-        map: state.map ? { ...state.map, edges: [...state.map.edges, edge] } : null,
+        map: state.map ? { ...state.map, edges: [...state.map.edges, normalizedEdge] } : null,
         isDirty: true,
         changeLog: [...state.changeLog, `🔗 Edge added: ${edgeDesc}`],
       };
@@ -211,7 +391,64 @@ export const useMindMapStore = create<MindMapState>((set, get) => ({
         map: state.map
           ? {
               ...state.map,
-              edges: state.map.edges.map((e) => (e.id === id ? { ...e, ...updates } : e)),
+              edges: state.map.edges.map((e) => {
+                if (e.id !== id) return e;
+
+                const mergedStyle =
+                  updates.style || e.style
+                    ? {
+                        strokeColor: updates.style?.strokeColor ?? e.style?.strokeColor,
+                        strokeWidth: updates.style?.strokeWidth ?? e.style?.strokeWidth,
+                        dashPattern: updates.style?.dashPattern ?? e.style?.dashPattern,
+                        markerStart: updates.style?.markerStart ?? e.style?.markerStart,
+                        markerEnd: updates.style?.markerEnd ?? e.style?.markerEnd,
+                      }
+                    : undefined;
+
+                const mergedSummary =
+                  updates.summary || e.summary
+                    ? {
+                        ...(e.summary ?? { nodeIds: [] }),
+                        ...(updates.summary ?? {}),
+                        nodeIds: updates.summary?.nodeIds
+                          ? [...updates.summary.nodeIds]
+                          : e.summary?.nodeIds
+                          ? [...e.summary.nodeIds]
+                          : [],
+                      }
+                    : undefined;
+
+                const mergedBoundary =
+                  updates.boundary || e.boundary
+                    ? {
+                        ...(e.boundary ?? { nodeIds: [] }),
+                        ...(updates.boundary ?? {}),
+                        nodeIds: updates.boundary?.nodeIds
+                          ? [...updates.boundary.nodeIds]
+                          : e.boundary?.nodeIds
+                          ? [...e.boundary.nodeIds]
+                          : [],
+                      }
+                    : undefined;
+
+                const mergedDecorators =
+                  updates.decorators !== undefined
+                    ? updates.decorators?.map((decorator) => ({ ...decorator }))
+                    : e.decorators
+                    ? e.decorators.map((decorator) => ({ ...decorator }))
+                    : undefined;
+
+                const mergedEdge: Edge = {
+                  ...e,
+                  ...updates,
+                  style: mergedStyle,
+                  summary: mergedSummary,
+                  boundary: mergedBoundary,
+                  decorators: mergedDecorators,
+                };
+
+                return normalizeEdge(mergedEdge);
+              }),
             }
           : null,
         isDirty: true,

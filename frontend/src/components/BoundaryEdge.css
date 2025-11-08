@@ -1,0 +1,32 @@
+.boundary-edge__shape {
+  filter:
+    drop-shadow(0 20px 24px rgba(15, 23, 42, 0.18))
+    drop-shadow(0 0 0 1px rgba(148, 163, 184, 0.18));
+}
+
+.boundary-edge.selected .boundary-edge__shape {
+  filter:
+    drop-shadow(0 24px 28px rgba(37, 99, 235, 0.2))
+    drop-shadow(0 0 0 1px rgba(37, 99, 235, 0.35));
+}
+
+.boundary-edge__title-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+}
+
+.boundary-edge__title {
+  display: inline-flex;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.75);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 6px 12px rgba(15, 23, 42, 0.24);
+}
+

@@ -2,7 +2,7 @@
  * EdgeEditor - Inline text editor for edge labels
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './EdgeEditor.css';
 
 interface EdgeEditorProps {
@@ -21,50 +21,57 @@ export default function EdgeEditor({
   onCancel,
 }: EdgeEditorProps) {
   const [value, setValue] = useState(initialValue);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    // Focus and select text when editor appears
-    if (inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+      textareaRef.current.select();
     }
   }, []);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+  const handleSave = () => {
+    onSave(value.trim());
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      onSave(value);
+      handleSave();
     } else if (e.key === 'Escape') {
       e.preventDefault();
       onCancel();
     }
   };
 
-  const handleBlur = () => {
-    // Save on blur (click outside)
-    onSave(value);
-  };
-
   return (
     <foreignObject
-      x={x - 60}
-      y={y - 15}
-      width={120}
-      height={30}
+      x={x - 90}
+      y={y - 50}
+      width={200}
+      height={110}
       className="edge-editor-wrapper"
     >
-      <input
-        ref={inputRef}
-        type="text"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={handleKeyDown}
-        onBlur={handleBlur}
-        className="edge-editor-input"
-        placeholder="Label"
-        maxLength={50}
-      />
+      <div
+        className="edge-editor"
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <textarea
+          ref={textareaRef}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={handleSave}
+          className="edge-editor-textarea"
+          placeholder="Edge details (Markdown supported)"
+          maxLength={200}
+          rows={3}
+        />
+        <div className="edge-editor-hint">
+          Enter to save · Shift+Enter for newline · Esc to cancel
+        </div>
+      </div>
     </foreignObject>
   );
 }

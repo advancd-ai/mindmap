@@ -8,26 +8,21 @@
   transition: var(--transition-fast);
 }
 
-.edge line {
-  stroke: var(--border-secondary);
-  stroke-width: 1.5;
-  transition: var(--transition-fast);
+.edge .edge-visible-path {
+  transition: stroke 150ms ease, stroke-width 150ms ease, filter 150ms ease;
 }
 
-.edge:hover line {
-  stroke-width: 2;
-  stroke: var(--accent-primary);
-  filter: drop-shadow(0 2px 4px rgba(37, 99, 235, 0.15));
+.edge:hover .edge-visible-path {
+  filter: drop-shadow(0 2px 6px rgba(37, 99, 235, 0.2));
+  stroke-width: var(--edge-hover-width, 2.25);
 }
 
 /* ============================================
    EDGE SELECTED STATE
    ============================================ */
 
-.edge.selected line {
-  stroke: var(--accent-primary);
-  stroke-width: 2;
-  filter: drop-shadow(0 4px 8px rgba(37, 99, 235, 0.2));
+.edge.selected .edge-visible-path {
+  filter: drop-shadow(0 0 9px rgba(37, 99, 235, 0.25));
 }
 
 /* ============================================
@@ -52,34 +47,76 @@
    EDGE LABEL - 관계의 설명
    ============================================ */
 
-.edge text {
+.edge-label-fo {
+  pointer-events: none;
+}
+
+.edge-label-card {
+  min-width: 120px;
+  max-width: 180px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  box-shadow:
+    0 6px 12px rgba(15, 23, 42, 0.12),
+    0 0 0 1px rgba(148, 163, 184, 0.25);
   font-size: 12px;
   font-weight: 500;
-  fill: var(--text-secondary);
-  letter-spacing: -0.01em;
-  user-select: none;
-  transition: var(--transition-fast);
+  color: rgba(51, 65, 85, 0.95);
+  text-align: center;
 }
 
-.edge text tspan {
-  dominant-baseline: middle;
+.edge-label-card .markdown-renderer {
+  width: 100%;
+  text-align: center;
+  font-size: 12px;
+  color: inherit;
 }
 
-.edge:hover text {
-  font-weight: 600;
-  fill: var(--text-primary);
+.edge-label-card .markdown-renderer p {
+  margin: 0;
 }
 
-/* Edge label background */
-.edge rect {
-  fill: var(--bg-primary);
-  stroke: var(--border-primary);
-  transition: var(--transition-fast);
+.edge-label-card .markdown-renderer strong {
+  color: rgba(30, 41, 59, 0.95);
 }
 
-.edge.selected rect {
-  stroke: var(--accent-primary);
-  filter: drop-shadow(0 2px 4px rgba(37, 99, 235, 0.1));
+.edge-label-card.selected {
+  border-color: rgba(37, 99, 235, 0.6);
+  box-shadow:
+    0 10px 18px rgba(37, 99, 235, 0.16),
+    0 0 0 1px rgba(37, 99, 235, 0.35);
+}
+
+.edge-label-card[data-kind='relationship'] {
+  background: rgba(254, 243, 199, 0.95);
+  border-color: rgba(249, 115, 22, 0.5);
+  color: rgba(154, 52, 18, 0.92);
+}
+
+.edge-label-badges {
+  margin-top: 6px;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  color: rgba(71, 85, 105, 0.9);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.edge-label-badge {
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: rgba(226, 232, 240, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.edge-label-card.selected[data-kind='relationship'] {
+  border-color: rgba(249, 115, 22, 0.8);
+}
 }
 
 /* ============================================

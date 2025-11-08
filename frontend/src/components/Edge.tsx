@@ -2,9 +2,15 @@
  * Edge Component - Connection line between nodes
  */
 
-import { type Edge as EdgeType, type Node } from '../store/mindmap';
+import type { CSSProperties } from 'react';
+import {
+  type Edge as EdgeType,
+  type EdgeMarker,
+  type Node,
+} from '../store/mindmap';
 import { getEdgePath, getLabelPosition } from '../utils/edgeHelpers';
 import { getNodeDisplayDimensions } from '../utils/nodeHelpers';
+import MarkdownRenderer from './MarkdownRenderer';
 import './Edge.css';
 
 interface EdgeProps {
@@ -26,6 +32,9 @@ export default function Edge({
   onDoubleClick,
   onContextMenu
 }: EdgeProps) {
+  if (edge.category === 'summary' || edge.category === 'boundary') {
+    return null;
+  }
   // Get display dimensions considering collapsed state
   const sourceDim = getNodeDisplayDimensions(sourceNode);
   const targetDim = getNodeDisplayDimensions(targetNode);
@@ -35,22 +44,62 @@ export default function Edge({
   const x2 = targetNode.x + targetDim.w / 2;
   const y2 = targetNode.y + targetDim.h / 2;
 
-  // Get path based on edge type using node boundaries
-  const edgeType = edge.edgeType || 'straight';
+  const category = edge.category ?? 'branch';
+  const routing = edge.routing ?? 'organic';
+  const baseEdgeType =
+    edge.edgeType ||
+    (routing === 'orthogonal'
+      ? 'orthogonal'
+      : category === 'relationship'
+      ? 'bezier'
+      : 'curved');
+  const pathType = routing === 'orthogonal' ? 'orthogonal' : baseEdgeType;
+
+  const style = edge.style ?? {};
+  const strokeColor =
+    style.strokeColor ?? (category === 'relationship' ? '#f97316' : '#94a3b8');
+  const baseStrokeWidth =
+    style.strokeWidth ?? (category === 'relationship' ? 1.75 : 1.5);
+  const strokeWidth = isSelected ? baseStrokeWidth + 0.75 : baseStrokeWidth;
+  const dashPattern = style.dashPattern?.length
+    ? style.dashPattern.join(' ')
+    : undefined;
+  const markerStart = (style.markerStart ?? 'none') as EdgeMarker;
+  const markerEnd = (style.markerEnd ?? 'arrow') as EdgeMarker;
+
+  const markerStartId =
+    markerStart !== 'none' ? `edge-marker-start-${edge.id}` : undefined;
+  const markerEndId =
+    markerEnd !== 'none' ? `edge-marker-end-${edge.id}` : undefined;
+
   const pathData = getEdgePath(
-    x1, y1, x2, y2, edgeType,
+    x1,
+    y1,
+    x2,
+    y2,
+    pathType,
     sourceDim.w, sourceDim.h,
-    targetDim.w, targetDim.h
+    targetDim.w, targetDim.h,
+    edge.controlPoints
   );
 
   // Calculate label position on the curve using node boundaries
   const labelPos = getLabelPosition(
-    x1, y1, x2, y2, edgeType,
+    x1,
+    y1,
+    x2,
+    y2,
+    pathType,
     sourceDim.w, sourceDim.h,
-    targetDim.w, targetDim.h
+    targetDim.w, targetDim.h,
+    edge.labelPosition,
+    edge.labelOffset,
+    edge.controlPoints
   );
   const midX = labelPos.x;
   const midY = labelPos.y;
+  const iconDecorators =
+    edge.decorators?.filter((decorator) => decorator.type === 'icon') ?? [];
 
   // Edge classes for styling
   const edgeClasses = [
@@ -58,11 +107,56 @@ export default function Edge({
     isSelected ? 'selected' : '',
     sourceNode.collapsed ? 'from-collapsed' : '',
     targetNode.collapsed ? 'to-collapsed' : '',
-    `edge-${edgeType}`,
+    `edge-${pathType}`,
+    `edge-routing-${routing}`,
+    `edge-kind-${category}`,
   ].filter(Boolean).join(' ');
 
   return (
-    <g className={edgeClasses}>
+    <g
+      className={edgeClasses}
+      data-kind={category}
+      style={
+        {
+          '--edge-hover-width': strokeWidth + 0.75,
+        } as CSSProperties
+      }
+    >
+      <defs>
+        {markerStartId && (
+          <marker
+            id={markerStartId}
+            markerWidth="10"
+            markerHeight="10"
+            orient="auto"
+            refX={markerStart === 'arrow' ? 1 : 4}
+            refY={markerStart === 'arrow' ? 3 : 3}
+          >
+            {markerStart === 'arrow' ? (
+              <polygon points="10 0, 0 3, 10 6" fill={strokeColor} />
+            ) : (
+              <circle cx="3" cy="3" r="3" fill={strokeColor} />
+            )}
+          </marker>
+        )}
+        {markerEndId && (
+          <marker
+            id={markerEndId}
+            markerWidth="10"
+            markerHeight="10"
+            orient="auto"
+            refX={markerEnd === 'arrow' ? 9 : 3}
+            refY={markerEnd === 'arrow' ? 3 : 3}
+          >
+            {markerEnd === 'arrow' ? (
+              <polygon points="0 0, 10 3, 0 6" fill={strokeColor} />
+            ) : (
+              <circle cx="3" cy="3" r="3" fill={strokeColor} />
+            )}
+          </marker>
+        )}
+      </defs>
+
       {/* Invisible wider path for easier clicking */}
       <path
         d={pathData}
@@ -84,39 +178,49 @@ export default function Edge({
       {/* Visible path */}
       <path
         d={pathData}
-        stroke={isSelected ? '#2563eb' : '#CBD5E1'}
-        strokeWidth={isSelected ? 2 : 1.5}
+        stroke={strokeColor}
+        strokeWidth={strokeWidth}
         fill="none"
-        markerEnd="url(#arrowhead)"
+        markerStart={markerStartId ? `url(#${markerStartId})` : undefined}
+        markerEnd={markerEndId ? `url(#${markerEndId})` : undefined}
         pointerEvents="none"
         className="edge-visible-path"
+        strokeDasharray={dashPattern}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{
+          filter: isSelected
+            ? 'drop-shadow(0 0 6px rgba(37, 99, 235, 0.35))'
+            : undefined,
+        }}
       />
 
       {/* Label */}
       {edge.label && (
-        <g pointerEvents="none">
-          <rect
-            x={midX - 40}
-            y={midY - 12}
-            width="80"
-            height="24"
-            rx="4"
-            fill="#ffffff"
-            stroke={isSelected ? '#2563eb' : '#9ca3af'}
-            strokeWidth="1"
-          />
-          <text
-            x={midX}
-            y={midY}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fontSize="12"
-            fill={isSelected ? '#2563eb' : '#6b7280'}
-            fontWeight="500"
+        <foreignObject
+          x={midX - 90}
+          y={midY - 26}
+          width={180}
+          height={80}
+          className="edge-label-fo"
+          pointerEvents="none"
+        >
+          <div
+            className={`edge-label-card ${isSelected ? 'selected' : ''}`}
+            data-kind={category}
           >
-            {edge.label}
-          </text>
-        </g>
+            <MarkdownRenderer content={edge.label} textAlign="center" />
+            {iconDecorators.length > 0 && (
+              <div className="edge-label-badges">
+                {iconDecorators.map((decorator, index) => (
+                  <span key={`${edge.id}-decorator-${index}`} className="edge-label-badge" style={{ borderColor: decorator.color ?? 'rgba(148,163,184,0.45)' }}>
+                    {decorator.icon ?? '●'} {decorator.label}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </foreignObject>
       )}
 
       {/* Hint when selected but no label */}

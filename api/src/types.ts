@@ -80,12 +80,73 @@ export interface Node {
 
 export type EdgeType = 'straight' | 'curved' | 'bezier';
 
+export type EdgeCategory = 'branch' | 'relationship' | 'summary' | 'boundary';
+export type EdgeRouting = 'organic' | 'orthogonal';
+export type EdgeMarker = 'none' | 'arrow' | 'circle';
+
+export interface EdgeStyle {
+  strokeColor?: string;
+  strokeWidth?: number;
+  dashPattern?: number[];
+  markerStart?: EdgeMarker;
+  markerEnd?: EdgeMarker;
+}
+
+export interface EdgeControlPoint {
+  x: number;
+  y: number;
+}
+
+export type EdgeLabelPosition = 'source' | 'middle' | 'target';
+
+export interface EdgeLabelOffset {
+  x: number;
+  y: number;
+}
+
+export interface EdgeDecorator {
+  type: 'icon' | 'highlight';
+  position?: number; // 0-1 along the edge path
+  icon?: string;
+  label?: string;
+  color?: string;
+  length?: number; // for highlight segments
+}
+
+export interface SummaryEdgeData {
+  nodeIds: string[];
+  title?: string;
+  padding?: number;
+  height?: number;
+  collapsed?: boolean;
+}
+
+export interface BoundaryEdgeData {
+  nodeIds: string[];
+  title?: string;
+  padding?: number;
+  theme?: 'default' | 'info' | 'success' | 'warning';
+  shape?: 'rounded' | 'organic';
+}
+
 export interface Edge {
   id: string;
   source: string;
   target: string;
   label?: string;
+  labelPosition?: EdgeLabelPosition;
+  labelOffset?: EdgeLabelOffset;
+  /**
+   * @deprecated Use routing + controlPoints instead. Left for backward compatibility.
+   */
   edgeType?: EdgeType;
+  category?: EdgeCategory;
+  routing?: EdgeRouting;
+  controlPoints?: EdgeControlPoint[];
+  style?: EdgeStyle;
+  summary?: SummaryEdgeData;
+  boundary?: BoundaryEdgeData;
+  decorators?: EdgeDecorator[];
   meta?: Record<string, any>;
 }
 

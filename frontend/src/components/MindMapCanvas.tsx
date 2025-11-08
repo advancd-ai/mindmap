@@ -9,6 +9,9 @@ import { useMindMapStore, type Node as NodeType, type Edge as EdgeType } from '.
 import { createMap, updateMap } from '../api/maps';
 import Node from './Node';
 import Edge from './Edge';
+import SummaryEdge from './SummaryEdge';
+import BoundaryEdge from './BoundaryEdge';
+import EdgeInspector from './EdgeInspector';
 import TemporaryEdge from './TemporaryEdge';
 import TextEditor from './editors/TextEditor';
 import RichEditorModal from './editors/RichEditorModal';
@@ -39,6 +42,10 @@ interface MindMapCanvasProps {
   onZoomChange?: (zoom: number) => void;
 }
 
+const SUMMARY_DEFAULT_HEIGHT = 64;
+const SUMMARY_DEFAULT_PADDING = 28;
+const BOUNDARY_DEFAULT_PADDING = 36;
+
 export default function MindMapCanvas({ 
   isReadOnly = false, 
   onRefreshToLatest,
@@ -58,6 +65,7 @@ export default function MindMapCanvas({
       refreshProgress
     });
   }, [isReadOnly, onRefreshToLatest, isRefreshing, refreshProgress]);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const [viewBox, setViewBox] = useState({ x: 0, y: 0, width: 1200, height: 800 });
   const [zoom, setZoom] = useState(1.0); // 1.0 = 100%
@@ -104,6 +112,18 @@ export default function MindMapCanvas({
     label?: string;
     onConfirm: () => void;
   } | null>(null);
+  const [edgeInspectorState, setEdgeInspectorState] = useState<{
+    edgeId: string;
+    x: number;
+    y: number;
+    offset?: { x: number; y: number };
+  } | null>(null);
+  const [edgeInspectorSize, setEdgeInspectorSize] = useState<{ width: number; height: number } | null>(null);
+  const handleEdgeInspectorLayout = useCallback((size: { width: number; height: number }) => {
+    setEdgeInspectorSize((prev) =>
+      prev && prev.width === size.width && prev.height === size.height ? prev : size
+    );
+  }, []);
 
   const map = useMindMapStore((state) => state.map);
   const selectedNodeId = useMindMapStore((state) => state.selectedNodeId);
@@ -226,12 +246,27 @@ export default function MindMapCanvas({
     }
   }, [map?.id, onZoomChange]); // Only when map ID changes, not on every map update
 
+  useEffect(() => {
+    if (!map || !edgeInspectorState) {
+      return;
+    }
+    if (!map.edges.some((edge) => edge.id === edgeInspectorState.edgeId)) {
+      setEdgeInspectorState(null);
+    }
+  }, [map, edgeInspectorState]);
+
   if (!map) {
     console.warn('⚠️ MindMapCanvas: No map data available');
     return null;
   }
 
   console.log('🖼️ Rendering canvas with', map.nodes.length, 'nodes and', map.edges.length, 'edges');
+
+  const boundaryEdges = map.edges.filter((edge) => edge.category === 'boundary');
+  const summaryEdges = map.edges.filter((edge) => edge.category === 'summary');
+  const standardEdges = map.edges.filter(
+    (edge) => edge.category !== 'summary' && edge.category !== 'boundary'
+  );
 
   // Convert screen coordinates to SVG coordinates
   const screenToSVG = (screenX: number, screenY: number) => {
@@ -583,6 +618,7 @@ export default function MindMapCanvas({
     setIsConnecting(false);
     setConnectingFrom(null);
     setContextMenu(null);
+    setEdgeInspectorState(null);
     console.log('🧹 All selections and edit states cleared');
   };
 
@@ -1025,6 +1061,7 @@ export default function MindMapCanvas({
     e.stopPropagation();
     if (!isDragging) {
       selectNode(nodeId);
+      setEdgeInspectorState(null);
       // 노드 선택 시 SVG에 포커스를 강제로 설정 (requestAnimationFrame으로 다음 프레임에서 실행)
       requestAnimationFrame(() => {
         if (svgRef.current) {
@@ -1143,12 +1180,14 @@ export default function MindMapCanvas({
     e.stopPropagation();
     console.log('🔗 Edge selected:', edgeId);
     selectEdge(edgeId);
+    setEdgeInspectorState(null);
   };
 
   const handleEdgeDoubleClick = (e: React.MouseEvent, edgeId: string) => {
     e.stopPropagation();
     e.preventDefault();
     console.log('✏️ Editing edge:', edgeId);
+    setEdgeInspectorState(null);
     setEditingEdgeId(edgeId);
   };
 
@@ -1162,6 +1201,108 @@ export default function MindMapCanvas({
     console.log('❌ Edge edit cancelled');
     setEditingEdgeId(null);
   };
+
+  const handleCreateSummaryForChildren = useCallback(
+    (parentId: string) => {
+      const { map: currentMap } = useMindMapStore.getState();
+      if (!currentMap) return;
+
+      const parentNode = currentMap.nodes.find((n) => n.id === parentId);
+      if (!parentNode) return;
+
+      const childEdges = currentMap.edges.filter(
+        (edge) =>
+          edge.source === parentId &&
+          edge.category !== 'summary' &&
+          edge.category !== 'boundary'
+      );
+      const childNodes = childEdges
+        .map((edge) => currentMap.nodes.find((node) => node.id === edge.target))
+        .filter((node): node is NodeType => Boolean(node));
+
+      if (childNodes.length < 2) {
+        console.warn('⚠️ Not enough child nodes to create summary');
+        return;
+      }
+
+      const summaryTitle = `${parentNode.label} Summary`;
+      const newEdge: EdgeType = {
+        id: `e_summary_${Date.now()}`,
+        source: childNodes[0].id,
+        target: childNodes[childNodes.length - 1].id,
+        category: 'summary',
+        summary: {
+          nodeIds: childNodes.map((node) => node.id),
+          title: summaryTitle,
+          height: SUMMARY_DEFAULT_HEIGHT,
+          padding: SUMMARY_DEFAULT_PADDING,
+          collapsed: false,
+        },
+        style: {
+          strokeColor: '#60a5fa',
+          strokeWidth: 2,
+        },
+      };
+
+      addEdge(newEdge);
+      selectEdge(newEdge.id);
+      setEdgeInspectorState({
+        edgeId: newEdge.id,
+        x: parentNode.x,
+        y: parentNode.y,
+      });
+    },
+    [addEdge, selectEdge]
+  );
+
+  const handleCreateBoundaryAroundFamily = useCallback(
+    (rootId: string) => {
+      const { map: currentMap } = useMindMapStore.getState();
+      if (!currentMap) return;
+
+      const rootNode = currentMap.nodes.find((n) => n.id === rootId);
+      if (!rootNode) return;
+
+      const childEdges = currentMap.edges.filter(
+        (edge) =>
+          edge.source === rootId &&
+          edge.category !== 'summary' &&
+          edge.category !== 'boundary'
+      );
+      const childNodes = childEdges
+        .map((edge) => currentMap.nodes.find((node) => node.id === edge.target))
+        .filter((node): node is NodeType => Boolean(node));
+
+      const nodeIds = [rootId, ...childNodes.map((node) => node.id)];
+
+      const newEdge: EdgeType = {
+        id: `e_boundary_${Date.now()}`,
+        source: rootId,
+        target: rootId,
+        category: 'boundary',
+        boundary: {
+          nodeIds,
+          title: `${rootNode.label} Group`,
+          padding: BOUNDARY_DEFAULT_PADDING,
+          theme: 'default',
+          shape: 'rounded',
+        },
+        style: {
+          strokeColor: '#3b82f6',
+          strokeWidth: 1.5,
+        },
+      };
+
+      addEdge(newEdge);
+      selectEdge(newEdge.id);
+      setEdgeInspectorState({
+        edgeId: newEdge.id,
+        x: rootNode.x,
+        y: rootNode.y,
+      });
+    },
+    [addEdge, selectEdge]
+  );
 
   const buildNodeContextMenuItems = useCallback((nodeId: string): MenuItem[] => {
     const { map: latestMap } = useMindMapStore.getState();
@@ -1199,6 +1340,27 @@ export default function MindMapCanvas({
         icon: <AppleIcon name="connect" size="medium" />,
         onClick: () => startConnectionFromNode(nodeId),
         disabled: isReadOnly,
+      },
+      {
+        label: 'Add Summary of Children',
+        icon: <AppleIcon name="success" size="medium" />,
+        onClick: () => handleCreateSummaryForChildren(nodeId),
+        disabled:
+          isReadOnly ||
+          !node ||
+          !map ||
+          map.edges.filter(
+            (edge) =>
+              edge.source === nodeId &&
+              edge.category !== 'summary' &&
+              edge.category !== 'boundary'
+          ).length < 2,
+      },
+      {
+        label: 'Add Boundary Group',
+        icon: <AppleIcon name="square" size="medium" />,
+        onClick: () => handleCreateBoundaryAroundFamily(nodeId),
+        disabled: isReadOnly || !node,
       },
       { divider: true } as MenuItem,
       {
@@ -1451,6 +1613,8 @@ export default function MindMapCanvas({
     map,
     isReadOnly,
     startConnectionFromNode,
+    handleCreateSummaryForChildren,
+    handleCreateBoundaryAroundFamily,
     setEmbedTargetNodeId,
     setShowEmbedDialog,
     updateNode,
@@ -1477,6 +1641,7 @@ export default function MindMapCanvas({
     console.log('📋 Node context menu:', nodeId);
     selectNode(nodeId);
 
+    setEdgeInspectorState(null);
     setContextMenu({
       x: position.x,
       y: position.y,
@@ -1492,81 +1657,41 @@ export default function MindMapCanvas({
   };
 
   const handleEdgeContextMenu = (e: React.MouseEvent, edgeId: string) => {
+    console.log('🐞 [EdgeContextMenu] raw event', {
+      edgeId,
+      client: { x: e.clientX, y: e.clientY },
+      type: e.type,
+      target: (e.target as HTMLElement)?.tagName,
+    });
+
     e.preventDefault();
     e.stopPropagation();
-    
-    console.log('📋 Edge context menu:', edgeId);
+
+    const edge = map.edges.find((item) => item.id === edgeId);
+    const source = edge ? map.nodes.find((node) => node.id === edge.source) : null;
+    const target = edge ? map.nodes.find((node) => node.id === edge.target) : null;
+    console.log('🐞 [EdgeContextMenu] edge lookup', {
+      foundEdge: !!edge,
+      category: edge?.category,
+      hasBoundary: !!edge?.boundary,
+      hasSummary: !!edge?.summary,
+      hasSource: !!source,
+      hasTarget: !!target,
+      edge,
+      source,
+      target,
+    });
+
     selectEdge(edgeId);
+    setContextMenu(null);
 
-    const edge = map.edges.find((ed) => ed.id === edgeId);
-    const currentType = edge?.edgeType || 'straight';
-    
-    const menuItems: MenuItem[] = [
-      {
-        label: edge?.label ? 'Edit Label' : 'Add Label',
-        icon: '✏️',
-        onClick: () => setEditingEdgeId(edgeId),
-      },
-      {
-        label: 'Remove Label',
-        icon: '🏷️',
-        onClick: () => updateEdge(edgeId, { label: undefined }),
-        disabled: !edge?.label,
-      },
-      { divider: true } as MenuItem,
-      {
-        label: 'Edge Type',
-        icon: '〰️',
-        onClick: () => {},
-        submenu: [
-          {
-            label: `${currentType === 'straight' ? '✓' : '  '} Straight Line`,
-            icon: '━',
-            onClick: () => {
-              updateEdge(edgeId, { edgeType: 'straight' });
-              console.log('Edge type changed to: straight');
-            },
-          },
-          {
-            label: `${currentType === 'curved' ? '✓' : '  '} Curved Line`,
-            icon: '⌢',
-            onClick: () => {
-              updateEdge(edgeId, { edgeType: 'curved' });
-              console.log('Edge type changed to: curved');
-            },
-          },
-          {
-            label: `${currentType === 'bezier' ? '✓' : '  '} Bezier Curve`,
-            icon: '〜',
-            onClick: () => {
-              updateEdge(edgeId, { edgeType: 'bezier' });
-              console.log('Edge type changed to: bezier');
-            },
-          },
-        ],
-      },
-      { divider: true } as MenuItem,
-      {
-        label: 'Delete Edge',
-        icon: <AppleIcon name="delete" size="medium" />,
-        onClick: () => {
-          setDeleteConfirm({
-            isOpen: true,
-            type: 'edge',
-            onConfirm: () => {
-          deleteEdge(edgeId);
-          selectEdge(null);
-              setDeleteConfirm(null);
-            },
-          });
-        },
-      },
-    ];
+    const svgCoords = screenToSVG(e.clientX, e.clientY);
+    console.log('🐞 [EdgeContextMenu] svg coords', { svgCoords });
 
-    setContextMenu({
-      x: e.clientX,
-      y: e.clientY,
-      items: menuItems,
+    setEdgeInspectorState({
+      edgeId,
+      x: svgCoords.x,
+      y: svgCoords.y,
     });
   };
 
@@ -1577,6 +1702,7 @@ export default function MindMapCanvas({
     
     const svgCoords = screenToSVG(e.clientX, e.clientY);
     
+    setEdgeInspectorState(null);
     const menuItems: MenuItem[] = [
       {
         label: 'Add Node Here',
@@ -2308,7 +2434,7 @@ export default function MindMapCanvas({
   ]);
 
   return (
-      <div className="mindmap-canvas-container">
+      <div ref={containerRef} className="mindmap-canvas-container">
         {isReadOnly && (
           <div className="readonly-overlay">
             <div className="readonly-banner">
@@ -2395,8 +2521,34 @@ export default function MindMapCanvas({
           fill="url(#grid)"
         />
 
+        {/* Boundary regions */}
+        {boundaryEdges.map((edge) => (
+          <BoundaryEdge
+            key={edge.id}
+            edge={edge}
+            nodes={map.nodes}
+            isSelected={selectedEdgeId === edge.id}
+            onClick={(e) => handleEdgeSelect(e, edge.id)}
+            onDoubleClick={(e) => handleEdgeDoubleClick(e, edge.id)}
+            onContextMenu={(e) => handleEdgeContextMenu(e, edge.id)}
+          />
+        ))}
+
+        {/* Summary arcs */}
+        {summaryEdges.map((edge) => (
+          <SummaryEdge
+            key={edge.id}
+            edge={edge}
+            nodes={map.nodes}
+            isSelected={selectedEdgeId === edge.id}
+            onClick={(e) => handleEdgeSelect(e, edge.id)}
+            onDoubleClick={(e) => handleEdgeDoubleClick(e, edge.id)}
+            onContextMenu={(e) => handleEdgeContextMenu(e, edge.id)}
+          />
+        ))}
+
         {/* Edges */}
-        {map.edges.map((edge) => {
+        {standardEdges.map((edge) => {
           const source = map.nodes.find((n) => n.id === edge.source);
           const target = map.nodes.find((n) => n.id === edge.target);
           if (!source || !target) return null;
@@ -2661,8 +2813,28 @@ export default function MindMapCanvas({
           const x2 = target.x + targetDim.w / 2;
           const y2 = target.y + targetDim.h / 2;
           
-          const edgeType = editingEdge.edgeType || 'straight';
-          const labelPos = getLabelPosition(x1, y1, x2, y2, edgeType);
+          const routing = editingEdge.routing ?? 'organic';
+          const edgeType =
+            editingEdge.edgeType ||
+            (routing === 'orthogonal'
+              ? 'orthogonal'
+              : editingEdge.category === 'relationship'
+              ? 'bezier'
+              : 'curved');
+          const labelPos = getLabelPosition(
+            x1,
+            y1,
+            x2,
+            y2,
+            edgeType,
+            sourceDim.w,
+            sourceDim.h,
+            targetDim.w,
+            targetDim.h,
+            editingEdge.labelPosition,
+            editingEdge.labelOffset,
+            editingEdge.controlPoints
+          );
           
           return (
             <EdgeEditor
@@ -2675,6 +2847,9 @@ export default function MindMapCanvas({
             />
           );
         })()}
+
+
+
       </svg>
 
       {map.nodes.length === 0 && (
@@ -2795,6 +2970,229 @@ export default function MindMapCanvas({
           onCancel={() => setDeleteConfirm(null)}
         />
       )}
+
+      {showColorPicker && colorTargetNodeId && (() => {
+        const targetNode = map.nodes.find((n) => n.id === colorTargetNodeId);
+        return (
+          <ColorPicker
+            currentColor={targetNode?.backgroundColor}
+            onConfirm={(color: string) => {
+              updateNode(colorTargetNodeId, { backgroundColor: color });
+              console.log('🎨 Node background color changed to:', color);
+              setShowColorPicker(false);
+              setColorTargetNodeId(null);
+            }}
+            onCancel={() => {
+              setShowColorPicker(false);
+              setColorTargetNodeId(null);
+            }}
+          />
+        );
+      })()}
+
+      {edgeInspectorState && (() => {
+        const inspectorEdge = map.edges.find((edge) => edge.id === edgeInspectorState.edgeId);
+        if (!inspectorEdge) {
+          console.warn('🐞 [EdgeInspectorOverlay] missing edge for', edgeInspectorState.edgeId);
+          return null;
+        }
+
+        let anchorX = edgeInspectorState.x;
+        let anchorY = edgeInspectorState.y;
+
+        if (inspectorEdge.category === 'boundary' && inspectorEdge.boundary) {
+          const targetNodes = inspectorEdge.boundary.nodeIds
+            .map((id) => map.nodes.find((node) => node.id === id))
+            .filter((node): node is NodeType => Boolean(node));
+
+          if (targetNodes.length > 0) {
+            const rects = targetNodes.map((node) => {
+              const { w, h } = getNodeDisplayDimensions(node);
+              return { x: node.x, y: node.y, w, h };
+            });
+            const padding = inspectorEdge.boundary.padding ?? BOUNDARY_DEFAULT_PADDING;
+            const left = Math.min(...rects.map((r) => r.x)) - padding;
+            const right = Math.max(...rects.map((r) => r.x + r.w)) + padding;
+            const top = Math.min(...rects.map((r) => r.y)) - padding;
+
+            anchorX = (left + right) / 2;
+            anchorY = top - 24;
+          }
+        } else if (inspectorEdge.category === 'summary' && inspectorEdge.summary) {
+          const targetNodes = inspectorEdge.summary.nodeIds
+            .map((id) => map.nodes.find((node) => node.id === id))
+            .filter((node): node is NodeType => Boolean(node));
+
+          if (targetNodes.length > 0) {
+            const rects = targetNodes.map((node) => {
+              const { w, h } = getNodeDisplayDimensions(node);
+              return { x: node.x, y: node.y, w, h };
+            });
+            const padding = inspectorEdge.summary.padding ?? SUMMARY_DEFAULT_PADDING;
+            const arcHeight = inspectorEdge.summary.height ?? SUMMARY_DEFAULT_HEIGHT;
+            const left = Math.min(...rects.map((r) => r.x));
+            const right = Math.max(...rects.map((r) => r.x + r.w));
+            const top = Math.min(...rects.map((r) => r.y));
+            const baseY = top - padding;
+            const apexY = baseY - arcHeight;
+
+            anchorX = (left + right) / 2;
+            anchorY = apexY - 20;
+          }
+        } else {
+          const source = map.nodes.find((n) => n.id === inspectorEdge.source);
+          const target = map.nodes.find((n) => n.id === inspectorEdge.target);
+
+          if (source && target) {
+            const sourceDim = getNodeDisplayDimensions(source);
+            const targetDim = getNodeDisplayDimensions(target);
+
+            const x1 = source.x + sourceDim.w / 2;
+            const y1 = source.y + sourceDim.h / 2;
+            const x2 = target.x + targetDim.w / 2;
+            const y2 = target.y + targetDim.h / 2;
+
+            const routing = inspectorEdge.routing ?? 'organic';
+            const edgeType =
+              inspectorEdge.edgeType ||
+              (routing === 'orthogonal'
+                ? 'orthogonal'
+                : inspectorEdge.category === 'relationship'
+                ? 'bezier'
+                : 'curved');
+
+            const labelPos = getLabelPosition(
+              x1,
+              y1,
+              x2,
+              y2,
+              edgeType,
+              sourceDim.w,
+              sourceDim.h,
+              targetDim.w,
+              targetDim.h,
+              inspectorEdge.labelPosition,
+              inspectorEdge.labelOffset,
+              inspectorEdge.controlPoints
+            );
+
+            anchorX = labelPos.x;
+            anchorY = labelPos.y;
+          }
+        }
+
+        const screenPoint = svgToScreen(anchorX, anchorY);
+        const viewportPadding = 16;
+        const maxTop = window.innerHeight - 360;
+        const maxLeft = window.innerWidth - 260;
+        const top = Math.max(viewportPadding, Math.min(screenPoint.y, maxTop));
+        const left = Math.max(viewportPadding, Math.min(screenPoint.x, maxLeft));
+
+        console.log('🐞 [EdgeInspectorOverlay] position resolved', {
+          anchor: { x: anchorX, y: anchorY },
+          screenPoint,
+          top,
+          left,
+          category: inspectorEdge.category,
+        });
+
+        const handleCloseInspector = () => setEdgeInspectorState(null);
+        const handleRequestDelete = () => {
+          if (isReadOnly) return;
+          setDeleteConfirm({
+            isOpen: true,
+            type: 'edge',
+            onConfirm: () => {
+              deleteEdge(inspectorEdge.id);
+              selectEdge(null);
+              setEdgeInspectorState(null);
+              setDeleteConfirm(null);
+            },
+          });
+        };
+
+        let relativeTop = screenPoint.y;
+        let relativeLeft = screenPoint.x;
+
+        if (containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect();
+          relativeTop -= rect.top;
+          relativeLeft -= rect.left;
+
+          const padding = 16;
+          const inspectorHeight = edgeInspectorSize?.height ?? 360;
+          const inspectorWidth = edgeInspectorSize?.width ?? 260;
+          const maxTopWithin = rect.height - inspectorHeight - padding;
+          const maxLeftWithin = rect.width - inspectorWidth - padding;
+
+          relativeTop = Math.max(padding, Math.min(relativeTop, maxTopWithin));
+          relativeLeft = Math.max(padding, Math.min(relativeLeft, maxLeftWithin));
+        } else {
+          const viewportPadding = 16;
+          const maxTop = window.innerHeight - 360;
+          const maxLeft = window.innerWidth - 260;
+          relativeTop = Math.max(viewportPadding, Math.min(relativeTop, maxTop));
+          relativeLeft = Math.max(viewportPadding, Math.min(relativeLeft, maxLeft));
+        }
+
+        const clampPosition = (left: number, top: number) => {
+          if (!containerRef.current) {
+            const vpPadding = 16;
+            const maxTop = window.innerHeight - 360;
+            const maxLeft = window.innerWidth - 260;
+            return {
+              left: Math.max(vpPadding, Math.min(left, maxLeft)),
+              top: Math.max(vpPadding, Math.min(top, maxTop)),
+            };
+          }
+
+          const rect = containerRef.current.getBoundingClientRect();
+          const padding = 16;
+          const inspectorHeight = edgeInspectorSize?.height ?? 360;
+          const inspectorWidth = edgeInspectorSize?.width ?? 260;
+          const maxTopWithin = rect.height - inspectorHeight - padding;
+          const maxLeftWithin = rect.width - inspectorWidth - padding;
+
+          return {
+            left: Math.max(padding, Math.min(left, maxLeftWithin)),
+            top: Math.max(padding, Math.min(top, maxTopWithin)),
+          };
+        };
+
+        const clamped = clampPosition(relativeLeft, relativeTop);
+        const handleDrag = ({ x, y }: { x: number; y: number }) => {
+          setEdgeInspectorState((prev) => {
+            if (!prev) return prev;
+            if (prev.edgeId !== inspectorEdge.id) return prev;
+            const nextOffset = {
+              x: (prev.offset?.x ?? 0) + x,
+              y: (prev.offset?.y ?? 0) + y,
+            };
+            const point = clampPosition(screenPoint.x + nextOffset.x, screenPoint.y + nextOffset.y);
+            return {
+              ...prev,
+              offset: {
+                x: point.left - screenPoint.x,
+                y: point.top - screenPoint.y,
+              },
+            };
+          });
+        };
+
+        return (
+          <EdgeInspector
+            key={`edge-inspector-${inspectorEdge.id}`}
+            position={{ top: clamped.top, left: clamped.left }}
+            edge={inspectorEdge}
+            disabled={isReadOnly}
+            onChange={(updates) => updateEdge(inspectorEdge.id, updates)}
+            onClose={handleCloseInspector}
+            onDelete={isReadOnly ? undefined : handleRequestDelete}
+            onLayout={handleEdgeInspectorLayout}
+            onDrag={handleDrag}
+          />
+        );
+      })()}
 
     </div>
   );
