@@ -1,4 +1,14 @@
 {
-  "generatedAt": "2025-11-08T05:40:52.587Z",
-  "items": []
+  "generatedAt": "2025-11-08T05:41:03.402Z",
+  "items": [
+    {
+      "id": "map_1762580462707",
+      "title": "test",
+      "tags": [],
+      "nodeCount": 1,
+      "edgeCount": 0,
+      "updatedAt": "2025-11-08T05:41:03.027Z",
+      "version": 2
+    }
+  ]
 }
