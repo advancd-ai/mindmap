@@ -2,7 +2,7 @@
  * Node Component - Individual mindmap node
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { type Node as NodeType } from '../store/mindmap';
 import ConnectionHandles from './ConnectionHandles';
 import ResizeHandles, { type ResizeDirection } from './ResizeHandles';
@@ -69,6 +69,10 @@ export default function Node({
   editorType,
 }: NodeProps) {
   const [showFallback, setShowFallback] = useState(false);
+
+  useEffect(() => {
+    setShowFallback(false);
+  }, [node.id, node.embedUrl]);
   
   // Check if node is in text mode (no contentType or contentType is not 'markdown'/'richeditor')
   const isTextMode = !node.contentType || (node.contentType !== 'markdown' && node.contentType !== 'richeditor');

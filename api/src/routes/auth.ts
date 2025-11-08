@@ -6,6 +6,7 @@
 import { Hono } from 'hono';
 import { nanoid } from 'nanoid';
 import { cache } from '../lib/redis.js';
+import { createGitProvider } from '../git/index.js';
 import type { Env, User } from '../types.js';
 
 export const authRouter = new Hono<{ Bindings: Env }>();
@@ -239,9 +240,8 @@ authRouter.get('/me', async (c) => {
   // Check repository status
   let repoStatus = { exists: false, initialized: false };
   try {
-    const { GitHubClient } = await import('../github/client.js');
-    const github = new GitHubClient(user);
-    repoStatus = await github.checkRepository();
+    const git = createGitProvider(user);
+    repoStatus = await git.checkRepository();
   } catch (error: any) {
     console.error('Error checking repository status:', error.message);
     // Continue even if check fails
@@ -295,14 +295,13 @@ authRouter.post('/setup-repo', async (c) => {
   const user: User = JSON.parse(userJson);
 
   try {
-    const { GitHubClient } = await import('../github/client.js');
-    const github = new GitHubClient(user);
-    
+    const git = createGitProvider(user);
+
     // Setup repository
-    await github.setupRepository();
-    
+    await git.setupRepository();
+
     // Verify setup
-    const status = await github.checkRepository();
+    const status = await git.checkRepository();
 
     return c.json({
       ok: true,

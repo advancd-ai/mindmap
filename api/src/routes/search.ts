@@ -5,7 +5,7 @@
 
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth.js';
-import { GitHubClient } from '../github/client.js';
+import { createGitProvider } from '../git/index.js';
 import { cache } from '../lib/redis.js';
 import { getGitHubRepoPath } from '../utils/github.js';
 import type { Env, User } from '../types.js';
@@ -35,7 +35,7 @@ searchRouter.get('/', async (c) => {
     );
   }
 
-  const github = new GitHubClient(user);
+  const github = createGitProvider(user);
 
   try {
     // Get index from cache or GitHub

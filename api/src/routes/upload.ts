@@ -5,9 +5,12 @@
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth.js';
 import { requestId } from '../middleware/request-id.js';
-import { uploadFileToGitHub, getGitHubRepoPath } from '../utils/github.js';
+import path from 'path';
 import { Octokit } from '@octokit/rest';
+import { createGitProvider } from '../git/index.js';
+import { getGitHubRepoPath } from '../utils/github.js';
 import type { User } from '../types.js';
+import { cache } from '../lib/redis.js';
 
 const upload = new Hono<{ Variables: { user: User } }>();
 
@@ -91,15 +94,8 @@ upload.post('/', requireAuth(), async (c) => {
       console.warn('⚠️ Could not construct request URL from headers:', e);
     }
     
-    // Upload to GitHub (to the specific map's branch)
-    const fileUrl = await uploadFileToGitHub(
-      user,
-      mapId,
-      filename,
-      buffer,
-      file.type,
-      requestUrl
-    );
+    const provider = createGitProvider(user);
+    const fileUrl = await provider.uploadFile(mapId, filename, buffer, file.type, { requestUrl });
 
     console.log(`✅ File uploaded: ${filename} to map ${mapId} by user ${user.userId}`);
 
@@ -152,6 +148,72 @@ upload.get('/download/:mapId/:filename', async (c) => {
 
   if (!mapId || !filename) {
     return c.json({ error: 'Map ID and filename are required' }, 400);
+  }
+
+  const providerType = (process.env.GIT_PROVIDER || 'github').toLowerCase();
+
+  if (providerType === 'local') {
+    try {
+      let user: User | null = null;
+      const authHeader = c.req.header('Authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.slice(7);
+        const userJson = await cache.get(`session:${token}`);
+        if (userJson) {
+          user = JSON.parse(userJson);
+        }
+      }
+
+      const fallbackOwner = process.env.LOCAL_GIT_OWNER || 'local';
+      const providerUser: User =
+        user ||
+        ({
+          userId: fallbackOwner,
+          email: `${fallbackOwner}@local`,
+          name: fallbackOwner,
+        } as User);
+
+      const provider = createGitProvider(providerUser);
+      const buffer = await provider.getFileBuffer(mapId, path.join('files', filename));
+
+      const extension = filename.split('.').pop()?.toLowerCase();
+      let contentType = 'application/octet-stream';
+      switch (extension) {
+        case 'jpg':
+        case 'jpeg':
+          contentType = 'image/jpeg';
+          break;
+        case 'png':
+          contentType = 'image/png';
+          break;
+        case 'gif':
+          contentType = 'image/gif';
+          break;
+        case 'webp':
+          contentType = 'image/webp';
+          break;
+        case 'svg':
+          contentType = 'image/svg+xml';
+          break;
+        case 'bmp':
+          contentType = 'image/bmp';
+          break;
+        case 'pdf':
+          contentType = 'application/pdf';
+          break;
+      }
+
+      const data = new Uint8Array(buffer);
+      const headers = new Headers();
+      headers.set('Content-Type', contentType);
+      headers.set('Content-Length', buffer.length.toString());
+      headers.set('Cache-Control', 'public, max-age=3600');
+      headers.set('Content-Disposition', `inline; filename="${filename}"`);
+      return c.newResponse(data, { status: 200, headers });
+    } catch (error: any) {
+      console.error('❌ Local download error:', error);
+      return c.json({ error: 'File not found' }, 404);
+    }
   }
 
   try {

@@ -81,6 +81,7 @@ export async function uploadFileToGitHub(
       path,
       message: `Upload file: ${filename}`,
       content: fileBuffer.toString('base64'),
+      encoding: 'base64',
       branch: branchName,
       committer: {
         name: 'Open Mindmap',

@@ -12,14 +12,15 @@
 import { Octokit } from '@octokit/rest';
 import { nanoid } from 'nanoid';
 import type { User, Map, Index, PRTransaction, IndexItem } from '../types.js';
-import { getGitHubRepoPath } from '../utils/github.js';
+import type { GitProvider, MapHistoryEntry } from '../git/provider.js';
+import { getGitHubRepoPath, uploadFileToGitHub } from '../utils/github.js';
 
 const BRANCH_PREFIX = 'maps/';
 const MAP_FILE_PATH = 'map.json';
 
-export class GitHubClient {
+export class GitHubClient implements GitProvider {
   private octokit: Octokit;
-  private user: User;
+  public readonly user: User;
   private owner: string;
   private repo: string;
   private ownerResolved: boolean = false;
@@ -826,6 +827,34 @@ export class GitHubClient {
     }
   }
 
+  async uploadFile(
+    mapId: string,
+    filename: string,
+    fileBuffer: Buffer,
+    mimeType: string,
+    options?: { requestUrl?: string }
+  ): Promise<string> {
+    await this.resolveOwner();
+    return uploadFileToGitHub(this.user, mapId, filename, fileBuffer, mimeType, options?.requestUrl);
+  }
+
+  async getFileBuffer(mapId: string, relativePath: string): Promise<Buffer> {
+    await this.resolveOwner();
+    const branchName = `${BRANCH_PREFIX}${mapId}`;
+    const { data } = await this.octokit.repos.getContent({
+      owner: this.owner,
+      repo: this.repo,
+      path: relativePath.replace(/\\/g, '/'),
+      ref: branchName,
+    });
+
+    if (!('content' in data)) {
+      throw Object.assign(new Error('File not found'), { status: 404 });
+    }
+
+    return Buffer.from(data.content, 'base64');
+  }
+
   /**
    * Delete a map by deleting its branch and removing from index
    */
@@ -1098,15 +1127,7 @@ export class GitHubClient {
   /**
    * Get version history of a map from git commits
    */
-  async getMapHistory(mapId: string): Promise<Array<{
-    version: number;
-    commitSha: string;
-    message: string;
-    author: string;
-    date: string;
-    nodeCount: number;
-    edgeCount: number;
-  }>> {
+  async getMapHistory(mapId: string): Promise<MapHistoryEntry[]> {
     await this.resolveOwner();
     
     const branchName = `${BRANCH_PREFIX}${mapId}`;
@@ -1120,7 +1141,7 @@ export class GitHubClient {
         per_page: 100, // Get last 100 commits
       });
 
-      const history = [];
+      const history: MapHistoryEntry[] = [];
       
       for (const commit of commits) {
         try {

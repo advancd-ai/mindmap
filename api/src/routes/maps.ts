@@ -5,7 +5,7 @@
 
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth.js';
-import { GitHubClient } from '../github/client.js';
+import { createGitProvider } from '../git/index.js';
 import { validateMap } from '../validators/map.js';
 import { cache } from '../lib/redis.js';
 import { getGitHubRepoPath } from '../utils/github.js';
@@ -25,7 +25,7 @@ mapsRouter.get('/', async (c) => {
   const user = c.get('user') as User;
   const { q, tag, limit = '50', offset = '0' } = c.req.query();
 
-  const github = new GitHubClient(user);
+  const github = createGitProvider(user);
 
   try {
     // Try to get from cache first
@@ -109,7 +109,7 @@ mapsRouter.post('/', async (c) => {
     );
   }
 
-  const github = new GitHubClient(user);
+  const github = createGitProvider(user);
 
   try {
     // Create PR transaction
@@ -141,7 +141,7 @@ mapsRouter.get('/:id', async (c) => {
   const { id } = c.req.param();
   const { commit, branch } = c.req.query();
 
-  const github = new GitHubClient(user);
+  const github = createGitProvider(user);
 
   try {
     // Try cache first
@@ -210,7 +210,7 @@ mapsRouter.put('/:id', async (c) => {
     );
   }
 
-  const github = new GitHubClient(user);
+  const github = createGitProvider(user);
 
   try {
     // Update via PR transaction
@@ -262,7 +262,7 @@ mapsRouter.patch('/:id/metadata', async (c) => {
     );
   }
 
-  const github = new GitHubClient(user);
+  const github = createGitProvider(user);
 
   try {
     // Update index.json only
@@ -294,7 +294,7 @@ mapsRouter.delete('/:id', async (c) => {
   const user = c.get('user') as User;
   const { id } = c.req.param();
 
-  const github = new GitHubClient(user);
+  const github = createGitProvider(user);
 
   try {
     const pr = await github.deleteMap(id);
@@ -323,7 +323,7 @@ mapsRouter.get('/:id/history', async (c) => {
   const user = c.get('user') as User;
   const { id } = c.req.param();
 
-  const github = new GitHubClient(user);
+  const github = createGitProvider(user);
 
   try {
     const history = await github.getMapHistory(id);
@@ -357,7 +357,7 @@ mapsRouter.get('/:id/version/:version', async (c) => {
   const user = c.get('user') as User;
   const { id, version } = c.req.param();
 
-  const github = new GitHubClient(user);
+  const github = createGitProvider(user);
 
   try {
     const map = await github.getMapVersion(id, parseInt(version));
@@ -405,7 +405,7 @@ mapsRouter.post('/:id/snapshot', async (c) => {
     );
   }
 
-  const github = new GitHubClient(user);
+  const github = createGitProvider(user);
 
   try {
     const tag = await github.createSnapshot(id, name, message);

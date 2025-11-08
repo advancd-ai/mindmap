@@ -456,62 +456,72 @@ export default function MindMapCanvas({
         console.log('📤 Image upload successful:', result);
         const imageUrl = result.url;
 
-        // Get image dimensions for node size
-        // Use fetch instead of Image to handle CORS and authentication properly
-        const imageDimensions = await new Promise<{ width: number; height: number }>((resolve, reject) => {
-          // Get auth token for image download
-          const auth = localStorage.getItem('auth-storage');
-          let authToken = null;
-          if (auth) {
-            try {
-              const { token } = JSON.parse(auth).state;
-              authToken = token;
-            } catch (e) {
-              console.warn('Failed to parse auth token');
-            }
-          }
+        let rawWidth = 320;
+        let rawHeight = 240;
 
-          // Prepare headers
-          const headers: HeadersInit = {};
-          if (authToken) {
-            headers.Authorization = `Bearer ${authToken}`;
-          }
-
-          // Fetch image as blob first
-          fetch(imageUrl, {
-            mode: 'cors',
-            credentials: 'omit',
-            headers,
-          })
-            .then((response) => {
-              if (!response.ok) {
-                throw new Error(`Failed to fetch image: ${response.status}`);
+        try {
+          // Get image dimensions for node size
+          // Use fetch instead of Image to handle CORS and authentication properly
+          const fetchedDimensions = await new Promise<{ width: number; height: number }>((resolve, reject) => {
+            // Get auth token for image download
+            const auth = localStorage.getItem('auth-storage');
+            let authToken = null;
+            if (auth) {
+              try {
+                const { token } = JSON.parse(auth).state;
+                authToken = token;
+              } catch (e) {
+                console.warn('Failed to parse auth token');
               }
-              return response.blob();
+            }
+
+            // Prepare headers
+            const headers: HeadersInit = {};
+            if (authToken) {
+              headers.Authorization = `Bearer ${authToken}`;
+            }
+
+            // Fetch image as blob first
+            fetch(imageUrl, {
+              mode: 'cors',
+              credentials: 'omit',
+              headers,
             })
-            .then((blob) => {
-              // Create object URL and load in Image object to get dimensions
-              const objectUrl = URL.createObjectURL(blob);
-              const img = new Image();
-              img.onload = () => {
-                resolve({ width: img.width, height: img.height });
-                URL.revokeObjectURL(objectUrl); // Clean up
-              };
-              img.onerror = () => {
-                URL.revokeObjectURL(objectUrl); // Clean up
-                reject(new Error('Failed to load image'));
-              };
-              img.src = objectUrl;
-            })
-            .catch((err) => {
-              reject(err);
-            });
-        });
+              .then((response) => {
+                if (!response.ok) {
+                  throw new Error(`Failed to fetch image: ${response.status}`);
+                }
+                return response.blob();
+              })
+              .then((blob) => {
+                // Create object URL and load in Image object to get dimensions
+                const objectUrl = URL.createObjectURL(blob);
+                const img = new Image();
+                img.onload = () => {
+                  resolve({ width: img.width, height: img.height });
+                  URL.revokeObjectURL(objectUrl); // Clean up
+                };
+                img.onerror = () => {
+                  URL.revokeObjectURL(objectUrl); // Clean up
+                  reject(new Error('Failed to load image'));
+                };
+                img.src = objectUrl;
+              })
+              .catch((err) => {
+                reject(err);
+              });
+          });
+
+          rawWidth = fetchedDimensions.width;
+          rawHeight = fetchedDimensions.height;
+        } catch (dimensionError) {
+          console.warn('⚠️ Using fallback image dimensions due to error:', dimensionError);
+        }
 
         // Calculate node size (max 600px width or height, maintain aspect ratio)
         const maxDimension = 600;
-        let nodeWidth = imageDimensions.width;
-        let nodeHeight = imageDimensions.height;
+        let nodeWidth = rawWidth;
+        let nodeHeight = rawHeight;
 
         if (nodeWidth > maxDimension || nodeHeight > maxDimension) {
           const scale = Math.min(maxDimension / nodeWidth, maxDimension / nodeHeight);

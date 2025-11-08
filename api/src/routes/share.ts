@@ -5,7 +5,7 @@
 
 import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth.js';
-import { GitHubClient } from '../github/client.js';
+import { createGitProvider } from '../git/index.js';
 import {
   getShareInfo,
   createOrUpdateShare,
@@ -101,14 +101,14 @@ shareRouter.get('/:token', async (c) => {
       }
     }
 
-    // Get map data (create GitHubClient with map owner's user info)
+    // Get map data (create provider with map owner's user info)
     const user: User = {
       userId: shareInfo.userId,
       email: shareInfo.userEmail,
       name: shareInfo.userEmail, // Fallback to email if name not available
     };
 
-    const github = new GitHubClient(user);
+    const github = createGitProvider(user);
     const map = await github.getMap(shareInfo.mapId);
 
     // Record view
@@ -245,7 +245,7 @@ shareRouter.post('/:id/share', requireAuth(), async (c) => {
 
   try {
     // Verify map ownership by trying to fetch it
-    const github = new GitHubClient(user);
+    const github = createGitProvider(user);
     await github.getMap(id); // Will throw if map doesn't exist or user doesn't have access
 
     // Create or update share
@@ -328,7 +328,7 @@ shareRouter.put('/:id/share', requireAuth(), async (c) => {
 
   try {
     // Verify map ownership
-    const github = new GitHubClient(user);
+    const github = createGitProvider(user);
     await github.getMap(id);
 
     // Get existing share info to verify ownership
@@ -420,7 +420,7 @@ shareRouter.delete('/:id/share', requireAuth(), async (c) => {
 
   try {
     // Verify map ownership
-    const github = new GitHubClient(user);
+    const github = createGitProvider(user);
     await github.getMap(id);
 
     // Get existing share info to verify ownership
