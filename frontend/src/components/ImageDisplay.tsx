@@ -18,6 +18,11 @@ export default function ImageDisplay({ imageUrl, alt, onError }: ImageDisplayPro
   const [reloadKey, setReloadKey] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const isVisible = useIntersectionObserver(containerRef);
+  const onErrorRef = useRef(onError);
+
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
 
   useEffect(() => {
     let isMounted = true;
@@ -89,7 +94,7 @@ export default function ImageDisplay({ imageUrl, alt, onError }: ImageDisplayPro
         if (!isMounted) return;
         setError(true);
         setLoading(false);
-        onError();
+        onErrorRef.current?.();
       }
     };
 
@@ -101,7 +106,7 @@ export default function ImageDisplay({ imageUrl, alt, onError }: ImageDisplayPro
       isMounted = false;
       cleanup();
     };
-  }, [imageUrl, onError, isVisible, reloadKey]);
+  }, [imageUrl, isVisible, reloadKey]);
 
   if (loading) {
     return (
@@ -178,7 +183,7 @@ export default function ImageDisplay({ imageUrl, alt, onError }: ImageDisplayPro
         onError={() => {
           console.error('❌ Failed to display local image');
           setError(true);
-          onError();
+          onErrorRef.current?.();
         }}
       />
       
