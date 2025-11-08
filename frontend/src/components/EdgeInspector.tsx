@@ -4,6 +4,7 @@ import {
   type EdgeMarker,
   type EdgeStyle,
   type EdgeLabelPosition,
+  type EdgeRouting,
 } from '../store/mindmap';
 import AppleIcon from './AppleIcon';
 import './EdgeInspector.css';
@@ -31,6 +32,55 @@ const DASH_PRESETS: Record<DashPreset, number[] | undefined> = {
 
 const MARKER_OPTIONS: EdgeMarker[] = ['none', 'arrow', 'circle'];
 const LABEL_POSITIONS: EdgeLabelPosition[] = ['source', 'middle', 'target'];
+const ROUTING_OPTIONS: Array<{
+  value: EdgeRouting;
+  label: string;
+  description: string;
+  icon: string;
+}> = [
+  {
+    value: 'organic',
+    label: 'Organic',
+    description: 'Natural bezier sweep for mind map branches.',
+    icon: '🌿',
+  },
+  {
+    value: 'straight',
+    label: 'Direct',
+    description: 'Shortest line between nodes.',
+    icon: '—',
+  },
+  {
+    value: 'radial',
+    label: 'Radial',
+    description: 'Arc that fans around the source node.',
+    icon: '◴',
+  },
+  {
+    value: 'spline',
+    label: 'Spline',
+    description: 'Soft S-curve for weaving through dense clusters.',
+    icon: '∿',
+  },
+  {
+    value: 'bundle',
+    label: 'Bundle',
+    description: 'Shared trunk with a gentle fan-out.',
+    icon: '≋',
+  },
+  {
+    value: 'orthogonal',
+    label: 'Right Angle',
+    description: 'L-shaped elbows ideal for diagrams.',
+    icon: '┐',
+  },
+  {
+    value: 'hierarchical',
+    label: 'Hierarchical',
+    description: 'Tiered top-to-bottom alignment.',
+    icon: '⇵',
+  },
+];
 
 function EdgePreview({
   color,
@@ -155,7 +205,8 @@ export default function EdgeInspector({
 
   const markerStart = edge.style?.markerStart ?? 'none';
   const markerEnd = edge.style?.markerEnd ?? 'arrow';
-  const routing = edge.routing ?? 'organic';
+  const routing = edge.routing ?? 'straight';
+  const activeRouting = ROUTING_OPTIONS.find((option) => option.value === routing) ?? ROUTING_OPTIONS[0];
   const labelPosition = edge.labelPosition ?? 'middle';
   const offset = edge.labelOffset ?? { x: 0, y: 0 };
 
@@ -440,24 +491,41 @@ export default function EdgeInspector({
             <section className="edge-inspector__section edge-inspector__section--stacked">
               <div className="edge-inspector__label-row">
                 <span className="edge-inspector__label edge-inspector__label--caps">Routing</span>
+                <span className="edge-inspector__label-hint">Choose how this edge flows between nodes.</span>
               </div>
-              <div className="edge-inspector__segmented edge-inspector__segmented--full" role="group" aria-label="Routing">
-                <button
-                  type="button"
-                  className={routing === 'organic' ? 'active' : ''}
-                  onClick={() => onChange({ routing: 'organic' })}
-                  disabled={disabled}
-                >
-                  Organic
-                </button>
-                <button
-                  type="button"
-                  className={routing === 'orthogonal' ? 'active' : ''}
-                  onClick={() => onChange({ routing: 'orthogonal' })}
-                  disabled={disabled}
-                >
-                  Orthogonal
-                </button>
+              <div className="edge-inspector__routing-grid" role="list">
+                {ROUTING_OPTIONS.map((option) => {
+                  const isActive = routing === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={`edge-inspector__routing-option ${isActive ? 'active' : ''}`}
+                      onClick={() => {
+                        if (option.value !== routing) {
+                          onChange({ routing: option.value });
+                        }
+                      }}
+                      disabled={disabled}
+                      aria-pressed={isActive}
+                    >
+                      <span className="edge-inspector__routing-icon" aria-hidden="true">
+                        {option.icon}
+                      </span>
+                      <span className="edge-inspector__routing-text">
+                        <span className="edge-inspector__routing-label">{option.label}</span>
+                        <span className="edge-inspector__routing-description">{option.description}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="edge-inspector__routing-summary" aria-live="polite">
+                <span className="edge-inspector__routing-summary-label">{activeRouting.icon}</span>
+                <div>
+                  <div className="edge-inspector__routing-summary-title">{activeRouting.label}</div>
+                  <div className="edge-inspector__routing-summary-hint">{activeRouting.description}</div>
+                </div>
               </div>
             </section>
 

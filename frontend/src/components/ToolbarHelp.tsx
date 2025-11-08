@@ -40,7 +40,6 @@ export default function ToolbarHelp() {
             <li><strong>Connect:</strong> Click blue handles</li>
             <li><strong>Change shape:</strong> Right-click → Change Shape</li>
             <li><strong>Text align:</strong> Right-click → Text Align (Horizontal/Vertical)</li>
-            <li><strong>Duplicate:</strong> Right-click → Duplicate</li>
           </ul>
           
           <h4 className="help-section-title">Edges</h4>

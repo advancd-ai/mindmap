@@ -62,15 +62,18 @@ export default function Edge({
   const endPoint = targetAnchor?.edgePoint ?? defaultTarget;
 
   const category = edge.category ?? 'branch';
-  const routing = edge.routing ?? 'organic';
-  const baseEdgeType =
-    edge.edgeType ||
-    (routing === 'orthogonal'
-      ? 'orthogonal'
-      : category === 'relationship'
-      ? 'bezier'
-      : 'curved');
-  const pathType = routing === 'orthogonal' ? 'orthogonal' : baseEdgeType;
+  const routing = edge.routing ?? 'straight';
+  const pathType = (() => {
+    if (edge.edgeType) {
+      return edge.edgeType;
+    }
+
+    if (routing === 'organic') {
+      return category === 'relationship' ? 'bezier' : 'organic';
+    }
+
+    return routing;
+  })();
 
   const style = edge.style ?? {};
   const strokeColor =

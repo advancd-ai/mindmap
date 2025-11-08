@@ -54,7 +54,10 @@ const mapSchema = {
           },
           edgeType: { type: 'string', enum: ['straight', 'curved', 'bezier'] },
           category: { type: 'string', enum: ['branch', 'relationship', 'summary', 'boundary'] },
-          routing: { type: 'string', enum: ['organic', 'orthogonal'] },
+          routing: {
+            type: 'string',
+            enum: ['organic', 'orthogonal', 'straight', 'radial', 'spline', 'bundle', 'hierarchical'],
+          },
           controlPoints: {
             type: 'array',
             items: {

@@ -81,7 +81,16 @@ export interface Node {
 export type EdgeType = 'straight' | 'curved' | 'bezier';
 
 export type EdgeCategory = 'branch' | 'relationship' | 'summary' | 'boundary';
-export type EdgeRouting = 'organic' | 'orthogonal';
+export const EDGE_ROUTING_VALUES = [
+  'organic',
+  'orthogonal',
+  'straight',
+  'radial',
+  'spline',
+  'bundle',
+  'hierarchical',
+] as const;
+export type EdgeRouting = (typeof EDGE_ROUTING_VALUES)[number];
 export type EdgeMarker = 'none' | 'arrow' | 'circle';
 
 export interface EdgeStyle {

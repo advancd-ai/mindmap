@@ -8,7 +8,200 @@ import type {
  * Edge helper functions
  */
 
-// Generate path based on edge type
+interface Point {
+  x: number;
+  y: number;
+}
+
+const EDGE_PATH_MODES = [
+  'straight',
+  'orthogonal',
+  'curved',
+  'bezier',
+  'organic',
+  'radial',
+  'spline',
+  'bundle',
+  'hierarchical',
+] as const;
+
+type EdgePathMode = (typeof EDGE_PATH_MODES)[number];
+
+const toPoint = (point: EdgeControlPoint | Point): Point => ({
+  x: point.x,
+  y: point.y,
+});
+
+const lengthBetween = (a: Point, b: Point) => Math.hypot(b.x - a.x, b.y - a.y);
+
+const lerpPoint = (a: Point, b: Point, t: number): Point => ({
+  x: a.x + (b.x - a.x) * t,
+  y: a.y + (b.y - a.y) * t,
+});
+
+const cubicPoint = (t: number, p0: Point, p1: Point, p2: Point, p3: Point): Point => {
+  const mt = 1 - t;
+  const mt2 = mt * mt;
+  const mt3 = mt2 * mt;
+  const t2 = t * t;
+  const t3 = t2 * t;
+
+  return {
+    x: mt3 * p0.x + 3 * mt2 * t * p1.x + 3 * mt * t2 * p2.x + t3 * p3.x,
+    y: mt3 * p0.y + 3 * mt2 * t * p1.y + 3 * mt * t2 * p2.y + t3 * p3.y,
+  };
+};
+
+const normalizePathMode = (value?: string): EdgePathMode => {
+  const candidate = (value ?? 'straight').toLowerCase();
+  return EDGE_PATH_MODES.includes(candidate as EdgePathMode)
+    ? (candidate as EdgePathMode)
+    : 'straight';
+};
+
+const controlOverride = (controlPoints?: EdgeControlPoint[]): Point[] | null => {
+  if (!controlPoints || controlPoints.length === 0) {
+    return null;
+  }
+
+  if (controlPoints.length === 1) {
+    const point = toPoint(controlPoints[0]);
+    return [point, point];
+  }
+
+  return [toPoint(controlPoints[0]), toPoint(controlPoints[1])];
+};
+
+const computeCubicControls = (
+  mode: EdgePathMode,
+  start: Point,
+  end: Point,
+  controlPoints?: EdgeControlPoint[]
+): [Point, Point] => {
+  const override = controlOverride(controlPoints);
+  if (override) {
+    return [override[0], override[1]];
+  }
+
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const distance = Math.hypot(dx, dy) || 1;
+  const direction = { x: dx / distance, y: dy / distance };
+  const perp = { x: -direction.y, y: direction.x };
+
+  switch (mode) {
+    case 'bezier': {
+      return [
+        { x: start.x + dx * 0.3, y: start.y + dy * 0.1 },
+        { x: start.x + dx * 0.7, y: start.y + dy * 0.9 },
+      ];
+    }
+
+    case 'radial': {
+      const arcSign = dx >= 0 ? 1 : -1;
+      const offset = Math.max(60, distance * 0.55);
+      return [
+        {
+          x: start.x + dx * 0.25 + perp.x * offset * arcSign,
+          y: start.y + dy * 0.25 + perp.y * offset * arcSign,
+        },
+        {
+          x: start.x + dx * 0.75 + perp.x * offset * arcSign,
+          y: start.y + dy * 0.75 + perp.y * offset * arcSign,
+        },
+      ];
+    }
+
+    case 'spline': {
+      const offset = distance * 0.3;
+      return [
+        {
+          x: start.x + dx * 0.2 + perp.x * offset,
+          y: start.y + dy * 0.2 + perp.y * offset,
+        },
+        {
+          x: start.x + dx * 0.8 - perp.x * offset,
+          y: start.y + dy * 0.8 - perp.y * offset,
+        },
+      ];
+    }
+
+    case 'bundle': {
+      const verticalDirection = start.y <= end.y ? 1 : -1;
+      const lift = Math.min(220, Math.max(70, Math.abs(dx) * 0.25 + Math.abs(dy) * 0.35));
+      return [
+        { x: start.x, y: start.y + verticalDirection * lift },
+        { x: end.x, y: start.y + verticalDirection * lift * 0.9 },
+      ];
+    }
+
+    case 'organic':
+    case 'curved':
+    default: {
+      const offset = distance * 0.22;
+      return [
+        {
+          x: start.x + dx * 0.25 + perp.x * offset,
+          y: start.y + dy * 0.25 + perp.y * offset,
+        },
+        {
+          x: start.x + dx * 0.75 - perp.x * offset,
+          y: start.y + dy * 0.75 - perp.y * offset,
+        },
+      ];
+    }
+  }
+};
+
+const buildPolylinePath = (points: Point[]): string => {
+  if (points.length === 0) {
+    return '';
+  }
+
+  const [first, ...rest] = points;
+  const segments = [`M ${first.x} ${first.y}`];
+  rest.forEach((point) => segments.push(`L ${point.x} ${point.y}`));
+  return segments.join(' ');
+};
+
+const polylineMidPoint = (points: Point[], offset: EdgeLabelOffset): Point => {
+  if (points.length === 0) {
+    return { x: offset.x ?? 0, y: offset.y ?? 0 };
+  }
+
+  const totalLength = points.reduce((acc, point, index) => {
+    if (index === 0) return 0;
+    return acc + lengthBetween(points[index - 1], point);
+  }, 0);
+
+  const target = totalLength / 2;
+  let traversed = 0;
+
+  for (let i = 1; i < points.length; i += 1) {
+    const prev = points[i - 1];
+    const current = points[i];
+    const segmentLength = lengthBetween(prev, current);
+
+    if (traversed + segmentLength >= target) {
+      const ratio = segmentLength === 0 ? 0 : (target - traversed) / segmentLength;
+      const point = lerpPoint(prev, current, ratio);
+      return {
+        x: point.x + (offset?.x ?? 0),
+        y: point.y + (offset?.y ?? 0),
+      };
+    }
+
+    traversed += segmentLength;
+  }
+
+  const last = points[points.length - 1];
+  return {
+    x: last.x + (offset?.x ?? 0),
+    y: last.y + (offset?.y ?? 0),
+  };
+};
+
+// Generate path based on edge type / routing
 export function getEdgePath(
   x1: number,
   y1: number,
@@ -21,92 +214,97 @@ export function getEdgePath(
   targetHeight?: number,
   controlPoints?: EdgeControlPoint[]
 ): string {
-  
-  // Calculate edge endpoints on node boundaries
-  let startX = x1, startY = y1, endX = x2, endY = y2;
-  
+  let startX = x1;
+  let startY = y1;
+  let endX = x2;
+  let endY = y2;
+
   if (sourceWidth && sourceHeight && targetWidth && targetHeight) {
-    // Calculate intersection points on node boundaries
     const sourceEdge = getNodeEdgePoint(x1, y1, sourceWidth, sourceHeight, x2, y2);
     const targetEdge = getNodeEdgePoint(x2, y2, targetWidth, targetHeight, x1, y1);
-    
+
     startX = sourceEdge.x;
     startY = sourceEdge.y;
     endX = targetEdge.x;
     endY = targetEdge.y;
   }
 
-  const defaultOrthogonalPoints = () => {
-    const dx = endX - startX;
-    const dy = endY - startY;
-    const horizontalDominant = Math.abs(dx) >= Math.abs(dy);
+  const start = { x: startX, y: startY };
+  const end = { x: endX, y: endY };
+  const mode = normalizePathMode(type);
 
-    if (horizontalDominant) {
-      const midX = startX + dx / 2;
-      return [
-        { x: midX, y: startY },
-        { x: midX, y: endY },
-      ];
-    }
-
-    const midY = startY + dy / 2;
-    return [
-      { x: startX, y: midY },
-      { x: endX, y: midY },
-    ];
-  };
-
-  switch (type) {
+  switch (mode) {
     case 'orthogonal': {
-      const points =
-        controlPoints && controlPoints.length > 0
-          ? controlPoints
-          : defaultOrthogonalPoints();
-      const segments = [`M ${startX} ${startY}`];
-      for (const point of points) {
-        segments.push(`L ${point.x} ${point.y}`);
+      if (controlPoints && controlPoints.length > 0) {
+        const points = [start, ...controlPoints.map(toPoint), end];
+        return buildPolylinePath(points);
       }
-      segments.push(`L ${endX} ${endY}`);
-      return segments.join(' ');
+
+      const dx = endX - startX;
+      const dy = endY - startY;
+      const horizontalDominant = Math.abs(dx) >= Math.abs(dy);
+
+      const points = horizontalDominant
+        ? [
+            start,
+            { x: startX + dx / 2, y: startY },
+            { x: startX + dx / 2, y: endY },
+            end,
+          ]
+        : [
+            start,
+            { x: startX, y: startY + dy / 2 },
+            { x: endX, y: startY + dy / 2 },
+            end,
+          ];
+
+      return buildPolylinePath(points);
     }
 
-    case 'curved': {
-      // Smooth curve using quadratic bezier
-      const dx = endX - startX;
+    case 'hierarchical': {
+      if (controlPoints && controlPoints.length > 0) {
+        const points = [start, ...controlPoints.map(toPoint), end];
+        return buildPolylinePath(points);
+      }
+
       const dy = endY - startY;
-      const controlPoint =
-        controlPoints && controlPoints[0]
-          ? controlPoints[0]
-          : {
-              x: startX + dx / 2,
-              y: startY + dy / 2 - Math.abs(dx) * 0.2,
-            };
-      return `M ${startX} ${startY} Q ${controlPoint.x} ${controlPoint.y}, ${endX} ${endY}`;
-    }
-    
-    case 'bezier': {
-      // Free-form bezier curve
       const dx = endX - startX;
-      const dy = endY - startY;
-      const control1 =
-        controlPoints && controlPoints[0]
-          ? controlPoints[0]
-          : { x: startX + dx * 0.3, y: startY + dy * 0.1 };
-      const control2 =
-        controlPoints && controlPoints[1]
-          ? controlPoints[1]
-          : { x: startX + dx * 0.7, y: startY + dy * 0.9 };
-      return `M ${startX} ${startY} C ${control1.x} ${control1.y}, ${control2.x} ${control2.y}, ${endX} ${endY}`;
+
+      if (Math.abs(dy) < 4 && Math.abs(dx) < 4) {
+        return `M ${startX} ${startY} L ${endX} ${endY}`;
+      }
+
+      const verticalDirection = startY <= endY ? 1 : -1;
+      const levelOffset = Math.min(240, Math.max(70, Math.abs(dy) * 0.6));
+      const pivotY = startY + verticalDirection * levelOffset;
+
+      const points = [
+        start,
+        { x: startX, y: pivotY },
+        { x: endX, y: pivotY },
+        end,
+      ];
+
+      return buildPolylinePath(points);
     }
-    
+
     case 'straight':
-    default:
-      // Straight line
       return `M ${startX} ${startY} L ${endX} ${endY}`;
+
+    case 'curved':
+    case 'bezier':
+    case 'organic':
+    case 'radial':
+    case 'spline':
+    case 'bundle':
+    default: {
+      const [cp1, cp2] = computeCubicControls(mode, start, end, controlPoints);
+      return `M ${startX} ${startY} C ${cp1.x} ${cp1.y}, ${cp2.x} ${cp2.y}, ${endX} ${endY}`;
+    }
   }
 }
 
-// Calculate label position on the curve (at t=0.5)
+// Calculate label position on the edge path
 export function getLabelPosition(
   x1: number,
   y1: number,
@@ -121,123 +319,101 @@ export function getLabelPosition(
   offset: EdgeLabelOffset = { x: 0, y: 0 },
   controlPoints?: EdgeControlPoint[]
 ): { x: number; y: number } {
-  
-  // Calculate edge endpoints on node boundaries
-  let startX = x1, startY = y1, endX = x2, endY = y2;
-  
+  let startX = x1;
+  let startY = y1;
+  let endX = x2;
+  let endY = y2;
+
   if (sourceWidth && sourceHeight && targetWidth && targetHeight) {
-    // Calculate intersection points on node boundaries
     const sourceEdge = getNodeEdgePoint(x1, y1, sourceWidth, sourceHeight, x2, y2);
     const targetEdge = getNodeEdgePoint(x2, y2, targetWidth, targetHeight, x1, y1);
-    
+
     startX = sourceEdge.x;
     startY = sourceEdge.y;
     endX = targetEdge.x;
     endY = targetEdge.y;
   }
 
-  const applyOffset = (point: { x: number; y: number }) => ({
-    x: point.x + (offset?.x ?? 0),
-    y: point.y + (offset?.y ?? 0),
-  });
+  const start = { x: startX, y: startY };
+  const end = { x: endX, y: endY };
+  const mode = normalizePathMode(type);
 
   if (position === 'source') {
-    return applyOffset({ x: startX, y: startY });
+    return {
+      x: start.x + (offset?.x ?? 0),
+      y: start.y + (offset?.y ?? 0),
+    };
   }
 
   if (position === 'target') {
-    return applyOffset({ x: endX, y: endY });
+    return {
+      x: end.x + (offset?.x ?? 0),
+      y: end.y + (offset?.y ?? 0),
+    };
   }
 
-  switch (type) {
-    case 'orthogonal': {
-      const dx = endX - startX;
-      const dy = endY - startY;
-      const horizontalDominant = Math.abs(dx) >= Math.abs(dy);
+  switch (mode) {
+    case 'orthogonal':
+    case 'hierarchical': {
       const points =
         controlPoints && controlPoints.length > 0
-          ? controlPoints
-          : horizontalDominant
-          ? [
-              { x: startX + dx / 2, y: startY },
-              { x: startX + dx / 2, y: endY },
-            ]
-          : [
-              { x: startX, y: startY + dy / 2 },
-              { x: endX, y: startY + dy / 2 },
-            ];
+          ? [start, ...controlPoints.map(toPoint), end]
+          : (() => {
+              const dx = endX - startX;
+              const dy = endY - startY;
+              const horizontalDominant = Math.abs(dx) >= Math.abs(dy);
 
-      const pathPoints = [{ x: startX, y: startY }, ...points, { x: endX, y: endY }];
-      const totalLength = pathPoints.reduce((acc, point, index) => {
-        if (index === 0) return acc;
-        const prev = pathPoints[index - 1];
-        return acc + Math.hypot(point.x - prev.x, point.y - prev.y);
-      }, 0);
+              if (mode === 'hierarchical') {
+                const verticalDirection = startY <= endY ? 1 : -1;
+                const levelOffset = Math.min(240, Math.max(70, Math.abs(dy) * 0.6));
+                const pivotY = startY + verticalDirection * levelOffset;
+                return [
+                  start,
+                  { x: startX, y: pivotY },
+                  { x: endX, y: pivotY },
+                  end,
+                ];
+              }
 
-      const targetDistance = totalLength / 2;
-      let accum = 0;
+              return horizontalDominant
+                ? [
+                    start,
+                    { x: startX + dx / 2, y: startY },
+                    { x: startX + dx / 2, y: endY },
+                    end,
+                  ]
+                : [
+                    start,
+                    { x: startX, y: startY + dy / 2 },
+                    { x: endX, y: startY + dy / 2 },
+                    end,
+                  ];
+            })();
 
-      for (let i = 1; i < pathPoints.length; i += 1) {
-        const prev = pathPoints[i - 1];
-        const point = pathPoints[i];
-        const segmentLength = Math.hypot(point.x - prev.x, point.y - prev.y);
-
-        if (accum + segmentLength >= targetDistance) {
-          const ratio = (targetDistance - accum) / segmentLength;
-          const x = prev.x + (point.x - prev.x) * ratio;
-          const y = prev.y + (point.y - prev.y) * ratio;
-          return applyOffset({ x, y });
-        }
-
-        accum += segmentLength;
-      }
-
-      return applyOffset({ x: endX, y: endY });
+      return polylineMidPoint(points, offset);
     }
 
-    case 'curved': {
-      // Quadratic Bezier: P(t) = (1-t)²P0 + 2(1-t)tP1 + t²P2
-      const dx = endX - startX;
-      const dy = endY - startY;
-      const controlX = startX + dx / 2;
-      const controlY = startY + dy / 2 - Math.abs(dx) * 0.2;
-      
-      const t = 0.5;
-      const x = Math.pow(1 - t, 2) * startX + 2 * (1 - t) * t * controlX + Math.pow(t, 2) * endX;
-      const y = Math.pow(1 - t, 2) * startY + 2 * (1 - t) * t * controlY + Math.pow(t, 2) * endY;
-      
-      return applyOffset({ x, y });
+    case 'straight': {
+      return {
+        x: (startX + endX) / 2 + (offset?.x ?? 0),
+        y: (startY + endY) / 2 + (offset?.y ?? 0),
+      };
     }
-    
-    case 'bezier': {
-      // Cubic Bezier: P(t) = (1-t)³P0 + 3(1-t)²tP1 + 3(1-t)t²P2 + t³P3
-      const dx = endX - startX;
-      const dy = endY - startY;
-      const control1X = startX + dx * 0.3;
-      const control1Y = startY + dy * 0.1;
-      const control2X = startX + dx * 0.7;
-      const control2Y = startY + dy * 0.9;
-      
-      const t = 0.5;
-      const t2 = t * t;
-      const t3 = t2 * t;
-      const mt = 1 - t;
-      const mt2 = mt * mt;
-      const mt3 = mt2 * mt;
-      
-      const x = mt3 * startX + 3 * mt2 * t * control1X + 3 * mt * t2 * control2X + t3 * endX;
-      const y = mt3 * startY + 3 * mt2 * t * control1Y + 3 * mt * t2 * control2Y + t3 * endY;
-      
-      return applyOffset({ x, y });
+
+    case 'curved':
+    case 'bezier':
+    case 'organic':
+    case 'radial':
+    case 'spline':
+    case 'bundle':
+    default: {
+      const [cp1, cp2] = computeCubicControls(mode, start, end, controlPoints);
+      const point = cubicPoint(0.5, start, cp1, cp2, end);
+      return {
+        x: point.x + (offset?.x ?? 0),
+        y: point.y + (offset?.y ?? 0),
+      };
     }
-    
-    case 'straight':
-    default:
-      // Midpoint between edge endpoints
-      return applyOffset({
-        x: (startX + endX) / 2,
-        y: (startY + endY) / 2,
-      });
   }
 }
 

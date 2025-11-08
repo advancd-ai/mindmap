@@ -38,7 +38,17 @@ export interface Node {
 export type EdgeType = 'straight' | 'curved' | 'bezier';
 
 export type EdgeCategory = 'branch' | 'relationship' | 'summary' | 'boundary';
-export type EdgeRouting = 'organic' | 'orthogonal';
+export const EDGE_ROUTING_VALUES = [
+  'organic',
+  'orthogonal',
+  'straight',
+  'radial',
+  'spline',
+  'bundle',
+  'hierarchical',
+] as const;
+
+export type EdgeRouting = (typeof EDGE_ROUTING_VALUES)[number];
 export type EdgeMarker = 'none' | 'arrow' | 'circle';
 
 export interface EdgeStyle {
@@ -149,6 +159,24 @@ const cloneBoundary = (boundary?: BoundaryEdgeData): BoundaryEdgeData | undefine
       }
     : undefined;
 
+const DEFAULT_EDGE_ROUTING: EdgeRouting = 'straight';
+
+const normalizeRouting = (value: unknown, category: EdgeCategory): EdgeRouting => {
+  if (category === 'boundary' || category === 'summary') {
+    return 'organic';
+  }
+
+  if (typeof value === 'string') {
+    const lower = value.toLowerCase();
+    const matched = EDGE_ROUTING_VALUES.find((option) => option === lower);
+    if (matched) {
+      return matched;
+    }
+  }
+
+  return DEFAULT_EDGE_ROUTING;
+};
+
 const normalizeEdge = (edge: Edge): Edge => {
   const category: EdgeCategory = edge.category ?? 'branch';
   let normalizedId = EDGE_ID_PATTERN.test(edge.id)
@@ -168,10 +196,7 @@ const normalizeEdge = (edge: Edge): Edge => {
     typeof value === 'number' && Number.isFinite(value) && value >= 0 && value < 12
       ? Math.floor(value)
       : undefined;
-  const routing: EdgeRouting =
-    category === 'boundary' || category === 'summary'
-      ? 'organic'
-      : edge.routing ?? 'organic';
+  const routing = normalizeRouting(edge.routing, category);
   const labelPosition: EdgeLabelPosition =
     category === 'boundary' ? 'middle' : edge.labelPosition ?? 'middle';
   const labelOffset: EdgeLabelOffset = edge.labelOffset

@@ -1230,8 +1230,6 @@ export default function MindMapCanvas({
     }
 
     const node = sourceMap.nodes.find((n) => n.id === nodeId);
-    const isMacPlatform = navigator.platform?.toLowerCase().includes('mac');
-
     const menuItems: MenuItem[] = [
       {
         label: 'Edit Label',
@@ -1339,6 +1337,7 @@ export default function MindMapCanvas({
               id: `e_${Date.now()}`,
               source: nodeId,
               target: newNode.id,
+              routing: 'straight' as const,
             };
             addEdge(newEdge);
             selectNode(newNode.id);
@@ -1346,28 +1345,6 @@ export default function MindMapCanvas({
         },
         disabled: isReadOnly,
         shortcut: 'a',
-      },
-      {
-        label: 'Duplicate',
-        icon: <AppleIcon name="copy" size="medium" />,
-        onClick: () => {
-          const { map: currentMap } = useMindMapStore.getState();
-          const targetNode = currentMap?.nodes.find((n) => n.id === nodeId);
-          if (!targetNode) {
-            return;
-          }
-
-            const newNode: NodeType = {
-            ...targetNode,
-              id: `n_${Date.now()}`,
-            x: targetNode.x + 30,
-            y: targetNode.y + 30,
-            contentType: targetNode.contentType || 'richeditor',
-            };
-            addNode(newNode);
-            selectNode(newNode.id);
-        },
-        shortcut: isMacPlatform ? 'Cmd+D' : 'Ctrl+D',
       },
       { divider: true } as MenuItem,
       {
@@ -2151,6 +2128,7 @@ export default function MindMapCanvas({
               id: `e_${Date.now()}`,
               source: currentSelectedNodeId,
               target: newNode.id,
+              routing: 'straight' as const,
             };
             addEdge(newEdge);
             selectNode(newNode.id);
@@ -2374,6 +2352,7 @@ export default function MindMapCanvas({
           target: nodeId,
           sourceAnchor: connectingFromAnchor ?? undefined,
           targetAnchor: anchorIndex,
+          routing: 'straight',
         };
         addEdge(newEdge);
       }
@@ -2763,14 +2742,15 @@ export default function MindMapCanvas({
           const x2 = target.x + targetDim.w / 2;
           const y2 = target.y + targetDim.h / 2;
           
-          const routing = editingEdge.routing ?? 'organic';
+          const routing = editingEdge.routing ?? 'straight';
+          const edgeCategory = editingEdge.category ?? 'branch';
           const edgeType =
             editingEdge.edgeType ||
-            (routing === 'orthogonal'
-              ? 'orthogonal'
-              : editingEdge.category === 'relationship'
-              ? 'bezier'
-              : 'curved');
+            (routing === 'organic'
+              ? edgeCategory === 'relationship'
+                ? 'bezier'
+                : 'organic'
+              : routing);
           const labelPos = getLabelPosition(
             x1,
             y1,
@@ -2981,7 +2961,7 @@ export default function MindMapCanvas({
             const x2 = target.x + targetDim.w / 2;
             const y2 = target.y + targetDim.h / 2;
 
-            const routing = inspectorEdge.routing ?? 'organic';
+            const routing = inspectorEdge.routing ?? 'straight';
             const edgeType =
               inspectorEdge.edgeType ||
               (routing === 'orthogonal'
