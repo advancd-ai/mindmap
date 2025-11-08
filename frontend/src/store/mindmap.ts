@@ -177,6 +177,11 @@ const normalizeRouting = (value: unknown, category: EdgeCategory): EdgeRouting =
   return DEFAULT_EDGE_ROUTING;
 };
 
+const normalizeAnchor = (value: number | undefined): number | undefined =>
+  typeof value === 'number' && Number.isFinite(value) && value >= 0 && value < 12
+    ? Math.floor(value)
+    : undefined;
+
 const normalizeEdge = (edge: Edge): Edge => {
   const category: EdgeCategory = edge.category ?? 'branch';
   let normalizedId = EDGE_ID_PATTERN.test(edge.id)
@@ -192,10 +197,6 @@ const normalizeEdge = (edge: Edge): Edge => {
       : DEFAULT_BRANCH_STYLE;
 
   const style = edge.style ?? {};
-  const normalizeAnchor = (value: number | undefined): number | undefined =>
-    typeof value === 'number' && Number.isFinite(value) && value >= 0 && value < 12
-      ? Math.floor(value)
-      : undefined;
   const routing = normalizeRouting(edge.routing, category);
   const labelPosition: EdgeLabelPosition =
     category === 'boundary' ? 'middle' : edge.labelPosition ?? 'middle';

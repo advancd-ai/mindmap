@@ -59,7 +59,7 @@ function NodeAnchors({
         const normalized = (orientationAngle + 360) % 360;
         const compassIndex = Math.floor((normalized + 22.5) / 45) % 8;
         const compass = COMPASS_LABELS[compassIndex];
-        const title = `${compass.long} anchor (${compass.hint})`;
+        const label = `${compass.long} anchor (${compass.hint})`;
 
         return (
           <circle
@@ -68,8 +68,7 @@ function NodeAnchors({
             cx={visualPoint.x}
             cy={visualPoint.y}
             r={isActive ? 8 : 6}
-            title={title}
-            aria-label={title}
+            aria-label={label}
             data-direction={compass.short}
             onPointerDown={(event) => {
               if (!interactive) return;
