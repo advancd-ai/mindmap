@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2025-11-08T05:31:43.690Z",
+  "generatedAt": "2025-11-08T05:31:51.611Z",
   "items": [
     {
       "id": "map_1762579902966",
       "title": "test",
       "tags": [],
-      "nodeCount": 1,
-      "edgeCount": 0,
-      "updatedAt": "2025-11-08T05:31:43.312Z",
+      "nodeCount": 2,
+      "edgeCount": 1,
+      "updatedAt": "2025-11-08T05:31:51.255Z",
       "version": 2
     }
   ]
