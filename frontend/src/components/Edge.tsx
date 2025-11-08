@@ -11,7 +11,6 @@ import {
 import { getEdgePath, getLabelPosition } from '../utils/edgeHelpers';
 import { getNodeAnchorPosition } from '../utils/anchorHelpers';
 import { getNodeDisplayDimensions } from '../utils/nodeHelpers';
-import MarkdownRenderer from './MarkdownRenderer';
 import './Edge.css';
 
 interface EdgeProps {
@@ -233,7 +232,7 @@ export default function Edge({
             className={`edge-label-card ${isSelected ? 'selected' : ''}`}
             data-kind={category}
           >
-            <MarkdownRenderer content={edge.label} textAlign="center" />
+            <div className="edge-label-text">{edge.label}</div>
             {iconDecorators.length > 0 && (
               <div className="edge-label-badges">
                 {iconDecorators.map((decorator, index) => (

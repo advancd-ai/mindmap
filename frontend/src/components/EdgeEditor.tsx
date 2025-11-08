@@ -22,6 +22,8 @@ export default function EdgeEditor({
 }: EdgeEditorProps) {
   const [value, setValue] = useState(initialValue);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const isCancelledRef = useRef(false);
+  const initialTrimmedRef = useRef(initialValue.trim());
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -31,7 +33,15 @@ export default function EdgeEditor({
   }, []);
 
   const handleSave = () => {
-    onSave(value.trim());
+    if (isCancelledRef.current) {
+      return;
+    }
+    const trimmed = value.trim();
+    if (trimmed === initialTrimmedRef.current) {
+      onCancel();
+      return;
+    }
+    onSave(trimmed);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -40,6 +50,7 @@ export default function EdgeEditor({
       handleSave();
     } else if (e.key === 'Escape') {
       e.preventDefault();
+      isCancelledRef.current = true;
       onCancel();
     }
   };
@@ -64,12 +75,12 @@ export default function EdgeEditor({
           onKeyDown={handleKeyDown}
           onBlur={handleSave}
           className="edge-editor-textarea"
-          placeholder="Edge details (Markdown supported)"
+          placeholder="Describe the relationship"
           maxLength={200}
           rows={3}
         />
         <div className="edge-editor-hint">
-          Enter to save · Shift+Enter for newline · Esc to cancel
+          Plain text · Enter to save · Shift+Enter for newline · Esc to cancel
         </div>
       </div>
     </foreignObject>

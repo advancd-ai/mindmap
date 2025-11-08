@@ -52,70 +52,55 @@
 }
 
 .edge-label-card {
-  min-width: 120px;
-  max-width: 180px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(148, 163, 184, 0.45);
-  box-shadow:
-    0 6px 12px rgba(15, 23, 42, 0.12),
-    0 0 0 1px rgba(148, 163, 184, 0.25);
-  font-size: 12px;
-  font-weight: 500;
-  color: rgba(51, 65, 85, 0.95);
+  min-width: 0;
+  max-width: 260px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  font-size: 14px;
+  font-weight: 600;
   text-align: center;
+  pointer-events: auto;
 }
 
-.edge-label-card .markdown-renderer {
-  width: 100%;
+.edge-label-text {
+  width: auto;
   text-align: center;
-  font-size: 12px;
-  color: inherit;
-}
-
-.edge-label-card .markdown-renderer p {
-  margin: 0;
-}
-
-.edge-label-card .markdown-renderer strong {
-  color: rgba(30, 41, 59, 0.95);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 2px 12px;
+  border-radius: 999px;
+  display: inline-block;
+  background:
+    linear-gradient(135deg, rgba(59, 130, 246, 0.32), rgba(79, 70, 229, 0.32));
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  text-shadow:
+    0 1px 8px rgba(15, 23, 42, 0.32),
+    0 0 1px rgba(15, 23, 42, 0.6);
+  -webkit-text-stroke: 0.2px rgba(15, 23, 42, 0.5);
 }
 
 .edge-label-card.selected {
-  border-color: rgba(37, 99, 235, 0.6);
-  box-shadow:
-    0 10px 18px rgba(37, 99, 235, 0.16),
-    0 0 0 1px rgba(37, 99, 235, 0.35);
+  filter: drop-shadow(0 6px 16px rgba(37, 99, 235, 0.32));
 }
 
 .edge-label-card[data-kind='relationship'] {
-  background: rgba(254, 243, 199, 0.95);
-  border-color: rgba(249, 115, 22, 0.5);
-  color: rgba(154, 52, 18, 0.92);
-}
-
-.edge-label-badges {
-  margin-top: 6px;
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 4px;
-  color: rgba(71, 85, 105, 0.9);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.edge-label-badge {
-  padding: 3px 6px;
-  border-radius: 999px;
-  background: rgba(226, 232, 240, 0.8);
-  border: 1px solid rgba(148, 163, 184, 0.4);
+  color: #fff5f7;
+  background:
+    linear-gradient(135deg, rgba(236, 72, 153, 0.34), rgba(190, 24, 93, 0.34));
+  border: 1px solid rgba(236, 72, 153, 0.26);
+  -webkit-text-stroke: 0.2px rgba(76, 5, 44, 0.4);
 }
 
 .edge-label-card.selected[data-kind='relationship'] {
-  border-color: rgba(249, 115, 22, 0.8);
+  filter: drop-shadow(0 8px 20px rgba(244, 63, 94, 0.4));
 }
 }
 
