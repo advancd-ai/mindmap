@@ -10,7 +10,7 @@ import { validateMap } from '../validators/map.js';
 import { cache } from '../lib/redis.js';
 import { getGitHubRepoPath } from '../utils/github.js';
 import { nanoid } from 'nanoid';
-import type { Env, Map, User } from '../types.js';
+import type { Env, Map, User, Index } from '../types.js';
 
 export const mapsRouter = new Hono<{ Bindings: Env; Variables: { user: User } }>();
 
@@ -147,21 +147,56 @@ mapsRouter.get('/:id', async (c) => {
     // Try cache first
     const repoPath = getGitHubRepoPath(user);
     const cacheKey = `map:${repoPath.owner}:${repoPath.repo}:${id}:latest`;
+    const indexCacheKey = `index:${repoPath.owner}:${repoPath.repo}:latest`;
     const cached = await cache.get(cacheKey);
 
-    let map;
+    let map: Map;
     if (cached) {
       map = JSON.parse(cached);
     } else {
-      // Fetch from GitHub
+      // Fetch from Git provider
       map = await github.getMap(id);
-      // Cache for 60 seconds
-      await cache.put(cacheKey, JSON.stringify(map), { expirationTtl: 60 });
     }
+
+    // Attempt to enrich with share metadata from index
+    let shareEnabled = map.shareEnabled ?? false;
+    let shareToken = map.shareToken;
+
+    try {
+      let index: Index | null = null;
+      const cachedIndex = await cache.get(indexCacheKey);
+
+      if (cachedIndex) {
+        index = JSON.parse(cachedIndex);
+      } else {
+        index = await github.getIndex();
+        await cache.put(indexCacheKey, JSON.stringify(index), { expirationTtl: 30 });
+      }
+
+      const indexItem = index?.items?.find((entry) => entry.id === id);
+      if (indexItem) {
+        shareEnabled = Boolean(indexItem.shareEnabled);
+        shareToken = indexItem.shareEnabled ? indexItem.shareToken : undefined;
+      }
+    } catch (shareError) {
+      console.warn('⚠️ Failed to load share metadata for map', {
+        mapId: id,
+        error: shareError instanceof Error ? shareError.message : shareError,
+      });
+    }
+
+    const mapWithShare: Map = {
+      ...map,
+      shareEnabled,
+      shareToken,
+    };
+
+    // Refresh cache with enriched map
+    await cache.put(cacheKey, JSON.stringify(mapWithShare), { expirationTtl: 60 });
 
     return c.json({
       ok: true,
-      data: map,
+      data: mapWithShare,
     });
   } catch (error: any) {
     if (error.status === 404) {

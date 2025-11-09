@@ -271,6 +271,38 @@
   min-height: 0;  /* Allow flex item to shrink */
 }
 
+.map-body-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.map-body-row .map-stats {
+  flex: 1;
+}
+
+.map-tags-inline {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  justify-content: flex-end;
+  flex-shrink: 0;
+  max-width: 160px;
+}
+
+.map-tags-inline .tag {
+  margin: 0;
+}
+
+.map-tags-inline .tag-more {
+  margin: 0;
+}
+
+.map-card-content .map-tags {
+  margin-top: 0;
+}
+
 .map-card::before {
   content: '';
   position: absolute;
@@ -345,13 +377,25 @@
   overflow-wrap: break-word;
   hyphens: auto;
   min-width: 0;  /* Allow flex item to shrink */
+  text-align: left;
 }
 
 .map-card-actions {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: var(--space-xs);
   flex-shrink: 0;
+  min-width: 0;
+}
+
+.map-card-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.map-card-header {
+  gap: var(--space-lg);
 }
 
 .map-edit-btn {
@@ -457,12 +501,12 @@
 
 .tag {
   padding: 4px 10px;
-  background: var(--accent-lighter);
-  border: 1px solid var(--accent-primary);
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.16);
   border-radius: var(--radius-sm);
   font-size: 11px;
   font-weight: 500;
-  color: var(--accent-primary);
+  color: rgba(59, 130, 246, 0.8);
   letter-spacing: -0.01em;
   transition: var(--transition-fast);
   white-space: nowrap;
@@ -473,9 +517,9 @@
 }
 
 .tag:hover {
-  background: var(--accent-light);
-  border-color: var(--accent-hover);
-  color: var(--accent-hover);
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.24);
+  color: rgba(37, 99, 235, 0.85);
 }
 
 .tag-more {

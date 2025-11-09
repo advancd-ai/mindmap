@@ -2387,15 +2387,6 @@ export default function MindMapCanvas({
 
   return (
       <div ref={containerRef} className="mindmap-canvas-container">
-        {isReadOnly && (
-          <div className="readonly-overlay">
-            <div className="readonly-banner">
-              <AppleIcon name="lock" size="medium" className="readonly-icon" />
-              <span className="readonly-text">{t('editor.readonly')}</span>
-              <span className="readonly-subtitle">{t('editor.readonlySubtitle')}</span>
-            </div>
-          </div>
-        )}
         {isRefreshing && (
           <div className="save-overlay">
             <div className="save-progress-container">

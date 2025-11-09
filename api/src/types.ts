@@ -46,6 +46,8 @@ export interface Map {
   viewState?: ViewState;
   updatedAt: string;
   version: number;
+  shareEnabled?: boolean;
+  shareToken?: string;
 }
 
 export type NodeShapeType = 

@@ -267,6 +267,8 @@ export interface MindMap {
   viewState?: ViewState;
   updatedAt: string;
   version: number;
+  shareEnabled?: boolean;
+  shareToken?: string;
 }
 
 interface MindMapState {

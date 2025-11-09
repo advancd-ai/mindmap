@@ -1,32 +1,39 @@
-.share-status-badge {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: flex;
+.share-chip {
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
-  background: rgba(0, 123, 255, 0.1);
-  border: 1px solid rgba(0, 123, 255, 0.3);
-  border-radius: 12px;
-  padding: 4px 8px;
-  font-size: 12px;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid rgba(17, 24, 39, 0.18);
+  color: rgba(17, 24, 39, 0.88);
+  transition: all 0.15s ease;
+}
+
+.share-chip[role='button'] {
   cursor: pointer;
-  transition: all 0.2s;
-  z-index: 10;
 }
 
-.share-status-badge:hover {
-  background: rgba(0, 123, 255, 0.15);
-  border-color: rgba(0, 123, 255, 0.5);
+.share-chip:hover,
+.share-chip:focus-visible {
+  background: rgba(15, 23, 42, 0.08);
+  border-color: rgba(15, 23, 42, 0.28);
+  outline: none;
 }
 
-.share-icon {
-  font-size: 14px;
+.share-chip:focus-visible {
+  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
 }
 
-.share-views {
-  color: #007bff;
-  font-weight: 500;
-  font-size: 11px;
+.share-chip__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: rgba(17, 24, 39, 0.88);
 }
+
 

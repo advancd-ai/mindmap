@@ -313,14 +313,18 @@ export default function DashboardPage() {
               className="map-card card"
               onClick={() => navigate(`/editor/${map.id}`)}
             >
-              <ShareStatusBadge 
-                isShared={map.shareEnabled || false}
-                viewCount={undefined} // View count not available in MapListItem
-              />
               <div className="map-card-content">
                 <div className="map-card-header">
                   <h3 className="map-title">{map.title}</h3>
                   <div className="map-card-actions">
+                    <div className="map-card-meta">
+                      {map.shareEnabled && (
+                        <ShareStatusBadge 
+                          isShared={map.shareEnabled}
+                        />
+                      )}
+                      <span className="map-version">v{map.version}</span>
+                    </div>
                     <button
                       className="map-edit-btn"
                       onClick={(e) => handleEditMap(e, map)}
@@ -328,38 +332,39 @@ export default function DashboardPage() {
                     >
                       ✏️
                     </button>
-                    <span className="map-version">v{map.version}</span>
                   </div>
                 </div>
 
-                {/* Stats */}
-                <div className="map-stats">
-                  <div className="stat-item">
-                    <span className="stat-icon">📊</span>
-                    <span className="stat-value">{map.nodeCount}</span>
-                    <span className="stat-label">{t('dashboard.nodes')}</span>
+                <div className="map-body-row">
+                  {/* Stats */}
+                  <div className="map-stats">
+                    <div className="stat-item">
+                      <span className="stat-icon">📊</span>
+                      <span className="stat-value">{map.nodeCount}</span>
+                      <span className="stat-label">{t('dashboard.nodes')}</span>
+                    </div>
+                    <div className="stat-divider">·</div>
+                    <div className="stat-item">
+                      <span className="stat-icon">🔗</span>
+                      <span className="stat-value">{map.edgeCount}</span>
+                      <span className="stat-label">{t('dashboard.edges')}</span>
+                    </div>
                   </div>
-                  <div className="stat-divider">·</div>
-                  <div className="stat-item">
-                    <span className="stat-icon">🔗</span>
-                    <span className="stat-value">{map.edgeCount}</span>
-                    <span className="stat-label">{t('dashboard.edges')}</span>
-                  </div>
-                </div>
 
-                {/* Tags */}
-                {map.tags && map.tags.length > 0 && (
-                  <div className="map-tags">
-                    {map.tags.slice(0, 3).map((tag: string) => (
-                      <span key={tag} className="tag">
-                        {tag}
-                      </span>
-                    ))}
-                    {map.tags.length > 3 && (
-                      <span className="tag-more">+{map.tags.length - 3}</span>
-                    )}
-                  </div>
-                )}
+                  {/* Tags */}
+                  {map.tags && map.tags.length > 0 && (
+                    <div className="map-tags map-tags-inline">
+                      {map.tags.slice(0, 2).map((tag: string) => (
+                        <span key={tag} className="tag">
+                          {tag}
+                        </span>
+                      ))}
+                      {map.tags.length > 2 && (
+                        <span className="tag-more">+{map.tags.length - 2}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Footer */}

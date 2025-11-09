@@ -12,6 +12,7 @@ import { fetchMap, fetchMaps, fetchMapVersion, fetchMapHistory } from '../api/ma
 import { versionSynchronizer } from '../utils/versionSync';
 import { optimisticVersionManager } from '../utils/optimisticUpdate';
 import MindMapCanvas from '../components/MindMapCanvas';
+import AppleIcon from '../components/AppleIcon';
 import LanguageSelector from '../components/LanguageSelector';
 import ToolbarHelp from '../components/ToolbarHelp';
 import Toast, { type ToastType } from '../components/Toast';
@@ -33,6 +34,7 @@ export default function EditorPage() {
   const [refreshProgress, setRefreshProgress] = useState(0);
   const [showShareModal, setShowShareModal] = useState(false);
   const [zoom, setZoom] = useState(1.0); // Zoom level (1.0 = 100%)
+  const isReadOnly = !isNewMap && !isLatestVersion;
 
   const map = useMindMapStore((state) => state.map);
   const setMap = useMindMapStore((state) => state.setMap);
@@ -423,6 +425,15 @@ export default function EditorPage() {
         </div>
 
         <div className="editor-header-right">
+          {isReadOnly && (
+            <div
+              className="readonly-chip"
+              title={t('editor.readonlySubtitle')}
+            >
+              <AppleIcon name="lock" size="small" className="readonly-chip__icon" />
+              <span className="readonly-chip__text">{t('editor.readonly')}</span>
+            </div>
+          )}
           {/* Share button, Save button, and Unsaved indicator */}
           <div className="editor-actions">
             {mapId && (
@@ -431,7 +442,27 @@ export default function EditorPage() {
                 onClick={() => setShowShareModal(true)}
                 title="Share map"
               >
-                🔗 Share
+                <svg
+                  className="share-button__icon"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 483 483"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M395.72,0c-48.204,0-87.281,39.078-87.281,87.281c0,2.036,0.164,4.03,0.309,6.029l-161.233,75.674
+                    c-15.668-14.971-36.852-24.215-60.231-24.215c-48.204,0.001-87.282,39.079-87.282,87.282c0,48.204,39.078,87.281,87.281,87.281
+                    c15.206,0,29.501-3.907,41.948-10.741l69.789,58.806c-3.056,8.896-4.789,18.396-4.789,28.322c0,48.204,39.078,87.281,87.281,87.281
+                    c48.205,0,87.281-39.078,87.281-87.281s-39.077-87.281-87.281-87.281c-15.205,0-29.5,3.908-41.949,10.74l-69.788-58.805
+                    c3.057-8.891,4.789-18.396,4.789-28.322c0-2.035-0.164-4.024-0.308-6.029l161.232-75.674c15.668,14.971,36.852,24.215,60.23,24.215
+                    c48.203,0,87.281-39.078,87.281-87.281C482.999,39.079,443.923,0,395.72,0z"
+                    fill="currentColor"
+                  />
+                </svg>
+                <span className="share-button__label">
+                  {map?.shareEnabled ? 'Shared' : 'Share'}
+                </span>
               </button>
             )}
             {(isNewMap || isLatestVersion) && (
@@ -455,7 +486,7 @@ export default function EditorPage() {
 
       <div className="editor-content">
         <MindMapCanvas 
-          isReadOnly={!isNewMap && !isLatestVersion}
+          isReadOnly={isReadOnly}
           onRefreshToLatest={refreshToLatestVersion}
           isRefreshing={isRefreshing}
           refreshProgress={refreshProgress}
