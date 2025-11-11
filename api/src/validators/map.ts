@@ -158,6 +158,8 @@ const mapSchema = {
     },
     updatedAt: { type: 'string', format: 'date-time' },
     version: { type: 'integer', minimum: 1 },
+    shareEnabled: { type: 'boolean' },
+    shareToken: { type: 'string', minLength: 1, maxLength: 120 },
   },
   additionalProperties: false,
 };
