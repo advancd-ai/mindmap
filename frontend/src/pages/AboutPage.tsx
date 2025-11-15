@@ -3,6 +3,46 @@ import { useTranslation } from 'react-i18next';
 import AppleIcon from '../components/AppleIcon';
 import './AboutPage.css';
 
+const highlightCardSpecs = [
+  { icon: 'add', titleKey: 'about.highlightQuickStartTitle', copyKey: 'about.highlightQuickStartCopy' },
+  { icon: 'history', titleKey: 'about.highlightAutoSaveTitle', copyKey: 'about.highlightAutoSaveCopy' },
+  { icon: 'edit', titleKey: 'about.highlightKeyboardTitle', copyKey: 'about.highlightKeyboardCopy' },
+  { icon: 'external-link', titleKey: 'about.highlightShareTitle', copyKey: 'about.highlightShareCopy' },
+] as const;
+
+const comfortSpecs = [
+  {
+    icon: 'folder',
+    titleKey: 'about.comfortNoSetupTitle',
+    copyKey: 'about.comfortNoSetupCopy',
+    bulletKeys: [
+      'about.comfortNoSetupBullet1',
+      'about.comfortNoSetupBullet2',
+      'about.comfortNoSetupBullet3',
+    ],
+  },
+  {
+    icon: 'connect',
+    titleKey: 'about.comfortFlowTitle',
+    copyKey: 'about.comfortFlowCopy',
+    bulletKeys: [
+      'about.comfortFlowBullet1',
+      'about.comfortFlowBullet2',
+      'about.comfortFlowBullet3',
+    ],
+  },
+  {
+    icon: 'image',
+    titleKey: 'about.comfortMediaTitle',
+    copyKey: 'about.comfortMediaCopy',
+    bulletKeys: [
+      'about.comfortMediaBullet1',
+      'about.comfortMediaBullet2',
+      'about.comfortMediaBullet3',
+    ],
+  },
+] as const;
+
 export default function AboutPage() {
   const { t } = useTranslation();
 
@@ -30,47 +70,46 @@ export default function AboutPage() {
       </header>
 
       <section className="about-section">
-        <h2>{t('about.sectionFeaturesTitle')}</h2>
+        <div className="about-section-heading">
+          <h2>{t('about.sectionHighlightsTitle')}</h2>
+          <p className="about-section-subtitle">{t('about.sectionHighlightsSubtitle')}</p>
+        </div>
         <div className="about-feature-grid">
-          <article className="about-card">
-            <AppleIcon name="edit" size="small" className="about-card-icon" />
-            <h3>{t('about.featureEditorTitle')}</h3>
-            <p>{t('about.featureEditorCopy')}</p>
-          </article>
-          <article className="about-card">
-            <AppleIcon name="history" size="small" className="about-card-icon" />
-            <h3>{t('about.featureBranchTitle')}</h3>
-            <p>{t('about.featureBranchCopy')}</p>
-          </article>
-          <article className="about-card">
-            <AppleIcon name="external-link" size="small" className="about-card-icon" />
-            <h3>{t('about.featureShareTitle')}</h3>
-            <p>{t('about.featureShareCopy')}</p>
-          </article>
-          <article className="about-card">
-            <AppleIcon name="lock" size="small" className="about-card-icon" />
-            <h3>{t('about.featureGuestTitle')}</h3>
-            <p>{t('about.featureGuestCopy')}</p>
-          </article>
+          {highlightCardSpecs.map((card) => (
+            <article className="about-card" key={card.titleKey}>
+              <AppleIcon name={card.icon} size="small" className="about-card-icon" />
+              <h3>{t(card.titleKey)}</h3>
+              <p>{t(card.copyKey)}</p>
+            </article>
+          ))}
         </div>
       </section>
 
-      <section className="about-section">
-        <h2>{t('about.sectionArchitectureTitle')}</h2>
-        <div className="about-architecture">
-          <div className="about-architecture-card">
-            <h3>{t('about.architectureBranchesTitle')}</h3>
-            <p>{t('about.architectureBranchesCopy')}</p>
-
-          </div>
-          <div className="about-architecture-card">
-            <h3>{t('about.architectureIndexTitle')}</h3>
-            <p>{t('about.architectureIndexCopy')}</p>
-          </div>
-          <div className="about-architecture-card">
-            <h3>{t('about.architectureDeployTitle')}</h3>
-            <p>{t('about.architectureDeployCopy')}</p>
-          </div>
+      <section className="about-section about-section-comfort">
+        <div className="about-section-heading">
+          <h2>{t('about.sectionComfortTitle')}</h2>
+          <p className="about-section-subtitle">{t('about.sectionComfortSubtitle')}</p>
+        </div>
+        <div className="about-comfort-grid">
+          {comfortSpecs.map((card) => (
+            <article className="about-comfort-card" key={card.titleKey}>
+              <div className="about-comfort-card-header">
+                <AppleIcon name={card.icon} size="small" className="about-card-icon" />
+                <div>
+                  <h3>{t(card.titleKey)}</h3>
+                  <p>{t(card.copyKey)}</p>
+                </div>
+              </div>
+              <ul className="about-comfort-list">
+                {card.bulletKeys.map((bullet) => (
+                  <li key={bullet}>
+                    <AppleIcon name="check" size="xs" className="about-comfort-bullet-icon" />
+                    <span>{t(bullet)}</span>
+                  </li>
+                ))}
+              </ul>
+            </article>
+          ))}
         </div>
       </section>
 
