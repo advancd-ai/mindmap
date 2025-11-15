@@ -20,7 +20,7 @@ const mapSchema = {
         required: ['id', 'label', 'x', 'y', 'w', 'h'],
         properties: {
           id: { type: 'string', pattern: '^n_[A-Za-z0-9_-]{4,}$' },
-          label: { type: 'string', maxLength: 200 },
+          label: { type: 'string', maxLength: 10000 },
           x: { type: 'number' },
           y: { type: 'number' },
           w: { type: 'number', minimum: 20, maximum: 1000 },
