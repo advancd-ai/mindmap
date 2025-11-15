@@ -15,6 +15,7 @@ data:
   API_URL: ""
   CORS_ORIGIN: "http://localhost:3000,https://yourdomain.com"
   DEV_MODE: "false"
+  DISCORD_WEBHOOK_URL: ""
   
   # Redis Configuration
   REDIS_HOST: "redis-service"

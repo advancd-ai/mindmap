@@ -40,6 +40,7 @@ services:
       - GITHUB_ORG=${GITHUB_ORG:-}
       - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}
       - DEV_MODE=${DEV_MODE:-false}
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL:-}
       # Git provider selection: github (default) or local
       - GIT_PROVIDER=${GIT_PROVIDER:-github}
       # Local Git settings (used when GIT_PROVIDER=local)

@@ -46,6 +46,7 @@ services:
       - GITHUB_ORG=${GITHUB_ORG:-}
       - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}
       - DEV_MODE=${DEV_MODE:-false}
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL:-}
     depends_on:
       redis:
         condition: service_healthy

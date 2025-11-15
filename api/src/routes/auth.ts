@@ -5,9 +5,10 @@
 
 import { Hono } from 'hono';
 import { nanoid } from 'nanoid';
-import { cache } from '../lib/redis.js';
+import { cache, getRedis } from '../lib/redis.js';
 import { createGitProvider } from '../git/index.js';
 import type { Env, User } from '../types.js';
+import { sendDiscordWebhook } from '../utils/discord.js';
 
 export const authRouter = new Hono<{ Bindings: Env }>();
 
@@ -177,6 +178,10 @@ authRouter.get('/google/callback', async (c) => {
       expirationTtl: 86400,
     });
 
+    triggerDiscordSignupWebhook(user).catch((error) => {
+      console.error('⚠️ Failed to send Discord webhook:', error);
+    });
+
     // Redirect to frontend with session token
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     const redirectUrl = new URL(`${frontendUrl}/auth/callback`);
@@ -198,6 +203,42 @@ authRouter.get('/google/callback', async (c) => {
     );
   }
 });
+
+async function triggerDiscordSignupWebhook(user: User) {
+  const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+  if (!webhookUrl) {
+    return;
+  }
+
+  const redis = getRedis();
+  const key = `user:firstSeen:${user.userId}`;
+  const setResult = await redis.set(key, JSON.stringify({
+    userId: user.userId,
+    email: user.email,
+    createdAt: new Date().toISOString(),
+  }), { NX: true });
+
+  if (setResult !== 'OK') {
+    return;
+  }
+
+  const embedColor = 0x5865f2;
+  await sendDiscordWebhook(webhookUrl, {
+    embeds: [
+      {
+        title: '🆕 New Mindmap Ziin account',
+        description: 'A new user has completed signup.',
+        color: embedColor,
+        timestamp: new Date().toISOString(),
+        fields: [
+          { name: 'User ID', value: user.userId || 'unknown', inline: true },
+          { name: 'Email', value: user.email || 'unknown', inline: true },
+          { name: 'Name', value: user.name || 'N/A', inline: false },
+        ],
+      },
+    ],
+  });
+}
 
 /**
  * GET /auth/me

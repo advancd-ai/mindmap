@@ -62,6 +62,12 @@ spec:
             configMapKeyRef:
               name: mindmap-config
               key: DEV_MODE
+        - name: DISCORD_WEBHOOK_URL
+          valueFrom:
+            configMapKeyRef:
+              name: mindmap-config
+              key: DISCORD_WEBHOOK_URL
+              optional: true
         
         # From Secrets
         - name: GOOGLE_CLIENT_ID

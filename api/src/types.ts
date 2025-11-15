@@ -25,6 +25,9 @@ export interface Env {
   // GitHub for data storage
   GITHUB_TOKEN?: string;
   GITHUB_ORG?: string;  // Organization name (e.g., "open-mindmap")
+
+  // Notifications
+  DISCORD_WEBHOOK_URL?: string;
 }
 
 export interface ViewState {

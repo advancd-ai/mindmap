@@ -51,6 +51,7 @@ GITHUB_OWNER=your-username
 # Optional
 FRONTEND_URL=http://localhost:3000
 GOOGLE_REDIRECT_URI=http://localhost:8787/auth/google/callback
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/xxxx
 ```
 
 3. **Build and start services:**
