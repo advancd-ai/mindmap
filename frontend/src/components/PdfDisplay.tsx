@@ -8,14 +8,18 @@ interface PdfDisplayProps {
   pdfUrl: string;
   title: string;
   onError: () => void;
+  onRequestFullView?: (viewerUrl: string) => void;
 }
 
-export default function PdfDisplay({ pdfUrl, title, onError }: PdfDisplayProps) {
+export default function PdfDisplay({ pdfUrl, title, onError, onRequestFullView }: PdfDisplayProps) {
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    let abortController: AbortController | null = new AbortController();
+    let isActive = true;
+
     const fetchPdf = async () => {
       try {
         setLoading(true);
@@ -42,6 +46,7 @@ export default function PdfDisplay({ pdfUrl, title, onError }: PdfDisplayProps) 
           mode: 'cors',
           credentials: 'omit',
           headers,
+          signal: abortController?.signal,
         });
 
         if (!response.ok) {
@@ -49,17 +54,22 @@ export default function PdfDisplay({ pdfUrl, title, onError }: PdfDisplayProps) 
         }
 
         const blob = await response.blob();
-        
-        // Create object URL for PDF display
-        const objectUrl = URL.createObjectURL(blob);
-        setPdfBlobUrl(objectUrl);
-        setLoading(false);
 
-        // Clean up object URL when component unmounts
-        return () => {
-          URL.revokeObjectURL(objectUrl);
-        };
+        // Create object URLs for display and download
+        const displayUrl = URL.createObjectURL(blob);
+
+        if (!isActive) {
+          URL.revokeObjectURL(displayUrl);
+          return;
+        }
+
+        setPdfBlobUrl(displayUrl);
+        setLoading(false);
       } catch (err) {
+        if (abortController?.signal.aborted) {
+          console.log('📄 PdfDisplay: fetch aborted');
+          return;
+        }
         console.error('❌ Failed to fetch PDF:', err);
         setError(true);
         setLoading(false);
@@ -68,40 +78,13 @@ export default function PdfDisplay({ pdfUrl, title, onError }: PdfDisplayProps) 
     };
 
     fetchPdf();
+
+    return () => {
+      isActive = false;
+      abortController?.abort();
+      abortController = null;
+    };
   }, [pdfUrl, onError]);
-
-  const handleDownload = async () => {
-    try {
-      // Get auth token
-      const auth = localStorage.getItem('auth-storage');
-      let authToken = null;
-      if (auth) {
-        const { token } = JSON.parse(auth).state;
-        authToken = token;
-      }
-
-      // Prepare headers
-      const headers: HeadersInit = {};
-      if (authToken) {
-        headers.Authorization = `Bearer ${authToken}`;
-      }
-
-      const response = await fetch(pdfUrl, { headers });
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = title || 'document.pdf';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('❌ Failed to download PDF:', err);
-    }
-  };
 
   if (loading) {
     return (
@@ -131,25 +114,13 @@ export default function PdfDisplay({ pdfUrl, title, onError }: PdfDisplayProps) 
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: '#fef2f2',
-        color: '#dc2626'
+        color: '#dc2626',
+        textAlign: 'center',
+        padding: '16px',
       }}>
-        <div style={{ textAlign: 'center' }}>
+        <div>
           <div style={{ fontSize: '24px', marginBottom: '8px' }}>❌</div>
           <div>Failed to load PDF</div>
-          <button
-            onClick={handleDownload}
-            style={{
-              marginTop: '8px',
-              padding: '4px 8px',
-              backgroundColor: '#dc2626',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            Download Instead
-          </button>
         </div>
       </div>
     );
@@ -170,53 +141,42 @@ export default function PdfDisplay({ pdfUrl, title, onError }: PdfDisplayProps) 
           setError(true);
         }}
       />
-      {/* PDF overlay with controls */}
       <div
         style={{
           position: 'absolute',
-          bottom: '0',
-          left: '0',
-          right: '0',
-          background: 'linear-gradient(to top, rgba(255,255,255,0.95), transparent)',
-          padding: '20px 8px 8px 8px',
-          textAlign: 'center',
+          top: '8px',
+          left: '8px',
+          display: 'flex',
+          gap: '8px',
         }}
       >
-        <a
-          href={pdfUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: 'inline-block',
-            padding: '6px 12px',
-            background: '#dc2626',
-            color: 'white',
-            borderRadius: '4px',
-            fontSize: '11px',
-            textDecoration: 'none',
-            fontWeight: 500,
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          📄 Open PDF
-        </a>
         <button
           onClick={(e) => {
             e.stopPropagation();
-            handleDownload();
+            if (pdfBlobUrl) {
+              onRequestFullView?.(pdfBlobUrl);
+            }
           }}
           style={{
-            marginLeft: '8px',
-            padding: '6px 12px',
-            background: '#f3f4f6',
-            color: '#374151',
-            border: 'none',
-            borderRadius: '4px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+            padding: '4px 10px',
             fontSize: '11px',
+            fontWeight: 500,
+            borderRadius: '999px',
+            color: '#374151',
+            background: 'rgba(255, 255, 255, 0.9)',
+            border: '1px solid rgba(55, 65, 81, 0.15)',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
             cursor: 'pointer',
           }}
+          type="button"
+          aria-label="Open PDF viewer"
+          tabIndex={0}
+          disabled={!pdfBlobUrl}
         >
-          💾 Download
+          📄 Open Viewer
         </button>
       </div>
     </div>

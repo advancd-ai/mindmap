@@ -3,6 +3,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { type Node as NodeType } from '../store/mindmap';
 import ConnectionHandles from './ConnectionHandles';
 import NodeAnchors from './NodeAnchors';
@@ -26,6 +27,7 @@ interface NodeProps {
   isDragging: boolean;
   isConnecting: boolean;
   isConnectionSource: boolean;
+  allowSelectWhileConnecting?: boolean;
   onSelect: (e: React.MouseEvent) => void;
   onDragStart: (e: React.MouseEvent) => void;
   onStartConnection: (e: React.MouseEvent) => void;
@@ -60,6 +62,7 @@ export default function Node({
   isDragging,
   isConnecting,
   isConnectionSource,
+  allowSelectWhileConnecting = false,
   onSelect,
   onDragStart,
   onStartConnection,
@@ -82,6 +85,19 @@ export default function Node({
   onAnchorLeave,
 }: NodeProps) {
   const [showFallback, setShowFallback] = useState(false);
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
+  const [pdfViewerUrl, setPdfViewerUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!showPdfViewer) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setShowPdfViewer(false);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
+  }, [showPdfViewer]);
 
   useEffect(() => {
     setShowFallback(false);
@@ -119,7 +135,7 @@ export default function Node({
         onClick={(e) => {
           if (e.detail === 1) {
             e.stopPropagation();
-            if (!isConnecting) {
+            if (!isConnecting || allowSelectWhileConnecting) {
               onSelect(e);
             }
           }
@@ -472,18 +488,63 @@ export default function Node({
                   onError={() => setShowFallback(true)}
                 />
               ) : node.embedType === 'pdf' ? (
-                // PDF display with authentication
-                <PdfDisplay
-                  pdfUrl={node.embedUrl!}
-                  title={node.label}
-                  onError={() => setShowFallback(true)}
-                />
+                <>
+                  <PdfDisplay
+                    pdfUrl={node.embedUrl!}
+                    title={node.label}
+                    onError={() => setShowFallback(true)}
+                    onRequestFullView={(viewerUrl) => {
+                      setPdfViewerUrl(viewerUrl);
+                      setShowPdfViewer(true);
+                    }}
+                  />
+                  {showPdfViewer &&
+                    createPortal(
+                      <div
+                        className="pdf-viewer-overlay"
+                        onClick={(e) => {
+                        e.stopPropagation();
+                        setShowPdfViewer(false);
+                        setPdfViewerUrl(null);
+                        }}
+                      >
+                        <div
+                          className="pdf-viewer-dialog"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="pdf-viewer-header">
+                            <span className="pdf-viewer-title">{node.label}</span>
+                            <button
+                              className="pdf-viewer-close"
+                              onClick={(e) => {
+                              e.stopPropagation();
+                              setShowPdfViewer(false);
+                              setPdfViewerUrl(null);
+                              }}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                          <iframe
+                            src={pdfViewerUrl || node.embedUrl}
+                            title={node.label}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              border: 'none',
+                            }}
+                          />
+                        </div>
+                      </div>,
+                      document.body
+                    )}
+                </>
               ) : showFallback ? (
                 // Fallback UI when embedding fails
                 <EmbedFallback url={node.embedUrl} title={node.label} />
               ) : (
                 // Try to embed webpage
-                <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+                <div style={{ width: '100%', height: '100%' }}>
                   <iframe
                     src={node.embedUrl}
                     title={node.label}
@@ -498,56 +559,6 @@ export default function Node({
                       setShowFallback(true);
                     }}
                   />
-                  {/* Always show open link at bottom */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      bottom: '0',
-                      left: '0',
-                      right: '0',
-                      background: 'linear-gradient(to top, rgba(255,255,255,0.95), transparent)',
-                      padding: '20px 8px 8px 8px',
-                      textAlign: 'center',
-                    }}
-                  >
-                    <a
-                      href={node.embedUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        display: 'inline-block',
-                        padding: '6px 12px',
-                        background: '#2563eb',
-                        color: 'white',
-                        borderRadius: '4px',
-                        fontSize: '11px',
-                        textDecoration: 'none',
-                        fontWeight: 500,
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      🔗 Open Full Page
-                    </a>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowFallback(true);
-                      }}
-                      style={{
-                        marginLeft: '8px',
-                        padding: '6px 12px',
-                        background: '#f3f4f6',
-                        color: '#374151',
-                        border: 'none',
-                        borderRadius: '4px',
-                        fontSize: '11px',
-                        cursor: 'pointer',
-                        fontWeight: 500,
-                      }}
-                    >
-                      ⚠️ Can't see? Click here
-                    </button>
-                  </div>
                 </div>
               )}
             </div>

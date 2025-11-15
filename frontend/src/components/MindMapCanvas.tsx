@@ -74,6 +74,7 @@ export default function MindMapCanvas({
   const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isConnecting, setIsConnecting] = useState(false);
+  const [connectionMode, setConnectionMode] = useState<'manual' | 'auto'>('manual');
   const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
   const [tempLineEnd, setTempLineEnd] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
@@ -963,8 +964,14 @@ export default function MindMapCanvas({
     }
 
     // Handle connection line preview
-    if (isConnecting && connectingFromAnchor !== null && !hoverAnchor) {
-      setTempLineEnd(svgCoords);
+    if (isConnecting) {
+      if (connectionMode === 'manual') {
+        if (connectingFromAnchor !== null && !hoverAnchor) {
+          setTempLineEnd(svgCoords);
+        }
+      } else if (!hoverAnchor) {
+        setTempLineEnd(svgCoords);
+      }
     }
   };
 
@@ -997,6 +1004,7 @@ export default function MindMapCanvas({
       setConnectingFrom(null);
       setConnectingFromAnchor(null);
       setHoverAnchor(null);
+      setConnectionMode('manual');
     }
   };
 
@@ -1024,11 +1032,61 @@ export default function MindMapCanvas({
     e.stopPropagation();
     e.preventDefault();
 
+    setConnectionMode('manual');
     startConnectionFromNode(nodeId);
   };
 
   const handleNodeSelect = (e: React.MouseEvent, nodeId: string) => {
     e.stopPropagation();
+
+    if (isConnecting && connectionMode === 'auto') {
+      e.preventDefault();
+
+      if (!connectingFrom) {
+        return;
+      }
+
+      if (nodeId === connectingFrom) {
+        setIsConnecting(false);
+        setConnectingFrom(null);
+        setConnectingFromAnchor(null);
+        setHoverAnchor(null);
+        setConnectionMode('manual');
+        return;
+      }
+
+      const { map: currentMap } = useMindMapStore.getState();
+      const sourceMap = currentMap || map;
+      if (!sourceMap) {
+        return;
+      }
+
+      const edgeExists = sourceMap.edges.some(
+        (edge) =>
+          (edge.source === connectingFrom && edge.target === nodeId) ||
+          (edge.source === nodeId && edge.target === connectingFrom)
+      );
+
+      if (edgeExists) {
+        console.log('⚠️ Edge already exists (auto connect)');
+      } else {
+        const newEdge: EdgeType = {
+          id: `e_${Date.now()}`,
+          source: connectingFrom,
+          target: nodeId,
+          routing: 'straight',
+        };
+        addEdge(newEdge);
+      }
+
+      setIsConnecting(false);
+      setConnectingFrom(null);
+      setConnectingFromAnchor(null);
+      setHoverAnchor(null);
+      setTempLineEnd({ x: 0, y: 0 });
+      setConnectionMode('manual');
+    }
+
     if (!isDragging) {
       selectNode(nodeId);
       setEdgeInspectorState(null);
@@ -1220,119 +1278,205 @@ export default function MindMapCanvas({
     [addEdge, selectEdge]
   );
 
-  const buildNodeContextMenuItems = useCallback((nodeId: string): MenuItem[] => {
-    const { map: latestMap } = useMindMapStore.getState();
-    const sourceMap = latestMap || map;
+  const buildNodeContextMenuItems = useCallback(
+    (nodeId: string): MenuItem[] => {
+      const { map: latestMap } = useMindMapStore.getState();
+      const sourceMap = latestMap || map;
 
-    if (!sourceMap) {
-      console.warn('⚠️ Node context menu requested without map');
-      return [];
-    }
+      if (!sourceMap) {
+        console.warn('⚠️ Node context menu requested without map');
+        return [];
+      }
 
-    const node = sourceMap.nodes.find((n) => n.id === nodeId);
-    const menuItems: MenuItem[] = [
-      {
-        label: 'Edit Label',
-        icon: <AppleIcon name="edit" size="medium" />,
-        onClick: () => {
-          const { map: currentMap } = useMindMapStore.getState();
-          const targetNode = currentMap?.nodes.find((n) => n.id === nodeId);
-          if (targetNode) {
-            if (targetNode.contentType === 'markdown') {
-              setEditorMode('markdown');
-            } else {
-              setEditorMode('richeditor');
-            }
-            setEditingNodeId(nodeId);
-          }
-        },
-        disabled: isReadOnly,
-        shortcut: 'e',
-      },
-      {
-        label: 'Connect to...',
-        icon: <AppleIcon name="connect" size="medium" />,
-        onClick: () => startConnectionFromNode(nodeId),
-        disabled: isReadOnly,
-      },
-      {
-        label: 'Add Boundary Group',
-        icon: <AppleIcon name="square" size="medium" />,
-        onClick: () => handleCreateBoundaryAroundFamily(nodeId),
-        disabled: isReadOnly || !node,
-      },
-      { divider: true } as MenuItem,
-      {
-        label: node?.embedUrl ? 'Change Embed' : 'Add Embed',
-        icon: <AppleIcon name="embed" size="medium" />,
-        onClick: () => {
-          setEmbedTargetNodeId(nodeId);
-          setShowEmbedDialog(true);
-        },
-        disabled: isReadOnly,
-      },
-      {
-        label: 'Remove Embed',
-        icon: <AppleIcon name="delete" size="medium" />,
-        onClick: () => {
-          updateNode(nodeId, { 
-            embedUrl: undefined, 
-            embedType: undefined,
-            collapsed: false,
-            w: 150,
-            h: 80,
-          });
-        },
-        disabled: !node?.embedUrl || isReadOnly,
-      },
-      ...(node?.embedUrl || node?.collapsed
-        ? [
-        { divider: true } as MenuItem,
+      const node = sourceMap.nodes.find((n) => n.id === nodeId);
+      if (!node) {
+        return [];
+      }
+
+      const hasEmbed = Boolean(node.embedUrl);
+      const connectionStatusItems =
+        isConnecting && connectingFrom === nodeId
+          ? [
+              {
+                label: t('contextMenu.connectionActive'),
+                icon: <AppleIcon name="bolt" size="small" />,
+                onClick: () => {},
+                disabled: true,
+              },
+            ]
+          : [];
+
+      const connectSubmenu: MenuItem[] = [
         {
-          label: node?.collapsed ? '📂 Expand' : '📁 Collapse',
-          icon: node?.collapsed ? '📂' : '📁',
+          label: t('contextMenu.connectManual'),
+          icon: <AppleIcon name="connect" size="small" />,
           onClick: () => {
-                const { map: currentMap } = useMindMapStore.getState();
-                const targetNode = currentMap?.nodes.find((n) => n.id === nodeId);
-                if (!targetNode) {
-                  return;
-                }
-                const newCollapsed = !targetNode.collapsed;
-            console.log('Menu: Toggling collapse to', newCollapsed, 'for node:', nodeId);
-            updateNode(nodeId, { collapsed: newCollapsed });
-            
-                const connectedEdges = currentMap?.edges.filter(
-                  (edge) => edge.source === nodeId || edge.target === nodeId
-                ) || [];
-            if (connectedEdges.length > 0) {
-              console.log(`  → ${connectedEdges.length} connected edges will update`);
+            setContextMenu(null);
+            setConnectionMode('manual');
+            startConnectionFromNode(nodeId);
+          },
+          disabled: isReadOnly,
+        },
+        {
+          label: t('contextMenu.connectAuto'),
+          icon: <AppleIcon name="connect" size="small" />,
+          onClick: () => {
+            setContextMenu(null);
+            setConnectionMode('auto');
+            startConnectionFromNode(nodeId);
+          },
+          disabled: isReadOnly,
+          shortcut: 'c',
+        },
+      ];
+
+      const editItems: MenuItem[] = [
+        {
+          label: t('contextMenu.editLabel'),
+          icon: <AppleIcon name="edit" size="medium" />,
+          onClick: () => {
+            const { map: currentMap } = useMindMapStore.getState();
+            const targetNode = currentMap?.nodes.find((n) => n.id === nodeId);
+            if (targetNode) {
+              if (targetNode.contentType === 'markdown') {
+                setEditorMode('markdown');
+              } else {
+                setEditorMode('richeditor');
+              }
+              setEditingNodeId(nodeId);
             }
           },
+          disabled: isReadOnly,
+          shortcut: 'e',
+        },
+        {
+          label: t('contextMenu.changeShape'),
+          icon: '◇',
+          onClick: () => {
+            setShapeTargetNodeId(nodeId);
+            setShowShapeSelector(true);
+            setContextMenu(null);
+          },
+          disabled: isReadOnly,
+          shortcut: 's',
+        },
+        {
+          label: t('contextMenu.contentType'),
+          icon: '📝',
+          onClick: () => {},
+          submenu: [
+            {
+              label: t('contextMenu.editorType'),
+              icon: '📝',
+              onClick: () => {},
+              disabled: true,
             },
-          ]
-        : []),
-      { divider: true } as MenuItem,
-      {
-        label: 'Add Child Node',
-        icon: <AppleIcon name="add" size="medium" />,
-        onClick: () => {
-          const { map: currentMap } = useMindMapStore.getState();
-          const parentNode = currentMap?.nodes.find((n) => n.id === nodeId);
-          if (!parentNode) {
-            return;
-          }
+            {
+              label: `${node?.contentType === 'markdown' ? '✓' : '  '} ${t('contextMenu.markdown')}`,
+              icon: '📝',
+              onClick: () => updateNode(nodeId, { contentType: 'markdown' }),
+            },
+            {
+              label: `${node?.contentType !== 'markdown' ? '✓' : '  '} ${t('contextMenu.richEditor')}`,
+              icon: '✏️',
+              onClick: () => updateNode(nodeId, { contentType: 'richeditor' }),
+            },
+          ],
+        },
+        {
+          label: t('contextMenu.backgroundColor'),
+          icon: '🎨',
+          onClick: () => {
+            setColorTargetNodeId(nodeId);
+            setShowColorPicker(true);
+            setContextMenu(null);
+          },
+          disabled: isReadOnly,
+        },
+        {
+          label: t('contextMenu.textAlign'),
+          icon: '≡',
+          onClick: () => {},
+          submenu: [
+            {
+              label: t('contextMenu.textAlignHorizontal'),
+              icon: '⟷',
+              onClick: () => {},
+              disabled: true,
+            },
+            {
+              label: `${node?.textAlign === 'left' || !node?.textAlign ? '✓' : '  '} ${t('contextMenu.alignLeft')}`,
+              icon: '⊣',
+              onClick: () => updateNode(nodeId, { textAlign: 'left' }),
+            },
+            {
+              label: `${node?.textAlign === 'center' ? '✓' : '  '} ${t('contextMenu.alignCenter')}`,
+              icon: '⊢',
+              onClick: () => updateNode(nodeId, { textAlign: 'center' }),
+            },
+            {
+              label: `${node?.textAlign === 'right' ? '✓' : '  '} ${t('contextMenu.alignRight')}`,
+              icon: '⊨',
+              onClick: () => updateNode(nodeId, { textAlign: 'right' }),
+            },
+            { divider: true } as MenuItem,
+            {
+              label: t('contextMenu.textAlignVertical'),
+              icon: '⟝',
+              onClick: () => {},
+              disabled: true,
+            },
+            {
+              label: `${node?.textVerticalAlign === 'top' ? '✓' : '  '} ${t('contextMenu.alignTop')}`,
+              icon: '⊤',
+              onClick: () => updateNode(nodeId, { textVerticalAlign: 'top' }),
+            },
+            {
+              label: `${node?.textVerticalAlign === 'middle' || !node?.textVerticalAlign ? '✓' : '  '} ${t('contextMenu.alignMiddle')}`,
+              icon: '⊥',
+              onClick: () => updateNode(nodeId, { textVerticalAlign: 'middle' }),
+            },
+            {
+              label: `${node?.textVerticalAlign === 'bottom' ? '✓' : '  '} ${t('contextMenu.alignBottom')}`,
+              icon: '⊥',
+              onClick: () => updateNode(nodeId, { textVerticalAlign: 'bottom' }),
+            },
+          ],
+        },
+      ];
+
+      const structureItems: MenuItem[] = [
+        {
+          label: t('contextMenu.addNode'),
+          icon: <AppleIcon name="add" size="medium" />,
+          onClick: () => {
+            setContextMenu(null);
+            handleAddNode();
+          },
+          disabled: isReadOnly,
+          shortcut: 'a',
+        },
+        {
+          label: t('contextMenu.addChildNode'),
+          icon: <AppleIcon name="add" size="medium" />,
+          onClick: () => {
+            const { map: currentMap } = useMindMapStore.getState();
+            const parentNode = currentMap?.nodes.find((n) => n.id === nodeId);
+            if (!parentNode) {
+              return;
+            }
 
             const newNode: NodeType = {
               id: `n_${Date.now()}`,
-              label: 'New Node',
-            x: parentNode.x + 180,
-            y: parentNode.y + 100,
+              label: t('contextMenu.newNodeLabel'),
+              x: parentNode.x + 180,
+              y: parentNode.y + 100,
               w: 150,
               h: 80,
-            contentType: 'richeditor',
+              contentType: 'richeditor',
             };
             addNode(newNode);
-            
+
             const newEdge = {
               id: `e_${Date.now()}`,
               source: nodeId,
@@ -1341,174 +1485,137 @@ export default function MindMapCanvas({
             };
             addEdge(newEdge);
             selectNode(newNode.id);
-            console.log('➕ Added child node and edge');
+          },
+          disabled: isReadOnly,
+          shortcut: 'Tab',
         },
-        disabled: isReadOnly,
-        shortcut: 'a',
-      },
-      { divider: true } as MenuItem,
-      {
-        label: 'Change Shape',
-        icon: '◇',
-        onClick: () => {
-          setShapeTargetNodeId(nodeId);
-          setShowShapeSelector(true);
-          setContextMenu(null);
+        ...connectionStatusItems,
+        {
+          label: t('contextMenu.connect'),
+          icon: <AppleIcon name="connect" size="medium" />,
+          onClick: () => {},
+          submenu: connectSubmenu,
+          disabled: isReadOnly,
         },
-      },
-      {
-        label: 'Content Type',
-        icon: '📝',
-        onClick: () => {},
-        submenu: [
-          {
-            label: 'Editor Type',
-            icon: '📝',
-            onClick: () => {},
-            disabled: true,
-          },
-          {
-            label: `  ${node?.contentType === 'markdown' ? '✓' : '  '} Markdown`,
-            icon: '📝',
-            onClick: () => {
-              updateNode(nodeId, { contentType: 'markdown' });
-              console.log('📝 Content type: markdown');
-            },
-          },
-          {
-            label: `  ${node?.contentType !== 'markdown' ? '✓' : '  '} Rich Editor`,
-            icon: '✏️',
-            onClick: () => {
-              updateNode(nodeId, { contentType: 'richeditor' });
-              console.log('📝 Content type: richeditor');
-            },
-          },
-        ],
-      },
-      {
-        label: 'Background Color',
-        icon: '🎨',
-        onClick: () => {
-          setColorTargetNodeId(nodeId);
-          setShowColorPicker(true);
-          setContextMenu(null);
-        },
-      },
-      { divider: true } as MenuItem,
-      {
-        label: 'Text Align',
-        icon: '≡',
-        onClick: () => {},
-        submenu: [
-          {
-            label: '수평 정렬',
-            icon: '⟷',
-            onClick: () => {},
-            disabled: true,
-          },
-          {
-            label: `  ${node?.textAlign === 'left' || !node?.textAlign ? '✓' : '  '} Left`,
-            icon: '⊣',
-            onClick: () => {
-              updateNode(nodeId, { textAlign: 'left' });
-              console.log('📝 Text align: left');
-            },
-          },
-          {
-            label: `  ${node?.textAlign === 'center' ? '✓' : '  '} Center`,
-            icon: '⊢',
-            onClick: () => {
-              updateNode(nodeId, { textAlign: 'center' });
-              console.log('📝 Text align: center');
-            },
-          },
-          {
-            label: `  ${node?.textAlign === 'right' ? '✓' : '  '} Right`,
-            icon: '⊨',
-            onClick: () => {
-              updateNode(nodeId, { textAlign: 'right' });
-              console.log('📝 Text align: right');
-            },
-          },
-          { divider: true } as MenuItem,
-          {
-            label: '수직 정렬',
-            icon: '⟝',
-            onClick: () => {},
-            disabled: true,
-          },
-          {
-            label: `  ${node?.textVerticalAlign === 'top' ? '✓' : '  '} Top`,
-            icon: '⊤',
-            onClick: () => {
-              updateNode(nodeId, { textVerticalAlign: 'top' });
-              console.log('📝 Text vertical align: top');
-            },
-          },
-          {
-            label: `  ${node?.textVerticalAlign === 'middle' || !node?.textVerticalAlign ? '✓' : '  '} Middle`,
-            icon: '⊥',
-            onClick: () => {
-              updateNode(nodeId, { textVerticalAlign: 'middle' });
-              console.log('📝 Text vertical align: middle');
-            },
-          },
-          {
-            label: `  ${node?.textVerticalAlign === 'bottom' ? '✓' : '  '} Bottom`,
-            icon: '⊥',
-            onClick: () => {
-              updateNode(nodeId, { textVerticalAlign: 'bottom' });
-              console.log('📝 Text vertical align: bottom');
-            },
-          },
-        ],
-      },
-      { divider: true } as MenuItem,
-      {
-        label: 'Delete',
-        icon: <AppleIcon name="delete" size="medium" />,
-        onClick: () => {
-          const { map: currentMap } = useMindMapStore.getState();
-          const targetNode = currentMap?.nodes.find((n) => n.id === nodeId);
-          const nodeLabel = targetNode?.label || '노드';
-          setDeleteConfirm({
-            isOpen: true,
-            type: 'node',
-            label: nodeLabel,
-            onConfirm: () => {
-          deleteNode(nodeId);
-          selectNode(null);
-              setDeleteConfirm(null);
-            },
-          });
-        },
-        shortcut: 'd',
-      },
-    ];
+      ];
 
-    return menuItems;
-  }, [
-    map,
-    isReadOnly,
-    startConnectionFromNode,
-    handleCreateBoundaryAroundFamily,
-    setEmbedTargetNodeId,
-    setShowEmbedDialog,
-    updateNode,
-    setColorTargetNodeId,
-    setShowColorPicker,
-    setShapeTargetNodeId,
-    setShowShapeSelector,
-    setContextMenu,
-    addNode,
-    addEdge,
-    selectNode,
-    setEditorMode,
-    setEditingNodeId,
-    deleteNode,
-    setDeleteConfirm
-  ]);
+      const embedItems: MenuItem[] = [
+        {
+          label: t('contextMenu.addBoundary'),
+          icon: <AppleIcon name="square" size="medium" />,
+          onClick: () => handleCreateBoundaryAroundFamily(nodeId),
+          disabled: isReadOnly || !node,
+        },
+        {
+          label: hasEmbed ? t('contextMenu.changeEmbed') : t('contextMenu.addEmbed'),
+          icon: <AppleIcon name="embed" size="medium" />,
+          onClick: () => {
+            setEmbedTargetNodeId(nodeId);
+            setShowEmbedDialog(true);
+          },
+          disabled: isReadOnly,
+          shortcut: 'b',
+        },
+      ];
 
+      if (hasEmbed) {
+        embedItems.push({
+          label: t('contextMenu.removeEmbed'),
+          icon: <AppleIcon name="delete" size="medium" />,
+          onClick: () => {
+            updateNode(nodeId, {
+              embedUrl: undefined,
+              embedType: undefined,
+              collapsed: false,
+              w: 150,
+              h: 80,
+            });
+          },
+          disabled: isReadOnly,
+        });
+      }
+
+      if (node.embedUrl || node.collapsed) {
+        embedItems.push({
+          label: node.collapsed ? t('contextMenu.expand') : t('contextMenu.collapse'),
+          icon: node.collapsed ? '📂' : '📁',
+          onClick: () => {
+            const { map: currentMap } = useMindMapStore.getState();
+            const targetNode = currentMap?.nodes.find((n) => n.id === nodeId);
+            if (!targetNode) {
+              return;
+            }
+            const newCollapsed = !targetNode.collapsed;
+            updateNode(nodeId, { collapsed: newCollapsed });
+          },
+        });
+      }
+
+      const dangerItems: MenuItem[] = [
+        {
+          label: t('contextMenu.delete'),
+          icon: <AppleIcon name="delete" size="medium" />,
+          onClick: () => {
+            const { map: currentMap } = useMindMapStore.getState();
+            const targetNode = currentMap?.nodes.find((n) => n.id === nodeId);
+            const nodeLabel = targetNode?.label || t('contextMenu.node');
+            setDeleteConfirm({
+              isOpen: true,
+              type: 'node',
+              label: nodeLabel,
+              onConfirm: () => {
+                deleteNode(nodeId);
+                selectNode(null);
+                setDeleteConfirm(null);
+              },
+            });
+          },
+          shortcut: 'd',
+        },
+      ];
+
+      const sections = [editItems, structureItems, embedItems, dangerItems];
+      const flattened: MenuItem[] = [];
+
+      sections.forEach((section) => {
+        if (!section.length) {
+          return;
+        }
+        if (flattened.length > 0) {
+          flattened.push({ divider: true } as MenuItem);
+        }
+        flattened.push(...section);
+      });
+
+      return flattened;
+    },
+    [
+      map,
+      isReadOnly,
+      handleAddNode,
+      startConnectionFromNode,
+      handleCreateBoundaryAroundFamily,
+      setEmbedTargetNodeId,
+      setShowEmbedDialog,
+      updateNode,
+      setColorTargetNodeId,
+      setShowColorPicker,
+      setShapeTargetNodeId,
+      setShowShapeSelector,
+      setContextMenu,
+      addNode,
+      addEdge,
+      selectNode,
+      setEditorMode,
+      setEditingNodeId,
+      deleteNode,
+      setDeleteConfirm,
+      setConnectionMode,
+      isConnecting,
+      connectingFrom,
+      t,
+    ]
+  );
   const showNodeContextMenu = useCallback((nodeId: string, position: { x: number; y: number }) => {
     const menuItems = buildNodeContextMenuItems(nodeId);
     if (menuItems.length === 0) {
@@ -1918,6 +2025,15 @@ export default function MindMapCanvas({
         }
         return;
       }
+
+      if (
+        deleteConfirm?.isOpen ||
+        showEmbedDialog ||
+        showShapeSelector ||
+        showColorPicker
+      ) {
+        return;
+      }
       
       // 텍스트 입력 중인지 확인
       const activeElement = document.activeElement;
@@ -1950,6 +2066,9 @@ export default function MindMapCanvas({
           console.log('❌ Connection cancelled (ESC key)');
           setIsConnecting(false);
           setConnectingFrom(null);
+          setConnectingFromAnchor(null);
+          setHoverAnchor(null);
+          setConnectionMode('manual');
         }
         if (isResizing) {
           console.log('❌ Resize cancelled (ESC key)');
@@ -2085,9 +2204,79 @@ export default function MindMapCanvas({
         setEditorMode(null); // 명시적 모드 없음 = 현재 contentType 기반 인라인 편집
         setEditingNodeId(currentSelectedNodeId);
       }
-      // 'a' 키: 노드 추가
-      // e.code를 사용하여 물리적 키 위치를 감지 (한글/영어 구분 없음)
+      // 's' 키: 노드 모양 변경
+      else if ((e.code === 'KeyS' || e.key.toLowerCase() === 's') && !isTextInputFocused && !isReadOnly) {
+        const currentState = getCurrentState();
+        const { selectedNodeId: currentSelectedNodeId } = currentState;
+
+        if (!currentSelectedNodeId || editingNodeId || editingEdgeId) {
+          return;
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        setShapeTargetNodeId(currentSelectedNodeId);
+        setShowShapeSelector(true);
+        setContextMenu(null);
+      }
+      // 'c' 키: 자동 연결 시작
+      else if ((e.code === 'KeyC' || e.key.toLowerCase() === 'c') && !isTextInputFocused && !isReadOnly) {
+        if (editingNodeId || editingEdgeId) {
+          return;
+        }
+
+        const currentState = getCurrentState();
+        const { selectedNodeId: currentSelectedNodeId } = currentState;
+
+        if (!currentSelectedNodeId) {
+          return;
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        setContextMenu(null);
+        setConnectionMode('auto');
+        startConnectionFromNode(currentSelectedNodeId);
+      }
+      // 'a' 키: 엣지 없이 새 노드 추가
       else if ((e.code === 'KeyA' || e.key.toLowerCase() === 'a') && !isTextInputFocused && !isReadOnly) {
+        if (editingNodeId || editingEdgeId) {
+          return;
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (import.meta.env.DEV) {
+          console.log('⌨️ Adding standalone node via keyboard shortcut (a key)');
+        }
+
+        handleAddNode();
+      }
+      // 'b' 키: Embed 추가/변경
+      else if ((e.code === 'KeyB' || e.key.toLowerCase() === 'b') && !isTextInputFocused && !isReadOnly) {
+        if (editingNodeId || editingEdgeId) {
+          return;
+        }
+
+        const currentState = getCurrentState();
+        const { selectedNodeId: currentSelectedNodeId } = currentState;
+
+        if (!currentSelectedNodeId) {
+          return;
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        setEmbedTargetNodeId(currentSelectedNodeId);
+        setShowEmbedDialog(true);
+        setContextMenu(null);
+      }
+      // Tab 키: 노드 추가 (선택된 노드가 있으면 child)
+      else if (e.key === 'Tab' && !isTextInputFocused && !isReadOnly) {
         // 편집 중일 때는 노드 추가 동작 안 함
         if (editingNodeId || editingEdgeId) {
           return;
@@ -2105,7 +2294,7 @@ export default function MindMapCanvas({
         e.stopPropagation(); // 이벤트 전파 방지
         
         if (import.meta.env.DEV) {
-          console.log('⌨️ Adding node via keyboard shortcut (a key)');
+          console.log('⌨️ Adding node via keyboard shortcut (Tab key)', { key: e.key, code: e.code });
         }
         
         // 노드가 선택되어 있으면 child node로 생성 (엣지 자동 연결)
@@ -2134,7 +2323,7 @@ export default function MindMapCanvas({
             selectNode(newNode.id);
             
             if (import.meta.env.DEV) {
-              console.log('➕ Added child node via a key');
+              console.log('➕ Added child node via Tab shortcut');
             }
           }
         } else {
@@ -2295,8 +2484,10 @@ export default function MindMapCanvas({
     isResizing,
     isConnecting,
     isPanning,
+    connectionMode,
     setEditorMode,
     setEditingNodeId,
+    handleAddNode,
     deleteNode,
     deleteEdge,
     selectNode,
@@ -2312,6 +2503,9 @@ export default function MindMapCanvas({
 
   const handleAnchorClick = useCallback(
     (nodeId: string, anchorIndex: number) => {
+      if (connectionMode !== 'manual') {
+        return;
+      }
       const node = map.nodes.find((n) => n.id === nodeId);
       if (!node) return;
 
@@ -2362,8 +2556,9 @@ export default function MindMapCanvas({
       setConnectingFromAnchor(null);
       setHoverAnchor(null);
       setTempLineEnd(anchorPos.edgePoint);
+      setConnectionMode('manual');
     },
-    [map, isConnecting, connectingFrom, connectingFromAnchor, addEdge, startConnectionFromNode]
+    [map, isConnecting, connectingFrom, connectingFromAnchor, addEdge, startConnectionFromNode, connectionMode]
   );
 
   const handleAnchorEnter = useCallback(
@@ -2498,24 +2693,33 @@ export default function MindMapCanvas({
         })}
 
         {/* Temporary connection line */}
-        {isConnecting && connectingFrom && connectingFromAnchor !== null && (() => {
-          const sourceNode = map.nodes.find((n) => n.id === connectingFrom);
-          if (!sourceNode) return null;
+        {isConnecting &&
+          connectingFrom &&
+          (connectionMode === 'auto' || connectingFromAnchor !== null) &&
+          (() => {
+            const sourceNode = map.nodes.find((n) => n.id === connectingFrom);
+            if (!sourceNode) return null;
 
-          const anchorPosition = getNodeAnchorPosition(
-            sourceNode,
-            Math.max(0, Math.min(11, connectingFromAnchor))
-          );
+            const startPoint =
+              connectionMode === 'manual' && connectingFromAnchor !== null
+                ? getNodeAnchorPosition(
+                    sourceNode,
+                    Math.max(0, Math.min(11, connectingFromAnchor ?? 0))
+                  ).edgePoint
+                : {
+                    x: sourceNode.x + sourceNode.w / 2,
+                    y: sourceNode.y + sourceNode.h / 2,
+                  };
 
-          return (
-            <TemporaryEdge
-              key="temp-edge"
-              sourceNode={sourceNode}
-              endPoint={tempLineEnd}
-              startPoint={anchorPosition.edgePoint}
-            />
-          );
-        })()}
+            return (
+              <TemporaryEdge
+                key="temp-edge"
+                sourceNode={sourceNode}
+                endPoint={tempLineEnd}
+                startPoint={startPoint}
+              />
+            );
+          })()}
 
         {/* Nodes */}
         {map.nodes.map((node) => (
@@ -2526,6 +2730,7 @@ export default function MindMapCanvas({
             isDragging={draggedNodeId === node.id}
             isConnecting={isConnecting}
             isConnectionSource={connectingFrom === node.id}
+            allowSelectWhileConnecting={connectionMode === 'auto'}
             onSelect={(e) => handleNodeSelect(e, node.id)}
             onDragStart={(e) => handleNodeDrag(e, node.id)}
             onStartConnection={(e) => handleStartConnection(e, node.id)}
@@ -2548,10 +2753,12 @@ export default function MindMapCanvas({
                 : undefined
             }
             showAnchors={
+              connectionMode === 'manual' &&
               isConnecting &&
               ((connectingFrom === node.id) || (connectingFromAnchor !== null))
             }
             anchorInteractive={
+              connectionMode === 'manual' &&
               isConnecting &&
               ((connectingFromAnchor === null && connectingFrom === node.id) ||
                 (connectingFromAnchor !== null && connectingFrom !== null))
