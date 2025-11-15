@@ -28,6 +28,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV LOCAL_GIT_ROOT=/data/repos
 
+# Install git for LocalGitProvider operations
+RUN apk add --no-cache git
+
 # Copy built files and dependencies
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
