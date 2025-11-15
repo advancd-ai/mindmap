@@ -26,16 +26,20 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV LOCAL_GIT_ROOT=/data/repos
 
 # Copy built files and dependencies
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 
-# Create non-root user
+# Create non-root user and ensure mount path writable
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nodejs && \
-    chown -R nodejs:nodejs /app
+    mkdir -p "$LOCAL_GIT_ROOT" && \
+    chown -R nodejs:nodejs /app "$LOCAL_GIT_ROOT"
+
+VOLUME ["$LOCAL_GIT_ROOT"]
 
 USER nodejs
 
