@@ -25,6 +25,7 @@ export default function AboutPage() {
         </div>
         <div className="about-hero-illustration" aria-hidden>
           <div className="about-hero-grid" />
+          <img src="/hero-illustration.png" alt="" className="about-hero-image" />
         </div>
       </header>
 
@@ -60,23 +61,15 @@ export default function AboutPage() {
           <div className="about-architecture-card">
             <h3>{t('about.architectureBranchesTitle')}</h3>
             <p>{t('about.architectureBranchesCopy')}</p>
-            <a href="https://github.com/ziin-ai/mindmap/tree/main/docs/BRANCH_ARCHITECTURE.md" target="_blank" rel="noreferrer">
-              {t('about.learnMore')} →
-            </a>
+
           </div>
           <div className="about-architecture-card">
             <h3>{t('about.architectureIndexTitle')}</h3>
             <p>{t('about.architectureIndexCopy')}</p>
-            <a href="https://github.com/ziin-ai/mindmap/tree/main/docs/INDEX_DB_ARCHITECTURE.md" target="_blank" rel="noreferrer">
-              {t('about.learnMore')} →
-            </a>
           </div>
           <div className="about-architecture-card">
             <h3>{t('about.architectureDeployTitle')}</h3>
             <p>{t('about.architectureDeployCopy')}</p>
-            <a href="https://github.com/ziin-ai/mindmap/tree/main/docs/DEPLOY.md" target="_blank" rel="noreferrer">
-              {t('about.learnMore')} →
-            </a>
           </div>
         </div>
       </section>
@@ -108,22 +101,6 @@ export default function AboutPage() {
         </ol>
       </section>
 
-      <section className="about-section about-section-cta">
-        <div className="about-cta-card">
-          <div>
-            <h2>{t('about.sectionCommunityTitle')}</h2>
-            <p>{t('about.sectionCommunityCopy')}</p>
-          </div>
-          <div className="about-cta-links">
-            <a href="https://github.com/ziin-ai/mindmap" target="_blank" rel="noreferrer" className="button button-secondary">
-              GitHub ↗
-            </a>
-            <Link to="/dashboard" className="button button-primary">
-              {t('about.heroCta')}
-            </Link>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
