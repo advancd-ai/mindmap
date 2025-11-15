@@ -40,6 +40,15 @@ services:
       - GITHUB_ORG=${GITHUB_ORG:-}
       - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}
       - DEV_MODE=${DEV_MODE:-false}
+      # Git provider selection: github (default) or local
+      - GIT_PROVIDER=${GIT_PROVIDER:-github}
+      # Local Git settings (used when GIT_PROVIDER=local)
+      - LOCAL_GIT_ROOT=${LOCAL_GIT_ROOT:-/data/repos}
+      - LOCAL_GIT_OWNER=${LOCAL_GIT_OWNER:-local}
+      - LOCAL_GIT_REPO=${LOCAL_GIT_REPO:-mindmap-local}
+      - LOCAL_GIT_AUTHOR_NAME=${LOCAL_GIT_AUTHOR_NAME:-Mindmap Ziin}
+      - LOCAL_GIT_AUTHOR_EMAIL=${LOCAL_GIT_AUTHOR_EMAIL:-mindmap@ziin.ai}
+      - LOCAL_GIT_SHELL=${LOCAL_GIT_SHELL:-git}
     depends_on:
       redis:
         condition: service_healthy
