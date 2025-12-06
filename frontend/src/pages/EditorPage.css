@@ -214,19 +214,35 @@
   flex: 1;
   overflow: hidden;
   position: relative;
-  padding-bottom: 50px; /* Add padding for fixed footer */
+  padding-bottom: 40px; /* Reduced padding for smaller footer */
   box-sizing: border-box;
+}
+
+/* Footer-colored background for footer area at bottom of editor-content */
+.editor-content::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px; /* Match padding-bottom - reduced for smaller footer */
+  background: var(--bg-elevated); /* Match footer background */
+  backdrop-filter: blur(20px) saturate(180%); /* Match footer backdrop */
+  -webkit-backdrop-filter: blur(20px) saturate(180%); /* Match footer backdrop */
+  z-index: 1;
+  pointer-events: none;
 }
 
 /* Editor Footer */
 .editor-footer {
-  border-top: 1px solid var(--border-primary);
+  border-top: 1px solid #FFFFFF; /* White top border */
   background: var(--bg-elevated);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
-  padding: 6px 20px;
+  padding: 4px 20px 4px 20px; /* Reduced padding for smaller footer */
   margin: 0;
+  margin-top: 0 !important; /* Force remove top margin */
   flex-shrink: 0;
   position: fixed;
   bottom: 0;
