@@ -542,10 +542,8 @@ export default function EditorPage() {
           >
             <div 
               className="editor-ad-banner"
-              onClick={() => {
-                setShowAd(false);
-                setAdCountdown(0);
-              }}
+              onClick={(e) => e.stopPropagation()}
+              style={{ pointerEvents: 'auto' }}
             >
               <div className="editor-ad-icon">✨</div>
               <div className="editor-ad-message">{t('share.adBanner')}</div>
@@ -553,13 +551,33 @@ export default function EditorPage() {
                 <div className="editor-ad-countdown">{adCountdown}</div>
               )}
             </div>
-            <div onClick={() => {
-              setShowAd(false);
-              setAdCountdown(0);
-            }}>
+            <div 
+              style={{ position: 'relative' }}
+            >
               <GoogleAdSense
                 adFormat="horizontal"
                 fullWidthResponsive={true}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  zIndex: 10,
+                  cursor: 'pointer',
+                  pointerEvents: 'auto'
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAd(false);
+                  setAdCountdown(0);
+                }}
+                onMouseDown={(e) => {
+                  // Prevent ad click from propagating
+                  e.stopPropagation();
+                }}
               />
             </div>
           </div>

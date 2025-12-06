@@ -25,7 +25,7 @@ export default function SharePage() {
   const [passwordError, setPasswordError] = useState<string>('');
   const [zoom, setZoom] = useState(1.0); // Zoom level (1.0 = 100%)
   const [showAd, setShowAd] = useState(true); // Ad visibility
-  const [adCountdown, setAdCountdown] = useState(10); // Ad countdown timer
+  const [adCountdown, setAdCountdown] = useState(30); // Ad countdown timer (30 seconds for Share page)
 
   const setMap = useMindMapStore((state) => state.setMap);
   const map = useMindMapStore((state) => state.map);
@@ -74,10 +74,10 @@ export default function SharePage() {
     }
   }, [data, setMap]);
 
-  // Auto-hide ad after 10 seconds with countdown
+  // Auto-hide ad after 30 seconds with countdown
   useEffect(() => {
     if (map && data?.ok && showAd) {
-      setAdCountdown(10);
+      setAdCountdown(30);
       
       const interval = setInterval(() => {
         setAdCountdown((prev) => {
@@ -219,10 +219,8 @@ export default function SharePage() {
           >
             <div 
               className="share-ad-banner"
-              onClick={() => {
-                setShowAd(false);
-                setAdCountdown(0);
-              }}
+              onClick={(e) => e.stopPropagation()}
+              style={{ pointerEvents: 'auto' }}
             >
               <div className="share-ad-icon">✨</div>
               <div className="share-ad-message">{t('share.adBanner')}</div>
@@ -230,13 +228,33 @@ export default function SharePage() {
                 <div className="share-ad-countdown">{adCountdown}</div>
               )}
             </div>
-            <div onClick={() => {
-              setShowAd(false);
-              setAdCountdown(0);
-            }}>
+            <div 
+              style={{ position: 'relative' }}
+            >
               <GoogleAdSense
                 adFormat="horizontal"
                 fullWidthResponsive={true}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  zIndex: 10,
+                  cursor: 'pointer',
+                  pointerEvents: 'auto'
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAd(false);
+                  setAdCountdown(0);
+                }}
+                onMouseDown={(e) => {
+                  // Prevent ad click from propagating
+                  e.stopPropagation();
+                }}
               />
             </div>
           </div>
