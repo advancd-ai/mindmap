@@ -187,13 +187,20 @@ export default function SharePage() {
             onZoomIn={() => {
               const newZoom = Math.min(5.0, Math.round((zoom + 0.1) * 10) / 10);
               setZoom(newZoom);
+              // Dispatch event to ensure MindMapCanvas receives the zoom change
+              window.dispatchEvent(new CustomEvent('toolbox-zoom-change', { detail: { zoom: newZoom } }));
             }}
             onZoomOut={() => {
               const newZoom = Math.max(0.1, Math.round((zoom - 0.1) * 10) / 10);
               setZoom(newZoom);
+              // Dispatch event to ensure MindMapCanvas receives the zoom change
+              window.dispatchEvent(new CustomEvent('toolbox-zoom-change', { detail: { zoom: newZoom } }));
             }}
             onResetZoom={() => {
-              setZoom(1.0);
+              const newZoom = 1.0;
+              setZoom(newZoom);
+              // Dispatch event to ensure MindMapCanvas receives the zoom change
+              window.dispatchEvent(new CustomEvent('toolbox-zoom-change', { detail: { zoom: newZoom } }));
             }}
             onFitToScreen={() => {
               // Dispatch custom event that MindMapCanvas will listen to

@@ -276,26 +276,30 @@ export default function MindMapCanvas({
       const newWidth = baseWidth / externalZoom;
       const newHeight = baseHeight / externalZoom;
       
-      // Keep the center point of current viewBox
-      const currentCenterX = viewBox.x + viewBox.width / 2;
-      const currentCenterY = viewBox.y + viewBox.height / 2;
-      
-      const newViewBox = {
-        x: currentCenterX - newWidth / 2,
-        y: currentCenterY - newHeight / 2,
-        width: newWidth,
-        height: newHeight,
-      };
+      // Use functional update to get current viewBox without including it in dependencies
+      setViewBox((currentViewBox) => {
+        // Keep the center point of current viewBox
+        const currentCenterX = currentViewBox.x + currentViewBox.width / 2;
+        const currentCenterY = currentViewBox.y + currentViewBox.height / 2;
+        
+        const newViewBox = {
+          x: currentCenterX - newWidth / 2,
+          y: currentCenterY - newHeight / 2,
+          width: newWidth,
+          height: newHeight,
+        };
+        
+        // Update view state in store
+        updateViewState({ zoom: externalZoom, viewBox: newViewBox });
+        
+        console.log('🔍 External zoom change:', (externalZoom * 100).toFixed(0) + '%');
+        
+        return newViewBox;
+      });
       
       setZoom(externalZoom);
-      setViewBox(newViewBox);
-      
-      // Update view state in store
-      updateViewState({ zoom: externalZoom, viewBox: newViewBox });
-      
-      console.log('🔍 External zoom change:', (externalZoom * 100).toFixed(0) + '%');
     }
-  }, [externalZoom, zoom, viewBox, updateViewState]);
+  }, [externalZoom, zoom, updateViewState]); // Removed viewBox from dependencies to avoid infinite loops
 
   // Handle fit to screen and center view events
   useEffect(() => {
