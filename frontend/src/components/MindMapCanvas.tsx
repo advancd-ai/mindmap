@@ -366,6 +366,9 @@ export default function MindMapCanvas({
         onZoomChange(newZoom);
       }
 
+      // Dispatch event to update parent's zoom state (for SharePage)
+      window.dispatchEvent(new CustomEvent('toolbox-zoom-change', { detail: { zoom: newZoom } }));
+
       console.log('📐 Fit to screen:', {
         zoom: (newZoom * 100).toFixed(0) + '%',
         viewBox: newViewBox,
@@ -441,7 +444,7 @@ export default function MindMapCanvas({
       window.removeEventListener('toolbox-fit-to-screen', handleFitToScreen);
       window.removeEventListener('toolbox-center-view', handleCenterView);
     };
-  }, [map, zoom, viewBox, updateViewState, onZoomChange]);
+  }, [map, zoom, updateViewState, onZoomChange]); // Removed viewBox from dependencies
 
   // Handle connection start and cancel from Toolbox
   // Note: This useEffect is placed before startConnectionFromNode definition

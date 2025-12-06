@@ -4,7 +4,7 @@
  * No authentication required
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchSharedMap } from '../api/share';
@@ -69,6 +69,21 @@ export default function SharePage() {
       console.log('✅ Map set in store');
     }
   }, [data, setMap]);
+
+  // Auto-fit to screen when map is first loaded (Share page only)
+  const hasAutoFittedRef = useRef(false);
+  useEffect(() => {
+    if (map && map.nodes && map.nodes.length > 0 && !hasAutoFittedRef.current) {
+      // Wait a bit for MindMapCanvas to be ready
+      const timer = setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('toolbox-fit-to-screen'));
+        hasAutoFittedRef.current = true;
+        console.log('📐 Auto-fit to screen on initial load');
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [map]);
 
   const handlePasswordSubmit = (pwd: string) => {
     setPassword(pwd);
