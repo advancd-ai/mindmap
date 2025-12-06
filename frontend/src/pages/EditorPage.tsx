@@ -18,6 +18,7 @@ import ToolbarHelp from '../components/ToolbarHelp';
 import Toast, { type ToastType } from '../components/Toast';
 import VersionHistoryDialog from '../components/VersionHistoryDialog';
 import ShareSettingsModal from '../components/ShareSettingsModal';
+import Toolbox from '../components/Toolbox';
 import './EditorPage.css';
 
 export default function EditorPage() {
@@ -34,7 +35,29 @@ export default function EditorPage() {
   const [refreshProgress, setRefreshProgress] = useState(0);
   const [showShareModal, setShowShareModal] = useState(false);
   const [zoom, setZoom] = useState(1.0); // Zoom level (1.0 = 100%)
+  const [isConnecting, setIsConnecting] = useState(false);
   const isReadOnly = !isNewMap && !isLatestVersion;
+
+  // Listen for zoom change events from Toolbox
+  useEffect(() => {
+    const handleZoomChange = (e: CustomEvent<{ zoom: number }>) => {
+      setZoom(e.detail.zoom);
+    };
+    
+    window.addEventListener('toolbox-zoom-change', handleZoomChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('toolbox-zoom-change', handleZoomChange as EventListener);
+    };
+  }, []);
+  
+  const selectedNodeId = useMindMapStore((state) => state.selectedNodeId);
+  const selectedEdgeId = useMindMapStore((state) => state.selectedEdgeId);
+  const addNode = useMindMapStore((state) => state.addNode);
+  const deleteNode = useMindMapStore((state) => state.deleteNode);
+  const deleteEdge = useMindMapStore((state) => state.deleteEdge);
+  const selectNode = useMindMapStore((state) => state.selectNode);
+  const selectEdge = useMindMapStore((state) => state.selectEdge);
 
   const map = useMindMapStore((state) => state.map);
   const setMap = useMindMapStore((state) => state.setMap);
@@ -492,7 +515,123 @@ export default function EditorPage() {
           refreshProgress={refreshProgress}
           onSave={handleSaveCallback}
           onZoomChange={setZoom}
+          zoom={zoom}
         />
+        
+        {/* Floating Toolbox */}
+        {map && (
+          <Toolbox
+            isConnecting={isConnecting}
+            zoom={zoom}
+            onAddNode={() => {
+              // Add node at center or near selected node
+              const centerX = 600;
+              const centerY = 400;
+              const x = selectedNodeId 
+                ? (map.nodes.find(n => n.id === selectedNodeId)?.x || centerX) + 180
+                : centerX;
+              const y = selectedNodeId
+                ? (map.nodes.find(n => n.id === selectedNodeId)?.y || centerY) + 100
+                : centerY;
+              
+              addNode({
+                id: `n_${Date.now()}`,
+                label: 'New Node',
+                x,
+                y,
+                w: 150,
+                h: 80,
+                contentType: 'richeditor',
+              });
+            }}
+            onConnect={() => {
+              if (selectedNodeId) {
+                // Dispatch custom event that MindMapCanvas will listen to
+                window.dispatchEvent(new CustomEvent('toolbox-start-connection', { 
+                  detail: { nodeId: selectedNodeId } 
+                }));
+                setIsConnecting(true);
+              }
+            }}
+            onCancelConnection={() => {
+              // Dispatch custom event to cancel connection
+              window.dispatchEvent(new CustomEvent('toolbox-cancel-connection'));
+              setIsConnecting(false);
+            }}
+            onEdit={() => {
+              // Edit will be handled by keyboard shortcuts or context menu
+              // This is a placeholder - actual edit logic is in MindMapCanvas
+              if (selectedNodeId || selectedEdgeId) {
+                // Trigger edit via keyboard event simulation
+                const event = new KeyboardEvent('keydown', {
+                  key: 'e',
+                  code: 'KeyE',
+                  bubbles: true,
+                  cancelable: true,
+                });
+                document.dispatchEvent(event);
+              }
+            }}
+            onDelete={() => {
+              if (selectedNodeId) {
+                if (confirm('Delete this node?')) {
+                  deleteNode(selectedNodeId);
+                  selectNode(null);
+                }
+              } else if (selectedEdgeId) {
+                if (confirm('Delete this edge?')) {
+                  deleteEdge(selectedEdgeId);
+                  selectEdge(null);
+                }
+              }
+            }}
+            onChangeShape={() => {
+              if (selectedNodeId) {
+                // Shape change will be handled by context menu
+                // This is a placeholder
+                const event = new KeyboardEvent('keydown', {
+                  key: 's',
+                  code: 'KeyS',
+                  bubbles: true,
+                  cancelable: true,
+                });
+                document.dispatchEvent(event);
+              }
+            }}
+            onEmbed={() => {
+              if (selectedNodeId) {
+                // Embed will be handled by context menu
+                const event = new KeyboardEvent('keydown', {
+                  key: 'i',
+                  code: 'KeyI',
+                  bubbles: true,
+                  cancelable: true,
+                });
+                document.dispatchEvent(event);
+              }
+            }}
+            onZoomIn={() => {
+              const newZoom = Math.min(5.0, Math.round((zoom + 0.1) * 10) / 10);
+              setZoom(newZoom);
+            }}
+            onZoomOut={() => {
+              const newZoom = Math.max(0.1, Math.round((zoom - 0.1) * 10) / 10);
+              setZoom(newZoom);
+            }}
+            onResetZoom={() => {
+              setZoom(1.0);
+            }}
+            onFitToScreen={() => {
+              // Dispatch custom event that MindMapCanvas will listen to
+              window.dispatchEvent(new CustomEvent('toolbox-fit-to-screen'));
+            }}
+            onCenterView={() => {
+              // Dispatch custom event that MindMapCanvas will listen to
+              window.dispatchEvent(new CustomEvent('toolbox-center-view'));
+            }}
+            isReadOnly={isReadOnly}
+          />
+        )}
       </div>
 
       {/* Footer with Stats & Controls */}

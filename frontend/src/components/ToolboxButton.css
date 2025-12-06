@@ -1,0 +1,172 @@
+/* ToolboxButton Styles */
+
+.toolbox-button-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.toolbox-button {
+  width: 100%;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  padding: 0;
+  margin: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.toolbox-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 122, 255, 0.1);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  border-radius: 8px;
+}
+
+.toolbox-button:hover:not(:disabled)::before {
+  opacity: 1;
+}
+
+.toolbox-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(0, 122, 255, 0.2);
+  transform: scale(1.05);
+  box-shadow: 
+    0 2px 8px rgba(0, 122, 255, 0.15),
+    0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.toolbox-button:active:not(:disabled) {
+  transform: scale(0.95);
+  transition-duration: 0.1s;
+}
+
+.toolbox-button.active {
+  background: rgba(0, 122, 255, 0.15);
+  border-color: rgba(0, 122, 255, 0.3);
+  box-shadow: 
+    0 2px 8px rgba(0, 122, 255, 0.2),
+    0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.toolbox-button.active::before {
+  opacity: 1;
+  background: rgba(0, 122, 255, 0.2);
+}
+
+.toolbox-button.active:hover:not(:disabled) {
+  background: rgba(0, 122, 255, 0.2);
+  border-color: rgba(0, 122, 255, 0.4);
+}
+
+.toolbox-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.toolbox-button-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--text-primary, #1d1d1f);
+  transition: color 0.15s ease;
+}
+
+.toolbox-button:hover:not(:disabled) .toolbox-button-icon {
+  color: #007AFF;
+}
+
+.toolbox-button.active .toolbox-button-icon {
+  color: #007AFF;
+}
+
+.toolbox-button:disabled .toolbox-button-icon {
+  color: var(--text-tertiary, #86868b);
+}
+
+/* Tooltip */
+.toolbox-tooltip {
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10000;
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.1);
+  animation: tooltipFadeIn 0.2s ease;
+}
+
+.toolbox-tooltip::before {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 6px solid transparent;
+  border-right-color: rgba(0, 0, 0, 0.85);
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .toolbox-button {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .toolbox-button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(0, 122, 255, 0.3);
+  }
+
+  .toolbox-button.active {
+    background: rgba(0, 122, 255, 0.2);
+    border-color: rgba(0, 122, 255, 0.4);
+  }
+
+  .toolbox-button-icon {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .toolbox-button:hover:not(:disabled) .toolbox-button-icon,
+  .toolbox-button.active .toolbox-button-icon {
+    color: #64B5F6;
+  }
+}
+

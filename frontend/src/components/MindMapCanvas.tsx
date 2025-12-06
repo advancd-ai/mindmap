@@ -40,6 +40,26 @@ interface MindMapCanvasProps {
   refreshProgress?: number;
   onSave?: (saveHandler: () => void, forceSaveHandler?: () => void) => void;
   onZoomChange?: (zoom: number) => void;
+  zoom?: number; // External zoom control from parent
+  onFitToScreen?: () => void; // Callback to trigger fit to screen
+  onCenterView?: () => void; // Callback to trigger center view
+  onToolboxAction?: (action: string, ...args: any[]) => void;
+  toolboxRef?: React.RefObject<{
+    isConnecting: boolean;
+    zoom: number;
+    handleAddNode: () => void;
+    handleConnect: () => void;
+    handleCancelConnection: () => void;
+    handleEdit: () => void;
+    handleDelete: () => void;
+    handleChangeShape: () => void;
+    handleEmbed: () => void;
+    handleZoomIn: () => void;
+    handleZoomOut: () => void;
+    handleResetZoom: () => void;
+    handleFitToScreen: () => void;
+    handleCenterView: () => void;
+  }>;
 }
 
 const BOUNDARY_DEFAULT_PADDING = 36;
@@ -50,7 +70,10 @@ export default function MindMapCanvas({
   isRefreshing = false,
   refreshProgress = 0,
   onSave,
-  onZoomChange
+  onZoomChange,
+  zoom: externalZoom,
+  onFitToScreen,
+  onCenterView
 }: MindMapCanvasProps) {
   const { t } = useTranslation();
   
@@ -246,6 +269,229 @@ export default function MindMapCanvas({
       }
     }
   }, [map?.id, onZoomChange]); // Only when map ID changes, not on every map update
+
+  // Handle external zoom changes from parent (Toolbox)
+  useEffect(() => {
+    if (externalZoom !== undefined && externalZoom !== zoom) {
+      const baseWidth = 1200;
+      const baseHeight = 800;
+      
+      // Calculate new viewBox size based on zoom
+      const newWidth = baseWidth / externalZoom;
+      const newHeight = baseHeight / externalZoom;
+      
+      // Keep the center point of current viewBox
+      const currentCenterX = viewBox.x + viewBox.width / 2;
+      const currentCenterY = viewBox.y + viewBox.height / 2;
+      
+      const newViewBox = {
+        x: currentCenterX - newWidth / 2,
+        y: currentCenterY - newHeight / 2,
+        width: newWidth,
+        height: newHeight,
+      };
+      
+      setZoom(externalZoom);
+      setViewBox(newViewBox);
+      
+      // Update view state in store
+      updateViewState({ zoom: externalZoom, viewBox: newViewBox });
+      
+      console.log('🔍 External zoom change:', (externalZoom * 100).toFixed(0) + '%');
+    }
+  }, [externalZoom, zoom, viewBox, updateViewState]);
+
+  // Handle fit to screen and center view events
+  useEffect(() => {
+    const handleFitToScreen = () => {
+      if (!map || map.nodes.length === 0) {
+        console.log('⚠️ No nodes to fit to screen');
+        return;
+      }
+
+      // Calculate bounding box of all nodes
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+
+      map.nodes.forEach((node) => {
+        const { w, h } = getNodeDisplayDimensions(node);
+        minX = Math.min(minX, node.x);
+        minY = Math.min(minY, node.y);
+        maxX = Math.max(maxX, node.x + w);
+        maxY = Math.max(maxY, node.y + h);
+      });
+
+      // Add padding
+      const padding = BOUNDARY_DEFAULT_PADDING;
+      minX -= padding;
+      minY -= padding;
+      maxX += padding;
+      maxY += padding;
+
+      const contentWidth = maxX - minX;
+      const contentHeight = maxY - minY;
+
+      // Base viewport size
+      const baseWidth = 1200;
+      const baseHeight = 800;
+
+      // Calculate zoom to fit content
+      const zoomX = baseWidth / contentWidth;
+      const zoomY = baseHeight / contentHeight;
+      const newZoom = Math.min(zoomX, zoomY, 5.0); // Cap at 5x zoom
+
+      // Calculate viewBox
+      const newWidth = baseWidth / newZoom;
+      const newHeight = baseHeight / newZoom;
+
+      // Center the content
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+
+      const newViewBox = {
+        x: centerX - newWidth / 2,
+        y: centerY - newHeight / 2,
+        width: newWidth,
+        height: newHeight,
+      };
+
+      setZoom(newZoom);
+      setViewBox(newViewBox);
+      updateViewState({ zoom: newZoom, viewBox: newViewBox });
+
+      // Notify parent
+      if (onZoomChange) {
+        onZoomChange(newZoom);
+      }
+
+      console.log('📐 Fit to screen:', {
+        zoom: (newZoom * 100).toFixed(0) + '%',
+        viewBox: newViewBox,
+        contentBounds: { minX, minY, maxX, maxY }
+      });
+    };
+
+    const handleCenterView = () => {
+      if (!map || map.nodes.length === 0) {
+        // If no nodes, center at origin
+        const baseWidth = 1200;
+        const baseHeight = 800;
+        const newWidth = baseWidth / zoom;
+        const newHeight = baseHeight / zoom;
+
+        const newViewBox = {
+          x: -newWidth / 2,
+          y: -newHeight / 2,
+          width: newWidth,
+          height: newHeight,
+        };
+
+        setViewBox(newViewBox);
+        updateViewState({ zoom, viewBox: newViewBox });
+        console.log('⊙ Center view (no nodes):', newViewBox);
+        return;
+      }
+
+      // Calculate center of all nodes
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+
+      map.nodes.forEach((node) => {
+        const { w, h } = getNodeDisplayDimensions(node);
+        minX = Math.min(minX, node.x);
+        minY = Math.min(minY, node.y);
+        maxX = Math.max(maxX, node.x + w);
+        maxY = Math.max(maxY, node.y + h);
+      });
+
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+
+      // Keep current zoom, just center the view
+      const baseWidth = 1200;
+      const baseHeight = 800;
+      const newWidth = baseWidth / zoom;
+      const newHeight = baseHeight / zoom;
+
+      const newViewBox = {
+        x: centerX - newWidth / 2,
+        y: centerY - newHeight / 2,
+        width: newWidth,
+        height: newHeight,
+      };
+
+      setViewBox(newViewBox);
+      updateViewState({ zoom, viewBox: newViewBox });
+
+      console.log('⊙ Center view:', {
+        center: { x: centerX, y: centerY },
+        viewBox: newViewBox
+      });
+    };
+
+    // Listen for custom events
+    window.addEventListener('toolbox-fit-to-screen', handleFitToScreen);
+    window.addEventListener('toolbox-center-view', handleCenterView);
+
+    return () => {
+      window.removeEventListener('toolbox-fit-to-screen', handleFitToScreen);
+      window.removeEventListener('toolbox-center-view', handleCenterView);
+    };
+  }, [map, zoom, viewBox, updateViewState, onZoomChange]);
+
+  // Handle connection start and cancel from Toolbox
+  // Note: This useEffect is placed before startConnectionFromNode definition
+  // So we implement the connection logic directly here
+  useEffect(() => {
+    const handleStartConnection = (e: CustomEvent<{ nodeId: string }>) => {
+      const nodeId = e.detail.nodeId;
+      if (!map || !nodeId) {
+        console.warn('⚠️ Cannot start connection: no map or nodeId');
+        return;
+      }
+
+      const node = map.nodes.find((n) => n.id === nodeId);
+      if (!node) {
+        console.warn('⚠️ Cannot start connection: node not found:', nodeId);
+        return;
+      }
+
+      // Start connection from the selected node in auto mode
+      console.log('🔗 Starting connection from node (auto mode):', nodeId);
+      setIsConnecting(true);
+      setConnectingFrom(nodeId);
+      setConnectingFromAnchor(null);
+      setHoverAnchor(null);
+      setConnectionMode('auto'); // Use auto mode for Toolbox connect
+      setTempLineEnd({
+        x: node.x + node.w / 2,
+        y: node.y + node.h / 2,
+      });
+      console.log('🔗 Toolbox: Starting connection from node (auto mode):', nodeId);
+    };
+
+    const handleCancelConnection = () => {
+      setIsConnecting(false);
+      setConnectingFrom(null);
+      setConnectingFromAnchor(null);
+      setHoverAnchor(null);
+      setConnectionMode('manual');
+      console.log('❌ Toolbox: Connection cancelled');
+    };
+
+    // Listen for custom events
+    window.addEventListener('toolbox-start-connection', handleStartConnection as EventListener);
+    window.addEventListener('toolbox-cancel-connection', handleCancelConnection);
+
+    return () => {
+      window.removeEventListener('toolbox-start-connection', handleStartConnection as EventListener);
+      window.removeEventListener('toolbox-cancel-connection', handleCancelConnection);
+    };
+  }, [map]);
 
   useEffect(() => {
     if (!map || !edgeInspectorState) {
