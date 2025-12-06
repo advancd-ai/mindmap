@@ -19,6 +19,7 @@ import Toast, { type ToastType } from '../components/Toast';
 import VersionHistoryDialog from '../components/VersionHistoryDialog';
 import ShareSettingsModal from '../components/ShareSettingsModal';
 import Toolbox from '../components/Toolbox';
+import AdNotice from '../components/AdNotice';
 import './EditorPage.css';
 
 export default function EditorPage() {
@@ -36,6 +37,7 @@ export default function EditorPage() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [zoom, setZoom] = useState(1.0); // Zoom level (1.0 = 100%)
   const [isConnecting, setIsConnecting] = useState(false);
+  const [showAdNotice, setShowAdNotice] = useState(true);
   const isReadOnly = !isNewMap && !isLatestVersion;
 
   // Listen for zoom change events from Toolbox
@@ -734,6 +736,15 @@ export default function EditorPage() {
           latestVersion={latestVersion}
           onVersionSelect={handleVersionSelect}
           onClose={() => setShowVersionHistory(false)}
+        />
+      )}
+
+      {/* Ad Notice Overlay */}
+      {showAdNotice && (
+        <AdNotice
+          message={t('share.adNotice')}
+          duration={2000}
+          onClose={() => setShowAdNotice(false)}
         />
       )}
     </div>

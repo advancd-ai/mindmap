@@ -256,7 +256,7 @@ export default function SharePage() {
       {showAdNotice && (
         <AdNotice
           message={t('share.adNotice')}
-          duration={3000}
+          duration={2000}
           onClose={() => setShowAdNotice(false)}
         />
       )}
