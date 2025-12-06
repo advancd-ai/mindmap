@@ -41,8 +41,6 @@ interface MindMapCanvasProps {
   onSave?: (saveHandler: () => void, forceSaveHandler?: () => void) => void;
   onZoomChange?: (zoom: number) => void;
   zoom?: number; // External zoom control from parent
-  onFitToScreen?: () => void; // Callback to trigger fit to screen
-  onCenterView?: () => void; // Callback to trigger center view
   onToolboxAction?: (action: string, ...args: any[]) => void;
   toolboxRef?: React.RefObject<{
     isConnecting: boolean;
@@ -71,9 +69,7 @@ export default function MindMapCanvas({
   refreshProgress = 0,
   onSave,
   onZoomChange,
-  zoom: externalZoom,
-  onFitToScreen,
-  onCenterView
+  zoom: externalZoom
 }: MindMapCanvasProps) {
   const { t } = useTranslation();
   
