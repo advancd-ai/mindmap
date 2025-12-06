@@ -3,7 +3,11 @@
   background: var(--bg-secondary);
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: 100vh;
+  min-height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  position: relative;
 }
 
 /* Editor Header */
@@ -210,6 +214,8 @@
   flex: 1;
   overflow: hidden;
   position: relative;
+  padding-bottom: 50px; /* Add padding for fixed footer */
+  box-sizing: border-box;
 }
 
 /* Editor Footer */
@@ -220,6 +226,16 @@
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
   padding: 6px 20px;
+  margin: 0;
+  flex-shrink: 0;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  z-index: 100;
 }
 
 .editor-footer-content {

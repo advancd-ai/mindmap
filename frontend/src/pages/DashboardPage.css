@@ -3,23 +3,39 @@
   background: var(--bg-secondary);
   min-height: 100vh;
   height: 100vh;
+  max-height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  overflow-x: hidden; /* Prevent horizontal scroll */
+  margin: 0;
+  padding: 0;
+  padding-bottom: 0 !important; /* Force remove bottom padding */
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
 }
 
 /* Dashboard Content */
 .dashboard-content {
-  flex: 1;
-  padding: 80px 24px 80px;  /* bottom padding for footer */
+  flex: 1 1 auto;
+  padding: 80px 24px 60px 24px;  /* Add bottom padding for footer (60px) */
   max-width: 1600px;  /* Increased for better grid layout */
   margin: 0 auto;
   width: 100%;
+  max-width: 100%;
   overflow-y: auto;
   overflow-x: hidden;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
   box-sizing: border-box;  /* Include padding in width calculation */
+  min-height: 0; /* Allow flex item to shrink */
+}
+
+/* AdSense container - remove bottom margin to prevent footer spacing */
+.dashboard-content .ad-container-horizontal {
+  margin-bottom: 0 !important;
 }
 
 /* Custom Scrollbar */
@@ -215,7 +231,7 @@
   }
   
   .dashboard-content {
-    padding: 60px 16px 100px;  /* More bottom padding on mobile */
+    padding: 60px 16px 60px 16px;  /* Add bottom padding for footer on mobile */
   }
   
   .dashboard-title {
@@ -597,21 +613,30 @@
   overflow-y: auto;
 }
 
-/* Dashboard Footer */
+/* Dashboard Footer - Unified with Editor Footer style */
 .dashboard-footer {
   border-top: 1px solid var(--border-primary);
   background: var(--bg-elevated);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
-  padding: 12px 24px;
+  padding: 6px 20px; /* Unified with Editor Footer */
+  margin: 0;
   flex-shrink: 0;
+  position: fixed; /* Dashboard only - keep for bottom positioning */
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   z-index: 100;
 }
 
 .dashboard-footer-content {
-  max-width: 1440px;
+  max-width: 1440px; /* Dashboard only - wider content area */
   margin: 0 auto;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -641,7 +666,7 @@
 /* Footer Responsive */
 @media (max-width: 768px) {
   .dashboard-footer {
-    padding: 10px 16px;
+    padding: 6px 16px; /* Unified with Editor Footer responsive style */
   }
   
   .dashboard-footer-content {
@@ -675,6 +700,7 @@
   align-items: center;
   gap: var(--space-sm);
   padding: 6px 12px;
+  margin: 0; /* Unified with Editor Footer style */
   background: var(--bg-secondary);
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-md);

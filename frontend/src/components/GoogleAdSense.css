@@ -3,7 +3,7 @@
 .adsbygoogle {
   display: block;
   text-align: center;
-  margin: 16px 0;
+  margin: 16px 0 0 0; /* Remove bottom margin */
 }
 
 /* Responsive ad container */
@@ -17,7 +17,7 @@
 .ad-container-horizontal {
   width: 100%;
   max-width: 728px;
-  margin: 16px auto;
+  margin: 16px auto 0 auto; /* Remove bottom margin */
 }
 
 .ad-container-vertical {
