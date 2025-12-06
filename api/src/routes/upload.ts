@@ -285,12 +285,15 @@ upload.get('/download/:mapId/:filename', async (c) => {
           
           if (userJson) {
             try {
-              user = JSON.parse(userJson);
-              const { getGitHubRepoPath } = await import('../utils/github.js');
-              const repoPath = getGitHubRepoPath(user);
-              owner = repoPath.owner;
-              repo = repoPath.repo;
-              console.log(`🔍 Using authenticated user's repository: ${owner}/${repo}`);
+              const parsedUser = JSON.parse(userJson) as User;
+              if (parsedUser) {
+                user = parsedUser;
+                const { getGitHubRepoPath } = await import('../utils/github.js');
+                const repoPath = getGitHubRepoPath(user);
+                owner = repoPath.owner;
+                repo = repoPath.repo;
+                console.log(`🔍 Using authenticated user's repository: ${owner}/${repo}`);
+              }
             } catch (e) {
               console.warn('⚠️ Failed to parse user from session, using default');
             }
