@@ -534,7 +534,10 @@ export default function EditorPage() {
         {map && showAd && (
           <div 
             className="editor-ad-container"
-            onClick={() => setShowAd(false)}
+            onClick={() => {
+              setShowAd(false);
+              setAdCountdown(0);
+            }}
             style={{ cursor: 'pointer' }}
           >
             <div 
@@ -550,7 +553,10 @@ export default function EditorPage() {
                 <div className="editor-ad-countdown">{adCountdown}</div>
               )}
             </div>
-            <div onClick={(e) => e.stopPropagation()}>
+            <div onClick={() => {
+              setShowAd(false);
+              setAdCountdown(0);
+            }}>
               <GoogleAdSense
                 adFormat="horizontal"
                 fullWidthResponsive={true}

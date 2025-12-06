@@ -211,7 +211,10 @@ export default function SharePage() {
         {map && data?.ok && showAd && (
           <div 
             className="share-ad-container"
-            onClick={() => setShowAd(false)}
+            onClick={() => {
+              setShowAd(false);
+              setAdCountdown(0);
+            }}
             style={{ cursor: 'pointer' }}
           >
             <div 
@@ -227,7 +230,10 @@ export default function SharePage() {
                 <div className="share-ad-countdown">{adCountdown}</div>
               )}
             </div>
-            <div onClick={(e) => e.stopPropagation()}>
+            <div onClick={() => {
+              setShowAd(false);
+              setAdCountdown(0);
+            }}>
               <GoogleAdSense
                 adFormat="horizontal"
                 fullWidthResponsive={true}
