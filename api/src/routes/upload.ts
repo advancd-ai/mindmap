@@ -11,6 +11,7 @@ import { createGitProvider } from '../git/index.js';
 import { getGitHubRepoPath } from '../utils/github.js';
 import type { User } from '../types.js';
 import { cache } from '../lib/redis.js';
+import { getShareInfo, isShareAccessible } from '../services/share.js';
 
 const upload = new Hono<{ Variables: { user: User } }>();
 
@@ -145,6 +146,7 @@ upload.get('/info', requireAuth(), async (c) => {
 upload.get('/download/:mapId/:filename', async (c) => {
   const mapId = c.req.param('mapId');
   const filename = c.req.param('filename');
+  const shareToken = c.req.query('shareToken');
 
   if (!mapId || !filename) {
     return c.json({ error: 'Map ID and filename are required' }, 400);
@@ -155,12 +157,34 @@ upload.get('/download/:mapId/:filename', async (c) => {
   if (providerType === 'local') {
     try {
       let user: User | null = null;
-      const authHeader = c.req.header('Authorization');
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.slice(7);
-        const userJson = await cache.get(`session:${token}`);
-        if (userJson) {
-          user = JSON.parse(userJson);
+      
+      // Check for share token first (for public Share page access)
+      if (shareToken) {
+        try {
+          const shareInfo = await getShareInfo(shareToken);
+          if (shareInfo && shareInfo.mapId === mapId && isShareAccessible(shareInfo)) {
+            // Use map owner's user info for share access
+            user = {
+              userId: shareInfo.userId,
+              email: shareInfo.userEmail,
+              name: shareInfo.userEmail,
+            } as User;
+            console.log(`🔓 Share token access for file: ${mapId}/${filename}`);
+          }
+        } catch (shareError) {
+          console.warn('⚠️ Failed to validate share token:', shareError);
+        }
+      }
+      
+      // Fallback to auth token if no share token or share token invalid
+      if (!user) {
+        const authHeader = c.req.header('Authorization');
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          const token = authHeader.slice(7);
+          const userJson = await cache.get(`session:${token}`);
+          if (userJson) {
+            user = JSON.parse(userJson);
+          }
         }
       }
 
@@ -221,35 +245,60 @@ upload.get('/download/:mapId/:filename', async (c) => {
       auth: process.env.GITHUB_TOKEN,
     });
 
-    // Try to get repository info from authenticated user if available
+    // Try to get repository info from authenticated user or share token
     let owner: string | undefined;
     let repo: string | undefined;
+    let user: User | null = null;
+    
+    // Check for share token first (for public Share page access)
+    if (shareToken) {
+      try {
+        const shareInfo = await getShareInfo(shareToken);
+        if (shareInfo && shareInfo.mapId === mapId && isShareAccessible(shareInfo)) {
+          // Use map owner's user info for share access
+          user = {
+            userId: shareInfo.userId,
+            email: shareInfo.userEmail,
+            name: shareInfo.userEmail,
+          } as User;
+          const { getGitHubRepoPath } = await import('../utils/github.js');
+          const repoPath = getGitHubRepoPath(user);
+          owner = repoPath.owner;
+          repo = repoPath.repo;
+          console.log(`🔓 Share token access for file: ${mapId}/${filename} (${owner}/${repo})`);
+        }
+      } catch (shareError) {
+        console.warn('⚠️ Failed to validate share token:', shareError);
+      }
+    }
     
     // Check if user is authenticated (optional auth for download)
-    try {
-      const authHeader = c.req.header('Authorization');
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.slice(7);
-        // Try to get user from session cache
-        const { cache } = await import('../lib/redis.js');
-        const cacheKey = `session:${token}`;
-        const userJson = await cache.get(cacheKey);
-        
-        if (userJson) {
-          try {
-            const user = JSON.parse(userJson);
-            const { getGitHubRepoPath } = await import('../utils/github.js');
-            const repoPath = getGitHubRepoPath(user);
-            owner = repoPath.owner;
-            repo = repoPath.repo;
-            console.log(`🔍 Using authenticated user's repository: ${owner}/${repo}`);
-          } catch (e) {
-            console.warn('⚠️ Failed to parse user from session, using default');
+    if (!user) {
+      try {
+        const authHeader = c.req.header('Authorization');
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          const token = authHeader.slice(7);
+          // Try to get user from session cache
+          const { cache } = await import('../lib/redis.js');
+          const cacheKey = `session:${token}`;
+          const userJson = await cache.get(cacheKey);
+          
+          if (userJson) {
+            try {
+              user = JSON.parse(userJson);
+              const { getGitHubRepoPath } = await import('../utils/github.js');
+              const repoPath = getGitHubRepoPath(user);
+              owner = repoPath.owner;
+              repo = repoPath.repo;
+              console.log(`🔍 Using authenticated user's repository: ${owner}/${repo}`);
+            } catch (e) {
+              console.warn('⚠️ Failed to parse user from session, using default');
+            }
           }
         }
+      } catch (e) {
+        console.warn('⚠️ Auth check failed, using default repository');
       }
-    } catch (e) {
-      console.warn('⚠️ Auth check failed, using default repository');
     }
 
     // Fallback to default repository from environment variables

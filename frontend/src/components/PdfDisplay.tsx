@@ -27,12 +27,24 @@ export default function PdfDisplay({ pdfUrl, title, onError, onRequestFullView }
 
         console.log('📄 PdfDisplay: Fetching PDF from:', pdfUrl);
 
-        // Get auth token from localStorage
-        const auth = localStorage.getItem('auth-storage');
+        // Check if we're on a Share page
+        const isSharePage = window.location.pathname.startsWith('/share/');
+        let shareToken: string | null = null;
+        if (isSharePage) {
+          const pathMatch = window.location.pathname.match(/^\/share\/([^/]+)/);
+          if (pathMatch) {
+            shareToken = pathMatch[1];
+          }
+        }
+
+        // Get auth token from localStorage (only if not on Share page)
         let authToken = null;
-        if (auth) {
-          const { token } = JSON.parse(auth).state;
-          authToken = token;
+        if (!isSharePage) {
+          const auth = localStorage.getItem('auth-storage');
+          if (auth) {
+            const { token } = JSON.parse(auth).state;
+            authToken = token;
+          }
         }
 
         // Prepare headers with authentication
@@ -41,8 +53,23 @@ export default function PdfDisplay({ pdfUrl, title, onError, onRequestFullView }
           headers.Authorization = `Bearer ${authToken}`;
         }
 
+        // Add share token to URL if on Share page
+        let fetchUrl = pdfUrl;
+        try {
+          const url = new URL(pdfUrl);
+          if (shareToken) {
+            url.searchParams.set('shareToken', shareToken);
+          }
+          fetchUrl = url.toString();
+        } catch {
+          if (shareToken) {
+            const separator = pdfUrl.includes('?') ? '&' : '?';
+            fetchUrl = `${pdfUrl}${separator}shareToken=${shareToken}`;
+          }
+        }
+
         // Fetch PDF with authentication
-        const response = await fetch(pdfUrl, {
+        const response = await fetch(fetchUrl, {
           mode: 'cors',
           credentials: 'omit',
           headers,

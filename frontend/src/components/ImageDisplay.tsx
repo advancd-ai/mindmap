@@ -43,12 +43,24 @@ export default function ImageDisplay({ imageUrl, alt, onError }: ImageDisplayPro
 
         console.log('🖼️ ImageDisplay: Attempting to download image from:', imageUrl);
 
-        // Get auth token from localStorage
-        const auth = localStorage.getItem('auth-storage');
+        // Check if we're on a Share page
+        const isSharePage = window.location.pathname.startsWith('/share/');
+        let shareToken: string | null = null;
+        if (isSharePage) {
+          const pathMatch = window.location.pathname.match(/^\/share\/([^/]+)/);
+          if (pathMatch) {
+            shareToken = pathMatch[1];
+          }
+        }
+
+        // Get auth token from localStorage (only if not on Share page)
         let authToken = null;
-        if (auth) {
-          const { token } = JSON.parse(auth).state;
-          authToken = token;
+        if (!isSharePage) {
+          const auth = localStorage.getItem('auth-storage');
+          if (auth) {
+            const { token } = JSON.parse(auth).state;
+            authToken = token;
+          }
         }
 
         // Prepare headers
@@ -62,9 +74,14 @@ export default function ImageDisplay({ imageUrl, alt, onError }: ImageDisplayPro
         try {
           const url = new URL(imageUrl);
           url.searchParams.set('_r', Date.now().toString());
+          // Add share token if on Share page
+          if (shareToken) {
+            url.searchParams.set('shareToken', shareToken);
+          }
           fetchUrl = url.toString();
         } catch {
-          fetchUrl = `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}_r=${Date.now()}`;
+          const separator = imageUrl.includes('?') ? '&' : '?';
+          fetchUrl = `${imageUrl}${separator}_r=${Date.now()}${shareToken ? `&shareToken=${shareToken}` : ''}`;
         }
 
         // Download image as blob
