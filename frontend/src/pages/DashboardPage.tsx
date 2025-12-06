@@ -16,6 +16,7 @@ import Toast, { type ToastType } from '../components/Toast';
 import ProgressIndicator from '../components/ProgressIndicator';
 import ShareStatusBadge from '../components/ShareStatusBadge';
 import DeleteConfirmDialog from '../components/DeleteConfirmDialog';
+import GoogleAdSense from '../components/GoogleAdSense';
 import './DashboardPage.css';
 
 export default function DashboardPage() {
@@ -389,6 +390,16 @@ export default function DashboardPage() {
             </div>
           ))}
         </div>
+
+        {/* Google AdSense - Horizontal Banner */}
+        {!isLoading && !error && maps && maps.length > 0 && (
+          <div className="ad-container-horizontal">
+            <GoogleAdSense
+              adFormat="horizontal"
+              fullWidthResponsive={true}
+            />
+          </div>
+        )}
       </div>
 
       {/* Footer with User Info & Controls */}

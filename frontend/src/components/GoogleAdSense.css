@@ -1,0 +1,60 @@
+/* GoogleAdSense Styles */
+
+.adsbygoogle {
+  display: block;
+  text-align: center;
+  margin: 16px 0;
+}
+
+/* Responsive ad container */
+.ad-container {
+  width: 100%;
+  max-width: 728px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.ad-container-horizontal {
+  width: 100%;
+  max-width: 728px;
+  margin: 16px auto;
+}
+
+.ad-container-vertical {
+  width: 100%;
+  max-width: 300px;
+  margin: 16px auto;
+}
+
+/* Sidebar ad (for editor page) */
+.ad-sidebar {
+  position: fixed;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 300px;
+  z-index: 100;
+}
+
+/* Footer ad */
+.ad-footer {
+  width: 100%;
+  max-width: 728px;
+  margin: 24px auto;
+  padding: 16px;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .ad-sidebar {
+    display: none;
+  }
+
+  .ad-container,
+  .ad-container-horizontal,
+  .ad-container-vertical {
+    max-width: 100%;
+    padding: 8px;
+  }
+}
+

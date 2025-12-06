@@ -19,6 +19,7 @@ import Toast, { type ToastType } from '../components/Toast';
 import VersionHistoryDialog from '../components/VersionHistoryDialog';
 import ShareSettingsModal from '../components/ShareSettingsModal';
 import Toolbox from '../components/Toolbox';
+import GoogleAdSense from '../components/GoogleAdSense';
 import './EditorPage.css';
 
 export default function EditorPage() {
@@ -517,6 +518,16 @@ export default function EditorPage() {
           onZoomChange={setZoom}
           zoom={zoom}
         />
+        
+        {/* Google AdSense - Sidebar */}
+        {map && (
+          <div className="ad-sidebar">
+            <GoogleAdSense
+              adFormat="vertical"
+              fullWidthResponsive={true}
+            />
+          </div>
+        )}
         
         {/* Floating Toolbox */}
         {map && (
