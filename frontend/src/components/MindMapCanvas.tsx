@@ -2831,26 +2831,6 @@ export default function MindMapCanvas({
 
   return (
       <div ref={containerRef} className="mindmap-canvas-container">
-        {isRefreshing && (
-          <div className="save-overlay">
-            <div className="save-progress-container">
-              <div className="save-progress-header">
-                <span className="save-icon">🔄</span>
-                <span className="save-title">{t('editor.saving')}</span>
-              </div>
-              <div className="save-progress-bar">
-                <div 
-                  className="save-progress-fill" 
-                  style={{ width: `${refreshProgress}%` }}
-                />
-              </div>
-              <div className="save-progress-text">
-                {Math.round(refreshProgress)}%
-              </div>
-            </div>
-          </div>
-        )}
-
       <svg
         ref={svgRef}
         className={`mindmap-canvas ${isPanning ? 'panning' : ''}`}

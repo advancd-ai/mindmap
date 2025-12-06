@@ -37,7 +37,7 @@ export default function EditorPage() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [zoom, setZoom] = useState(1.0); // Zoom level (1.0 = 100%)
   const [isConnecting, setIsConnecting] = useState(false);
-  const [showAd, setShowAd] = useState(true); // Ad visibility
+  const [showAd, setShowAd] = useState(false); // Ad visibility (shown on save)
   const [adCountdown, setAdCountdown] = useState(10); // Ad countdown timer
   const isReadOnly = !isNewMap && !isLatestVersion;
 
@@ -258,12 +258,7 @@ export default function EditorPage() {
       clearInterval(progressInterval);
       setRefreshProgress(100);
       
-      // Show success message
-      setToast({
-        message: t('editor.refreshSuccess', { version: actualLatestVersion }),
-        type: 'success'
-      });
-      
+      // Success message removed - ad will be shown instead
       console.log(`✅ Successfully refreshed to version ${actualLatestVersion}`);
       
     } catch (error) {
@@ -294,9 +289,9 @@ export default function EditorPage() {
     }
   }, [fetchedMap, mapId, setMap]);
 
-  // Auto-hide ad after 10 seconds with countdown
+  // Auto-hide ad after 10 seconds with countdown (only when ad is shown)
   useEffect(() => {
-    if (map && showAd) {
+    if (showAd) {
       setAdCountdown(10);
       
       const interval = setInterval(() => {
@@ -312,7 +307,7 @@ export default function EditorPage() {
       
       return () => clearInterval(interval);
     }
-  }, [map, showAd]);
+  }, [showAd]);
 
 
   // Initialize new map (only if not already set from Dashboard)
@@ -518,6 +513,9 @@ export default function EditorPage() {
                 onClick={() => {
                   if (!isSaving) {
                     canvasSaveHandlerRef.current?.();
+                    // Show ad when save button is clicked
+                    setShowAd(true);
+                    setAdCountdown(10);
                   }
                 }}
                 disabled={!isDirty || !canvasSaveHandlerRef.current || isSaving}
@@ -541,7 +539,10 @@ export default function EditorPage() {
           >
             <div 
               className="editor-ad-banner"
-              onClick={(e) => e.stopPropagation()}
+              onClick={() => {
+                setShowAd(false);
+                setAdCountdown(0);
+              }}
             >
               <div className="editor-ad-icon">✨</div>
               <div className="editor-ad-message">{t('share.adBanner')}</div>

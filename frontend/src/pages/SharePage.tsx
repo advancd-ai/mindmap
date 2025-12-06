@@ -216,7 +216,10 @@ export default function SharePage() {
           >
             <div 
               className="share-ad-banner"
-              onClick={(e) => e.stopPropagation()}
+              onClick={() => {
+                setShowAd(false);
+                setAdCountdown(0);
+              }}
             >
               <div className="share-ad-icon">✨</div>
               <div className="share-ad-message">{t('share.adBanner')}</div>
