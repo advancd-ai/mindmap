@@ -25,6 +25,7 @@ export default function SharePage() {
   const [passwordError, setPasswordError] = useState<string>('');
   const [zoom, setZoom] = useState(1.0); // Zoom level (1.0 = 100%)
   const [showAd, setShowAd] = useState(true); // Ad visibility
+  const [adCountdown, setAdCountdown] = useState(10); // Ad countdown timer
 
   const setMap = useMindMapStore((state) => state.setMap);
   const map = useMindMapStore((state) => state.map);
@@ -72,6 +73,26 @@ export default function SharePage() {
       console.log('✅ Map set in store');
     }
   }, [data, setMap]);
+
+  // Auto-hide ad after 10 seconds with countdown
+  useEffect(() => {
+    if (map && data?.ok && showAd) {
+      setAdCountdown(10);
+      
+      const interval = setInterval(() => {
+        setAdCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            setShowAd(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [map, data, showAd]);
 
   // Auto-fit to screen when map is first loaded (Share page only)
   const hasAutoFittedRef = useRef(false);
@@ -199,6 +220,9 @@ export default function SharePage() {
             >
               <div className="share-ad-icon">✨</div>
               <div className="share-ad-message">{t('share.adBanner')}</div>
+              {adCountdown > 0 && (
+                <div className="share-ad-countdown">{adCountdown}</div>
+              )}
             </div>
             <div onClick={(e) => e.stopPropagation()}>
               <GoogleAdSense

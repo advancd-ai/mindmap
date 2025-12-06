@@ -38,6 +38,7 @@ export default function EditorPage() {
   const [zoom, setZoom] = useState(1.0); // Zoom level (1.0 = 100%)
   const [isConnecting, setIsConnecting] = useState(false);
   const [showAd, setShowAd] = useState(true); // Ad visibility
+  const [adCountdown, setAdCountdown] = useState(10); // Ad countdown timer
   const isReadOnly = !isNewMap && !isLatestVersion;
 
   // Listen for zoom change events from Toolbox
@@ -293,6 +294,26 @@ export default function EditorPage() {
     }
   }, [fetchedMap, mapId, setMap]);
 
+  // Auto-hide ad after 10 seconds with countdown
+  useEffect(() => {
+    if (map && showAd) {
+      setAdCountdown(10);
+      
+      const interval = setInterval(() => {
+        setAdCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            setShowAd(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [map, showAd]);
+
 
   // Initialize new map (only if not already set from Dashboard)
   useEffect(() => {
@@ -524,6 +545,9 @@ export default function EditorPage() {
             >
               <div className="editor-ad-icon">✨</div>
               <div className="editor-ad-message">{t('share.adBanner')}</div>
+              {adCountdown > 0 && (
+                <div className="editor-ad-countdown">{adCountdown}</div>
+              )}
             </div>
             <div onClick={(e) => e.stopPropagation()}>
               <GoogleAdSense
