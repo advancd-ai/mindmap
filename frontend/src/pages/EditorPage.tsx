@@ -553,11 +553,19 @@ export default function EditorPage() {
             </div>
             <div 
               style={{ position: 'relative' }}
+              onClick={(e) => {
+                // Only close if clicking on the container itself, not the ad
+                if (e.target === e.currentTarget) {
+                  setShowAd(false);
+                  setAdCountdown(0);
+                }
+              }}
             >
               <GoogleAdSense
                 adFormat="horizontal"
                 fullWidthResponsive={true}
               />
+              {/* Close ad when clicking on ad (after a short delay to allow ad click) */}
               <div
                 style={{
                   position: 'absolute',
@@ -566,17 +574,14 @@ export default function EditorPage() {
                   right: 0,
                   bottom: 0,
                   zIndex: 10,
-                  cursor: 'pointer',
-                  pointerEvents: 'auto'
+                  pointerEvents: 'none'
                 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowAd(false);
-                  setAdCountdown(0);
-                }}
-                onMouseDown={(e) => {
-                  // Prevent ad click from propagating
-                  e.stopPropagation();
+                onClick={() => {
+                  // Allow ad click to go through, then close after a delay
+                  setTimeout(() => {
+                    setShowAd(false);
+                    setAdCountdown(0);
+                  }, 100);
                 }}
               />
             </div>
