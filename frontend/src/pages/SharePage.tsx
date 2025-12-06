@@ -12,6 +12,7 @@ import { useMindMapStore } from '../store/mindmap';
 import MindMapCanvas from '../components/MindMapCanvas';
 import PasswordPrompt from '../components/PasswordPrompt';
 import GoogleAdSense from '../components/GoogleAdSense';
+import Toolbox from '../components/Toolbox';
 import './SharePage.css';
 
 export default function SharePage() {
@@ -20,9 +21,23 @@ export default function SharePage() {
   const [password, setPassword] = useState<string | null>(null);
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [passwordError, setPasswordError] = useState<string>('');
+  const [zoom, setZoom] = useState(1.0); // Zoom level (1.0 = 100%)
 
   const setMap = useMindMapStore((state) => state.setMap);
   const map = useMindMapStore((state) => state.map);
+
+  // Listen for zoom change events from Toolbox
+  useEffect(() => {
+    const handleZoomChange = (e: CustomEvent<{ zoom: number }>) => {
+      setZoom(e.detail.zoom);
+    };
+    
+    window.addEventListener('toolbox-zoom-change', handleZoomChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('toolbox-zoom-change', handleZoomChange as EventListener);
+    };
+  }, []);
 
   // Fetch shared map
   const { data, isLoading, error } = useQuery({
@@ -154,7 +169,43 @@ export default function SharePage() {
       <div className="share-content">
         <MindMapCanvas 
           isReadOnly={true}
+          zoom={zoom}
         />
+        
+        {/* Floating Toolbox - Read-only with zoom controls */}
+        {map && (
+          <Toolbox
+            isConnecting={false}
+            zoom={zoom}
+            onAddNode={() => {}} // Not used in read-only mode
+            onConnect={() => {}} // Not used in read-only mode
+            onCancelConnection={() => {}} // Not used in read-only mode
+            onEdit={() => {}} // Not used in read-only mode
+            onDelete={() => {}} // Not used in read-only mode
+            onChangeShape={() => {}} // Not used in read-only mode
+            onEmbed={() => {}} // Not used in read-only mode
+            onZoomIn={() => {
+              const newZoom = Math.min(5.0, Math.round((zoom + 0.1) * 10) / 10);
+              setZoom(newZoom);
+            }}
+            onZoomOut={() => {
+              const newZoom = Math.max(0.1, Math.round((zoom - 0.1) * 10) / 10);
+              setZoom(newZoom);
+            }}
+            onResetZoom={() => {
+              setZoom(1.0);
+            }}
+            onFitToScreen={() => {
+              // Dispatch custom event that MindMapCanvas will listen to
+              window.dispatchEvent(new CustomEvent('toolbox-fit-to-screen'));
+            }}
+            onCenterView={() => {
+              // Dispatch custom event that MindMapCanvas will listen to
+              window.dispatchEvent(new CustomEvent('toolbox-center-view'));
+            }}
+            isReadOnly={true}
+          />
+        )}
       </div>
 
       {/* Google AdSense - Horizontal Banner */}
