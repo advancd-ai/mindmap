@@ -11,6 +11,7 @@ import { fetchSharedMap } from '../api/share';
 import { useMindMapStore } from '../store/mindmap';
 import MindMapCanvas from '../components/MindMapCanvas';
 import PasswordPrompt from '../components/PasswordPrompt';
+import GoogleAdSense from '../components/GoogleAdSense';
 import './SharePage.css';
 
 export default function SharePage() {
@@ -155,6 +156,16 @@ export default function SharePage() {
           isReadOnly={true}
         />
       </div>
+
+      {/* Google AdSense - Horizontal Banner */}
+      {map && (
+        <div className="ad-container-horizontal">
+          <GoogleAdSense
+            adFormat="horizontal"
+            fullWidthResponsive={true}
+          />
+        </div>
+      )}
 
       {showPasswordPrompt && (
         <PasswordPrompt
