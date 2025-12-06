@@ -338,6 +338,9 @@
     "workflowShareCopy": "Git 저장과 공유 배지 발행을 동시에 처리해 팀과 즉시 나눌 수 있습니다.",
     "sectionCommunityTitle": "커뮤니티와 함께",
     "sectionCommunityCopy": "Mindmap Ziin은 오픈 소스 프로젝트입니다. 문서를 읽고 이슈를 올리거나 PR을 보내 주세요. 함께 발전하길 기대합니다."
+  },
+  "share": {
+    "adNotice": "구글 광고 클릭은 사이트 운영에 도움을 줍니다!"
   }
 }
 

@@ -7,21 +7,25 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { fetchSharedMap } from '../api/share';
 import { useMindMapStore } from '../store/mindmap';
 import MindMapCanvas from '../components/MindMapCanvas';
 import PasswordPrompt from '../components/PasswordPrompt';
 import GoogleAdSense from '../components/GoogleAdSense';
 import Toolbox from '../components/Toolbox';
+import AdNotice from '../components/AdNotice';
 import './SharePage.css';
 
 export default function SharePage() {
+  const { t } = useTranslation();
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const [password, setPassword] = useState<string | null>(null);
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [passwordError, setPasswordError] = useState<string>('');
   const [zoom, setZoom] = useState(1.0); // Zoom level (1.0 = 100%)
+  const [showAdNotice, setShowAdNotice] = useState(true);
 
   const setMap = useMindMapStore((state) => state.setMap);
   const map = useMindMapStore((state) => state.map);
@@ -245,6 +249,15 @@ export default function SharePage() {
           onSubmit={handlePasswordSubmit}
           onCancel={handlePasswordCancel}
           error={passwordError}
+        />
+      )}
+
+      {/* Ad Notice Overlay */}
+      {showAdNotice && (
+        <AdNotice
+          message={t('share.adNotice')}
+          duration={3000}
+          onClose={() => setShowAdNotice(false)}
         />
       )}
     </div>

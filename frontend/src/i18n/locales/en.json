@@ -338,6 +338,9 @@
     "workflowShareCopy": "Save to Git, copy a share badge, or export snapshots with confidence.",
     "sectionCommunityTitle": "Built in the open",
     "sectionCommunityCopy": "Mindmap Ziin is community-driven. Read the docs, file an issue, or submit a pull request—everyone is welcome."
+  },
+  "share": {
+    "adNotice": "Clicking on Google ads helps support the site!"
   }
 }
 
