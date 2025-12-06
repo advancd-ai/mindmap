@@ -208,8 +208,8 @@ export default function SharePage() {
         )}
       </div>
 
-      {/* Google AdSense - Horizontal Banner */}
-      {map && (
+      {/* Google AdSense - Horizontal Banner (Share page only) */}
+      {map && data?.ok && (
         <div className="ad-container-horizontal">
           <GoogleAdSense
             adFormat="horizontal"
