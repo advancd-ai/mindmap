@@ -14,7 +14,6 @@ import MindMapCanvas from '../components/MindMapCanvas';
 import PasswordPrompt from '../components/PasswordPrompt';
 import GoogleAdSense from '../components/GoogleAdSense';
 import Toolbox from '../components/Toolbox';
-import AdNotice from '../components/AdNotice';
 import './SharePage.css';
 
 export default function SharePage() {
@@ -25,7 +24,7 @@ export default function SharePage() {
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [passwordError, setPasswordError] = useState<string>('');
   const [zoom, setZoom] = useState(1.0); // Zoom level (1.0 = 100%)
-  const [showAdNotice, setShowAdNotice] = useState(true);
+  const [showAd, setShowAd] = useState(true); // Ad visibility
 
   const setMap = useMindMapStore((state) => state.setMap);
   const map = useMindMapStore((state) => state.map);
@@ -88,6 +87,7 @@ export default function SharePage() {
       return () => clearTimeout(timer);
     }
   }, [map]);
+
 
   const handlePasswordSubmit = (pwd: string) => {
     setPassword(pwd);
@@ -186,6 +186,28 @@ export default function SharePage() {
       </header>
 
       <div className="share-content">
+        {/* Google AdSense - Positioned at 1/3 of screen height */}
+        {map && data?.ok && showAd && (
+          <div 
+            className="share-ad-container"
+            onClick={() => setShowAd(false)}
+            style={{ cursor: 'pointer' }}
+          >
+            <div 
+              className="share-ad-banner"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="share-ad-icon">✨</div>
+              <div className="share-ad-message">{t('share.adBanner')}</div>
+            </div>
+            <div onClick={(e) => e.stopPropagation()}>
+              <GoogleAdSense
+                adFormat="horizontal"
+                fullWidthResponsive={true}
+              />
+            </div>
+          </div>
+        )}
         <MindMapCanvas 
           isReadOnly={true}
           zoom={zoom}
@@ -234,30 +256,11 @@ export default function SharePage() {
         )}
       </div>
 
-      {/* Google AdSense - Horizontal Banner (Share page only) */}
-      {map && data?.ok && (
-        <div className="ad-container-horizontal">
-          <GoogleAdSense
-            adFormat="horizontal"
-            fullWidthResponsive={true}
-          />
-        </div>
-      )}
-
       {showPasswordPrompt && (
         <PasswordPrompt
           onSubmit={handlePasswordSubmit}
           onCancel={handlePasswordCancel}
           error={passwordError}
-        />
-      )}
-
-      {/* Ad Notice Overlay */}
-      {showAdNotice && (
-        <AdNotice
-          message={t('share.adNotice')}
-          duration={2000}
-          onClose={() => setShowAdNotice(false)}
         />
       )}
     </div>

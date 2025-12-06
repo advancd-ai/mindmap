@@ -19,7 +19,7 @@ import Toast, { type ToastType } from '../components/Toast';
 import VersionHistoryDialog from '../components/VersionHistoryDialog';
 import ShareSettingsModal from '../components/ShareSettingsModal';
 import Toolbox from '../components/Toolbox';
-import AdNotice from '../components/AdNotice';
+import GoogleAdSense from '../components/GoogleAdSense';
 import './EditorPage.css';
 
 export default function EditorPage() {
@@ -37,7 +37,7 @@ export default function EditorPage() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [zoom, setZoom] = useState(1.0); // Zoom level (1.0 = 100%)
   const [isConnecting, setIsConnecting] = useState(false);
-  const [showAdNotice, setShowAdNotice] = useState(true);
+  const [showAd, setShowAd] = useState(true); // Ad visibility
   const isReadOnly = !isNewMap && !isLatestVersion;
 
   // Listen for zoom change events from Toolbox
@@ -172,6 +172,7 @@ export default function EditorPage() {
       setIsLatestVersion(true); // 맵이 없으면 기본적으로 최신
     }
   }, [latestVersion, map, isNewMap, mapId]);
+
 
   // Debug readonly condition and save button visibility
   useEffect(() => {
@@ -510,6 +511,29 @@ export default function EditorPage() {
       </header>
 
       <div className="editor-content">
+        {/* Google AdSense - Positioned at 1/3 of screen height */}
+        {map && showAd && (
+          <div 
+            className="editor-ad-container"
+            onClick={() => setShowAd(false)}
+            style={{ cursor: 'pointer' }}
+          >
+            <div 
+              className="editor-ad-banner"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="editor-ad-icon">✨</div>
+              <div className="editor-ad-message">{t('share.adBanner')}</div>
+            </div>
+            <div onClick={(e) => e.stopPropagation()}>
+              <GoogleAdSense
+                adFormat="horizontal"
+                fullWidthResponsive={true}
+              />
+            </div>
+          </div>
+        )}
+
         <MindMapCanvas 
           isReadOnly={isReadOnly}
           onRefreshToLatest={refreshToLatestVersion}
@@ -736,15 +760,6 @@ export default function EditorPage() {
           latestVersion={latestVersion}
           onVersionSelect={handleVersionSelect}
           onClose={() => setShowVersionHistory(false)}
-        />
-      )}
-
-      {/* Ad Notice Overlay */}
-      {showAdNotice && (
-        <AdNotice
-          message={t('share.adNotice')}
-          duration={2000}
-          onClose={() => setShowAdNotice(false)}
         />
       )}
     </div>

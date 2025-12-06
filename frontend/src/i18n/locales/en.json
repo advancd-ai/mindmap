@@ -340,7 +340,8 @@
     "sectionCommunityCopy": "Mindmap Ziin is community-driven. Read the docs, file an issue, or submit a pull request—everyone is welcome."
   },
   "share": {
-    "adNotice": "Clicking on Google ads helps support the site!"
+    "adNotice": "Clicking on Google ads helps support the site!",
+    "adBanner": "This service is supported by ads revenue. Your ad clicks help keep this service free for everyone 🙏"
   }
 }
 
