@@ -28,8 +28,26 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV LOCAL_GIT_ROOT=/data/repos
 
-# Install git for LocalGitProvider operations
-RUN apk add --no-cache git
+# Install git and dependencies for Playwright
+RUN apk add --no-cache \
+    git \
+    chromium \
+    nss \
+    freetype \
+    freetype-dev \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    font-noto-emoji \
+    udev \
+    ttf-opensans
+
+# Install Playwright browsers
+# Note: Playwright may not fully support Alpine, so we use system Chromium
+# Try to install Playwright browser, but fallback to system Chromium if it fails
+RUN npx playwright install chromium --with-deps 2>/dev/null || \
+    (echo "Playwright browser install failed, will use system Chromium" && \
+     echo "System Chromium path: $(which chromium || which chromium-browser || echo '/usr/bin/chromium')")
 
 # Copy built files and dependencies
 COPY --from=builder /app/dist ./dist

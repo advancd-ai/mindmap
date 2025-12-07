@@ -3,6 +3,8 @@
  */
 
 import { chromium, type Browser, type BrowserContext } from 'playwright';
+import { execSync } from 'child_process';
+import { existsSync } from 'fs';
 
 class BrowserPool {
   private browsers: Browser[] = [];
@@ -18,8 +20,35 @@ class BrowserPool {
 
     for (let i = 0; i < this.maxBrowsers; i++) {
       try {
+        // Try to find Chromium executable path
+        let executablePath: string | undefined = undefined;
+        if (process.env.PLAYWRIGHT_BROWSERS_PATH) {
+          executablePath = process.env.PLAYWRIGHT_BROWSERS_PATH;
+        } else {
+          // Try common Chromium paths (for Alpine Linux)
+          const commonPaths = ['/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/chrome'];
+          for (const path of commonPaths) {
+            if (existsSync(path)) {
+              executablePath = path;
+              break;
+            }
+          }
+          // If not found, try which command
+          if (!executablePath) {
+            try {
+              const chromiumPath = execSync('which chromium chromium-browser 2>/dev/null | head -1', { encoding: 'utf-8' }).trim();
+              if (chromiumPath) {
+                executablePath = chromiumPath;
+              }
+            } catch {
+              // Use default Playwright Chromium
+            }
+          }
+        }
+
         const browser = await chromium.launch({
           headless: true,
+          executablePath,
           args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
