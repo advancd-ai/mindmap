@@ -49,6 +49,11 @@ services:
       - LOCAL_GIT_AUTHOR_NAME=${LOCAL_GIT_AUTHOR_NAME:-Mindmap Ziin}
       - LOCAL_GIT_AUTHOR_EMAIL=${LOCAL_GIT_AUTHOR_EMAIL:-mindmap@ziin.ai}
       - LOCAL_GIT_SHELL=${LOCAL_GIT_SHELL:-git}
+      # PDF rendering settings (Playwright)
+      - PLAYWRIGHT_MAX_BROWSERS=${PLAYWRIGHT_MAX_BROWSERS:-3}
+      - PLAYWRIGHT_MAX_CONTEXTS=${PLAYWRIGHT_MAX_CONTEXTS:-5}
+      # PDF cache settings
+      - PDF_CACHE_TTL=${PDF_CACHE_TTL:-3600}
     volumes:
       # Persist local git repositories on the host when using GIT_PROVIDER=local
       - ${LOCAL_GIT_ROOT_HOST:-./data/repos}:${LOCAL_GIT_ROOT:-/data/repos}
