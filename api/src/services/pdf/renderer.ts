@@ -99,6 +99,9 @@ export class PDFService {
       // 마인드맵이 로드될 때까지 대기
       await this.waitForMindMapReady(page);
 
+      // 이미지가 모두 로드될 때까지 대기
+      await this.waitForImagesLoaded(page);
+
       // PDF 생성
       const pdfBuffer = await page.pdf({
         format: options.format || 'A4',
@@ -148,6 +151,59 @@ export class PDFService {
       await page.waitForTimeout(500);
     } catch (error) {
       console.warn('⚠️ MindMap ready check timeout, proceeding anyway');
+    }
+  }
+
+  private async waitForImagesLoaded(page: any): Promise<void> {
+    try {
+      console.log('🖼️ Waiting for images to load...');
+      
+      // 네트워크가 idle 상태가 될 때까지 대기
+      await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {
+        console.warn('⚠️ Network idle timeout, continuing...');
+      });
+
+      // 이미지 로딩 대기 (최대 15초)
+      await page.waitForFunction(
+        () => {
+          // @ts-ignore - document is available in browser context
+          const images = document.querySelectorAll('img');
+          const imageElements = Array.from(images);
+          
+          if (imageElements.length === 0) {
+            return true; // 이미지가 없으면 완료
+          }
+
+          // 모든 이미지가 로드되었는지 확인
+          const allLoaded = imageElements.every((img: any) => {
+            // 완전히 로드된 이미지 (naturalWidth > 0)
+            if (img.complete && img.naturalWidth > 0) {
+              return true;
+            }
+            // 로딩 중이거나 에러 상태
+            if (!img.complete && img.src) {
+              return false; // 아직 로딩 중
+            }
+            return true; // src가 없는 경우는 무시
+          });
+
+          // ImageDisplay 컴포넌트의 로딩 상태도 확인
+          // "Downloading image..." 텍스트가 없어야 함
+          // @ts-ignore - document is available in browser context
+          const bodyText = document.body?.textContent || '';
+          const hasLoadingImage = bodyText.includes('Downloading image');
+
+          return allLoaded && !hasLoadingImage;
+        },
+        { timeout: 15000 }
+      );
+
+      // 추가 대기 (이미지 렌더링 완료 및 blob URL 처리)
+      await page.waitForTimeout(2000);
+      
+      console.log('✅ All images loaded');
+    } catch (error) {
+      console.warn('⚠️ Image loading check timeout, proceeding anyway');
     }
   }
 
