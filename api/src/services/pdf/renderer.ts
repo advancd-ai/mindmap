@@ -42,6 +42,7 @@ export class PDFService {
     
     // 인증 토큰이 있는 경우 페이지 로드 전에 localStorage 설정 스크립트 추가
     if (options.authToken && options.userInfo) {
+      // @ts-ignore - Playwright browser context has DOM APIs
       await context.addInitScript((token: string, userInfo: any) => {
         // Zustand persist 형식에 맞게 auth-storage 설정
         const authStorage = {
@@ -53,7 +54,9 @@ export class PDFService {
           },
           version: 0
         };
+        // @ts-ignore - localStorage is available in browser context
         localStorage.setItem('auth-storage', JSON.stringify(authStorage));
+        // @ts-ignore - console is available in browser context
         console.log('✅ Auth token set in localStorage before page load');
       }, options.authToken, options.userInfo);
     }
@@ -129,6 +132,7 @@ export class PDFService {
       // 노드가 렌더링될 때까지 대기
       await page.waitForFunction(
         () => {
+          // @ts-ignore - document is available in browser context
           const svg = document.querySelector('svg.mindmap-canvas');
           return svg && svg.querySelectorAll('g.node').length > 0;
         },

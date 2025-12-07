@@ -36,15 +36,28 @@ pdfRouter.post('/export', requireAuth(), async (c) => {
     const authHeader = c.req.header('Authorization');
     const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
     
+    // Ensure user info has required fields
+    const userInfo = {
+      userId: user.userId,
+      email: user.email,
+      name: user.name || user.email || 'User',
+      picture: user.picture,
+    };
+    
     const pdfBuffer = await pdfService.generatePDF(url, {
       ...options,
       authToken: token || undefined, // 인증 토큰 전달
-      userInfo: user, // 사용자 정보도 함께 전달
+      userInfo: userInfo, // 사용자 정보도 함께 전달
     });
 
     c.header('Content-Type', 'application/pdf');
     c.header('Content-Disposition', `attachment; filename="mindmap.pdf"`);
-    return c.body(pdfBuffer);
+    return new Response(pdfBuffer, {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="mindmap.pdf"`,
+      },
+    });
   } catch (error: any) {
     console.error('PDF generation error:', error);
     return c.json({ 
@@ -90,7 +103,12 @@ pdfRouter.get('/export', requireAuth(), async (c) => {
 
     c.header('Content-Type', 'application/pdf');
     c.header('Content-Disposition', `attachment; filename="mindmap.pdf"`);
-    return c.body(pdfBuffer);
+    return new Response(pdfBuffer, {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="mindmap.pdf"`,
+      },
+    });
   } catch (error: any) {
     console.error('PDF generation error:', error);
     return c.json({ 
@@ -128,7 +146,12 @@ pdfRouter.get('/share/:token', async (c) => {
 
     c.header('Content-Type', 'application/pdf');
     c.header('Content-Disposition', `attachment; filename="mindmap.pdf"`);
-    return c.body(pdfBuffer);
+    return new Response(pdfBuffer, {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="mindmap.pdf"`,
+      },
+    });
   } catch (error: any) {
     console.error('PDF generation error:', error);
     return c.json({ 
