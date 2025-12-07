@@ -40,7 +40,10 @@ RUN apk add --no-cache \
     ttf-freefont \
     font-noto-emoji \
     udev \
-    ttf-opensans
+    ttf-opensans \
+    font-noto \
+    font-noto-cjk \
+    font-noto-extra
 
 # Install Playwright browsers
 # Note: Playwright may not fully support Alpine, so we use system Chromium
