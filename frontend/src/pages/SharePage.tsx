@@ -9,11 +9,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { fetchSharedMap } from '../api/share';
+import { exportSharedPDF, viewPDF } from '../api/pdf';
 import { useMindMapStore } from '../store/mindmap';
 import MindMapCanvas from '../components/MindMapCanvas';
 import PasswordPrompt from '../components/PasswordPrompt';
 import GoogleAdSense from '../components/GoogleAdSense';
 import Toolbox from '../components/Toolbox';
+import Toast, { type ToastType } from '../components/Toast';
 import './SharePage.css';
 
 export default function SharePage() {
@@ -26,6 +28,8 @@ export default function SharePage() {
   const [zoom, setZoom] = useState(1.0); // Zoom level (1.0 = 100%)
   const [showAd, setShowAd] = useState(true); // Ad visibility
   const [adCountdown, setAdCountdown] = useState(30); // Ad countdown timer (30 seconds for Share page)
+  const [isViewingPDF, setIsViewingPDF] = useState(false); // PDF view state
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   const setMap = useMindMapStore((state) => state.setMap);
   const map = useMindMapStore((state) => state.map);
@@ -93,6 +97,35 @@ export default function SharePage() {
       return () => clearInterval(interval);
     }
   }, [map, data, showAd]);
+
+  // Handle PDF view
+  const handleViewPDF = async () => {
+    if (!map || !token || isViewingPDF) return;
+
+    try {
+      setIsViewingPDF(true);
+      
+      // Export PDF using share token
+      const pdfBlob = await exportSharedPDF(token, {
+        format: 'A4',
+        landscape: true,
+      });
+      
+      // View PDF in new tab
+      viewPDF(pdfBlob);
+      
+      // Show success message
+      setToast({ message: t('share.pdfViewSuccess') || 'PDF opened in new tab', type: 'success' });
+    } catch (error: any) {
+      console.error('PDF view error:', error);
+      setToast({ 
+        message: error.message || t('share.pdfViewError') || 'Failed to view PDF', 
+        type: 'error' 
+      });
+    } finally {
+      setIsViewingPDF(false);
+    }
+  };
 
   // Auto-fit to screen when map is first loaded (Share page only)
   const hasAutoFittedRef = useRef(false);
@@ -198,12 +231,60 @@ export default function SharePage() {
           <h1>{map.title}</h1>
           <span className="share-readonly-badge">Read-only</span>
         </div>
-        <button 
-          className="btn-secondary share-open-in-app"
-          onClick={() => navigate('/login')}
-        >
-          Open in App
-        </button>
+        <div className="share-header-actions">
+          <button
+            className={`button button-secondary pdf-view-button${isViewingPDF ? ' viewing' : ''}`}
+            onClick={handleViewPDF}
+            disabled={isViewingPDF || !map}
+            title={isViewingPDF ? t('share.viewingPDF') : t('share.viewPDF')}
+            aria-label={isViewingPDF ? t('share.viewingPDF') : t('share.viewPDF')}
+            aria-busy={isViewingPDF}
+          >
+            {isViewingPDF ? (
+              <>
+                <svg
+                  className="pdf-button__icon spinning"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <circle cx="12" cy="12" r="10" strokeDasharray="31.416" strokeDashoffset="31.416">
+                    <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416;0 31.416" repeatCount="indefinite"/>
+                    <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416;-31.416" repeatCount="indefinite"/>
+                  </circle>
+                </svg>
+                <span className="pdf-button__label">{t('share.viewingPDF')}</span>
+              </>
+            ) : (
+              <>
+                <svg
+                  className="pdf-button__icon"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <span className="pdf-button__label">{t('share.viewPDF')}</span>
+              </>
+            )}
+          </button>
+          <button 
+            className="btn-secondary share-open-in-app"
+            onClick={() => navigate('/login')}
+          >
+            Open in App
+          </button>
+        </div>
       </header>
 
       <div className="share-content">
@@ -317,6 +398,15 @@ export default function SharePage() {
           onSubmit={handlePasswordSubmit}
           onCancel={handlePasswordCancel}
           error={passwordError}
+        />
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
         />
       )}
     </div>

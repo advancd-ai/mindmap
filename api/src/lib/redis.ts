@@ -79,5 +79,25 @@ export const cache = {
       // Don't throw - cache deletes are non-critical
     }
   },
+
+  async del(...keys: string[]): Promise<void> {
+    try {
+      const redis = getRedis();
+      await redis.del(keys);
+    } catch (error) {
+      console.error(`❌ Redis del error for keys ${keys.join(', ')}:`, error);
+      // Don't throw - cache deletes are non-critical
+    }
+  },
+
+  async keys(pattern: string): Promise<string[]> {
+    try {
+      const redis = getRedis();
+      return await redis.keys(pattern);
+    } catch (error) {
+      console.error(`❌ Redis keys error for pattern ${pattern}:`, error);
+      return [];
+    }
+  },
 };
 

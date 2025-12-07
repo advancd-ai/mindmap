@@ -341,7 +341,15 @@
   },
   "share": {
     "adNotice": "Clicking on Google ads helps support the site!",
-    "adBanner": "This service is supported by ads revenue. Your ad clicks help keep this service free for everyone 🙏"
+    "adBanner": "This service is supported by ads revenue. Your ad clicks help keep this service free for everyone 🙏",
+    "exportPDF": "Export PDF",
+    "exportingPDF": "Generating PDF...",
+    "pdfExportSuccess": "PDF exported successfully",
+    "pdfExportError": "Failed to export PDF. Please try again.",
+    "viewPDF": "View PDF",
+    "viewingPDF": "Opening PDF...",
+    "pdfViewSuccess": "PDF opened in new tab",
+    "pdfViewError": "Failed to view PDF. Please try again."
   }
 }
 

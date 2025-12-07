@@ -90,9 +90,46 @@
   font-weight: 500;
 }
 
+.share-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .share-open-in-app {
   padding: 8px 16px;
   font-size: 14px;
+}
+
+.pdf-export-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+}
+
+.pdf-export-button.exporting {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.pdf-button__icon {
+  color: currentColor;
+  flex-shrink: 0;
+}
+
+.pdf-button__icon.spinning {
+  animation: spin 1s linear infinite;
+}
+
+.pdf-button__label {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .share-ad-container {

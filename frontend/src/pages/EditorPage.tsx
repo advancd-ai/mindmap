@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useMindMapStore } from '../store/mindmap';
 import { useAuthStore } from '../store/auth';
 import { fetchMap, fetchMaps, fetchMapVersion, fetchMapHistory } from '../api/maps';
+import { exportPDF, viewPDF } from '../api/pdf';
 import { versionSynchronizer } from '../utils/versionSync';
 import { optimisticVersionManager } from '../utils/optimisticUpdate';
 import MindMapCanvas from '../components/MindMapCanvas';
@@ -39,6 +40,7 @@ export default function EditorPage() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [showAd, setShowAd] = useState(false); // Ad visibility (shown on save)
   const [adCountdown, setAdCountdown] = useState(10); // Ad countdown timer
+  const [isViewingPDF, setIsViewingPDF] = useState(false); // PDF view state
   const isReadOnly = !isNewMap && !isLatestVersion;
 
   // Listen for zoom change events from Toolbox
@@ -421,6 +423,38 @@ export default function EditorPage() {
     navigate('/login');
   };
 
+  // Handle PDF view
+  const handleViewPDF = async () => {
+    if (!map || !mapId || isViewingPDF) return;
+
+    try {
+      setIsViewingPDF(true);
+      
+      // Get current page URL
+      const currentUrl = window.location.href;
+      
+      // Export PDF
+      const pdfBlob = await exportPDF(currentUrl, {
+        format: 'A4',
+        landscape: true,
+      });
+      
+      // View PDF in new tab
+      viewPDF(pdfBlob);
+      
+      // Show success message
+      setToast({ message: t('editor.pdfViewSuccess'), type: 'success' });
+    } catch (error: any) {
+      console.error('PDF view error:', error);
+      setToast({ 
+        message: error.message || t('editor.pdfViewError'), 
+        type: 'error' 
+      });
+    } finally {
+      setIsViewingPDF(false);
+    }
+  };
+
 
   if (isFetchingMap) {
     return <div className="loading-page">
@@ -476,14 +510,15 @@ export default function EditorPage() {
               <span className="readonly-chip__text">{t('editor.readonly')}</span>
             </div>
           )}
-          {/* Share button, Save button, and Unsaved indicator */}
+          {/* Share button, PDF export button, Save button, and Unsaved indicator */}
           <div className="editor-actions">
             {mapId && (
-              <button
-                className="button button-secondary share-button"
-                onClick={() => setShowShareModal(true)}
-                title="Share map"
-              >
+              <>
+                <button
+                  className="button button-secondary share-button"
+                  onClick={() => setShowShareModal(true)}
+                  title="Share map"
+                >
                 <svg
                   className="share-button__icon"
                   width="16"
@@ -506,6 +541,53 @@ export default function EditorPage() {
                   {map?.shareEnabled ? 'Shared' : 'Share'}
                 </span>
               </button>
+              <button
+                className={`button button-secondary pdf-view-button${isViewingPDF ? ' viewing' : ''}`}
+                onClick={handleViewPDF}
+                disabled={isViewingPDF || !map}
+                title={isViewingPDF ? t('editor.viewingPDF') : t('editor.viewPDF')}
+                aria-label={isViewingPDF ? t('editor.viewingPDF') : t('editor.viewPDF')}
+                aria-busy={isViewingPDF}
+              >
+                {isViewingPDF ? (
+                  <>
+                    <svg
+                      className="pdf-button__icon spinning"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <circle cx="12" cy="12" r="10" strokeDasharray="31.416" strokeDashoffset="31.416">
+                        <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416;0 31.416" repeatCount="indefinite"/>
+                        <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416;-31.416" repeatCount="indefinite"/>
+                      </circle>
+                    </svg>
+                    <span className="pdf-button__label">{t('editor.viewingPDF')}</span>
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      className="pdf-button__icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <span className="pdf-button__label">{t('editor.viewPDF')}</span>
+                  </>
+                )}
+              </button>
+              </>
             )}
             {(isNewMap || isLatestVersion) && (
               <button

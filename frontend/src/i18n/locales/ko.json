@@ -84,7 +84,16 @@
     "unsavedChanges": "저장되지 않은 변경사항",
     "emptyCanvas": "\"노드 추가\" 버튼을 클릭하여 마인드맵 만들기 시작",
     "emptyCanvasHint": "우클릭으로 더 많은 옵션 보기",
-    "logout": "로그아웃"
+    "logout": "로그아웃",
+    "exportPDF": "PDF 내보내기",
+    "exportingPDF": "PDF 생성 중...",
+    "pdfExportSuccess": "PDF가 성공적으로 생성되었습니다",
+    "pdfExportError": "PDF 생성에 실패했습니다. 다시 시도해주세요.",
+    "pdfExportTimeout": "PDF 생성 시간이 초과되었습니다. 다시 시도해주세요.",
+    "viewPDF": "PDF 보기",
+    "viewingPDF": "PDF 열기 중...",
+    "pdfViewSuccess": "PDF가 새 탭에서 열렸습니다",
+    "pdfViewError": "PDF 보기에 실패했습니다. 다시 시도해주세요."
   },
   "toolbar": {
     "addNode": "+ 노드 추가",
@@ -341,7 +350,15 @@
   },
   "share": {
     "adNotice": "구글 광고 클릭은 사이트 운영에 도움을 줍니다!",
-    "adBanner": "이 서비스는 광고의 수익으로 운영됩니다. 광고 클릭은 무료 서비스를 유지하는 데 큰 도움이 됩니다 🙏"
+    "adBanner": "이 서비스는 광고의 수익으로 운영됩니다. 광고 클릭은 무료 서비스를 유지하는 데 큰 도움이 됩니다 🙏",
+    "exportPDF": "PDF 내보내기",
+    "exportingPDF": "PDF 생성 중...",
+    "pdfExportSuccess": "PDF가 성공적으로 생성되었습니다",
+    "pdfExportError": "PDF 생성에 실패했습니다. 다시 시도해주세요.",
+    "viewPDF": "PDF 보기",
+    "viewingPDF": "PDF 열기 중...",
+    "pdfViewSuccess": "PDF가 새 탭에서 열렸습니다",
+    "pdfViewError": "PDF 보기에 실패했습니다. 다시 시도해주세요."
   }
 }
 

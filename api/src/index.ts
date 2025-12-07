@@ -14,6 +14,7 @@ import { searchRouter } from './routes/search.js';
 import { webhookRouter } from './routes/webhooks.js';
 import { shareRouter } from './routes/share.js';
 import upload from './routes/upload.js';
+import { pdfRouter } from './routes/pdf.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { requestId } from './middleware/request-id.js';
 import { initRedis } from './lib/redis.js';
@@ -57,6 +58,7 @@ app.route('/maps', shareRouter);  // /maps/:id/share (share management, more spe
 app.route('/search', searchRouter);
 app.route('/webhooks', webhookRouter);
 app.route('/upload', upload);
+app.route('/pdf', pdfRouter);     // /pdf/export, /pdf/share/:token
 
 // 404 handler
 app.notFound((c) => {
