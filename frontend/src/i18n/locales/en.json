@@ -84,7 +84,16 @@
     "unsavedChanges": "Unsaved changes",
     "emptyCanvas": "Click \"Add Node\" to start building your mindmap",
     "emptyCanvasHint": "Right-click for more options",
-    "logout": "Logout"
+    "logout": "Logout",
+    "exportPDF": "Export PDF",
+    "exportingPDF": "Generating PDF...",
+    "pdfExportSuccess": "PDF exported successfully",
+    "pdfExportError": "Failed to export PDF. Please try again.",
+    "pdfExportTimeout": "PDF generation timed out. Please try again.",
+    "viewPDF": "View PDF",
+    "viewingPDF": "Opening PDF...",
+    "pdfViewSuccess": "PDF opened in new tab",
+    "pdfViewError": "Failed to view PDF. Please try again."
   },
   "toolbar": {
     "addNode": "+ Add Node",
