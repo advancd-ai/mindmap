@@ -42,13 +42,18 @@ export class PDFService {
     
     // 인증 토큰이 있는 경우 페이지 로드 전에 localStorage 설정 스크립트 추가
     if (options.authToken && options.userInfo) {
+      // 인자를 하나의 객체로 묶어서 전달
+      const authData = {
+        token: options.authToken,
+        userInfo: options.userInfo,
+      };
       // @ts-ignore - Playwright browser context has DOM APIs
-      await context.addInitScript((token: string, userInfo: any) => {
+      await context.addInitScript((data: { token: string; userInfo: any }) => {
         // Zustand persist 형식에 맞게 auth-storage 설정
         const authStorage = {
           state: {
-            token: token,
-            user: userInfo,
+            token: data.token,
+            user: data.userInfo,
             isAuthenticated: true,
             isGuest: false,
           },
@@ -58,7 +63,7 @@ export class PDFService {
         localStorage.setItem('auth-storage', JSON.stringify(authStorage));
         // @ts-ignore - console is available in browser context
         console.log('✅ Auth token set in localStorage before page load');
-      }, options.authToken, options.userInfo);
+      }, authData);
     }
     
     const page = await context.newPage();
