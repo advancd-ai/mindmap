@@ -279,6 +279,51 @@ VITE_ADSENSE_SLOT_SHARE_MIDDLE=2222222222
    - 형식: 가로형 배너
    - 슬롯 ID: 미지정 (자동 광고)
 
+## Docker 배포 시 환경변수 설정
+
+Docker로 빌드할 때는 빌드 타임에 환경변수를 전달해야 합니다:
+
+### Dockerfile 사용 시
+
+```bash
+docker build \
+  --build-arg VITE_ADSENSE_ENABLED=true \
+  -t mindmap-frontend:latest \
+  -f frontend/Dockerfile ./frontend
+```
+
+### docker-compose 사용 시
+
+`docker-compose.yml` 파일의 `frontend` 서비스에 `build.args`를 추가:
+
+```yaml
+frontend:
+  build:
+    context: ./frontend
+    dockerfile: Dockerfile
+    args:
+      - VITE_API_URL=${VITE_API_URL:-https://mindmap-api.ziin.ai}
+      - VITE_ADSENSE_ENABLED=${VITE_ADSENSE_ENABLED:-true}
+```
+
+그리고 `.env` 파일에 설정:
+
+```bash
+VITE_ADSENSE_ENABLED=true
+```
+
+### build.sh 스크립트 사용 시
+
+```bash
+# AdSense 활성화 (기본값)
+VITE_ADSENSE_ENABLED=true ./deployment/build.sh
+
+# AdSense 비활성화
+VITE_ADSENSE_ENABLED=false ./deployment/build.sh
+```
+
+**중요:** Vite 환경변수는 빌드 타임에 주입되므로, 이미지를 빌드한 후에는 변경할 수 없습니다. 다른 설정으로 변경하려면 이미지를 다시 빌드해야 합니다.
+
 ## 문제 해결
 
 ### 광고가 표시되지 않는 경우

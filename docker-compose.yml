@@ -76,6 +76,7 @@ services:
       dockerfile: Dockerfile
       args:
         - VITE_API_URL=${VITE_API_URL:-https://mindmap-api.ziin.ai}
+        - VITE_ADSENSE_ENABLED=${VITE_ADSENSE_ENABLED:-true}
     container_name: mindmap-frontend
     restart: unless-stopped
     depends_on:

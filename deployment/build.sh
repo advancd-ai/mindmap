@@ -37,8 +37,10 @@ echo ""
 # Build frontend
 echo -e "${GREEN}🔨 Building frontend image...${NC}"
 VITE_API_URL=${VITE_API_URL:-"http://localhost:8787"}
+VITE_ADSENSE_ENABLED=${VITE_ADSENSE_ENABLED:-"true"}
 docker build -t "${FRONTEND_IMAGE}" \
   --build-arg VITE_API_URL="${VITE_API_URL}" \
+  --build-arg VITE_ADSENSE_ENABLED="${VITE_ADSENSE_ENABLED}" \
   -f ../frontend/Dockerfile ../frontend
 echo -e "${GREEN}✅ Frontend image built: ${FRONTEND_IMAGE}${NC}"
 echo ""

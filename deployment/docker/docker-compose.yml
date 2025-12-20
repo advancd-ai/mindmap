@@ -66,6 +66,7 @@ services:
       dockerfile: ../frontend/Dockerfile
       args:
         - VITE_API_URL=${VITE_API_URL:-http://localhost:8787}
+        - VITE_ADSENSE_ENABLED=${VITE_ADSENSE_ENABLED:-true}
     container_name: mindmap-frontend
     restart: unless-stopped
     ports:
