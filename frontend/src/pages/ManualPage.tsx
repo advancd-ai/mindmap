@@ -12,7 +12,6 @@ import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import { useTranslation } from 'react-i18next';
 import AppleIcon from '../components/AppleIcon';
-import LanguageSelector from '../components/LanguageSelector';
 import './ManualPage.css';
 
 interface TocItem {
@@ -284,11 +283,12 @@ export default function ManualPage() {
                   <table {...props} />
                 </div>
               ),
-              code: ({ node, inline, ...props }) => {
-                if (inline) {
-                  return <code className="manual-inline-code" {...props} />;
+              code: ({ node, className, children, ...props }: any) => {
+                const isInline = !className || !className.includes('language-');
+                if (isInline) {
+                  return <code className="manual-inline-code" {...props}>{children}</code>;
                 }
-                return <code className="manual-code-block" {...props} />;
+                return <code className="manual-code-block" {...props}>{children}</code>;
               },
               pre: ({ node, ...props }) => (
                 <pre className="manual-pre" {...props} />
