@@ -14,6 +14,7 @@ import { useMindMapStore } from '../store/mindmap';
 import MindMapCanvas from '../components/MindMapCanvas';
 import PasswordPrompt from '../components/PasswordPrompt';
 import GoogleAdSense from '../components/GoogleAdSense';
+import { isAdSenseEnabled } from '../utils/adsense';
 import Toolbox from '../components/Toolbox';
 import Toast, { type ToastType } from '../components/Toast';
 import './SharePage.css';
@@ -289,7 +290,7 @@ export default function SharePage() {
 
       <div className="share-content">
         {/* Google AdSense - Positioned at 1/3 of screen height */}
-        {map && data?.ok && showAd && (
+        {map && data?.ok && showAd && isAdSenseEnabled() && (
           <div 
             className="share-ad-container"
             onClick={() => {

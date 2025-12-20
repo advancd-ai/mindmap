@@ -3,6 +3,7 @@
  */
 
 import { useEffect } from 'react';
+import { isAdSenseEnabled } from '../utils/adsense';
 import './GoogleAdSense.css';
 
 interface GoogleAdSenseProps {
@@ -26,6 +27,11 @@ export default function GoogleAdSense({
   style,
   className = ''
 }: GoogleAdSenseProps) {
+  // Return null if AdSense is disabled
+  if (!isAdSenseEnabled()) {
+    return null;
+  }
+
   useEffect(() => {
     try {
       // Initialize adsbygoogle array if it doesn't exist

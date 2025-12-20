@@ -215,17 +215,50 @@ export default function SharePage() {
    - `fullWidthResponsive={true}`를 사용하면 모바일에서도 잘 작동합니다
    - 필요시 미디어 쿼리를 사용하여 모바일/데스크톱에서 다른 광고를 표시할 수 있습니다
 
-## 환경 변수로 관리하기 (선택사항)
+## 환경 변수로 관리하기
+
+### AdSense 활성화/비활성화
+
+AdSense 광고 표시를 환경 변수로 제어할 수 있습니다:
+
+```bash
+# .env 파일
+# AdSense 활성화 (기본값: true)
+VITE_ADSENSE_ENABLED=true
+
+# AdSense 비활성화
+VITE_ADSENSE_ENABLED=false
+```
+
+**지원되는 값:**
+- 활성화: `true`, `1`, `yes`, `on`
+- 비활성화: `false`, `0`, `no`, `off`
+- 미설정 시 기본값: `true` (하위 호환성)
+
+**참고:** Vite에서는 클라이언트 측에서 접근 가능한 환경변수에 `VITE_` 접두사가 필요합니다.
+
+**사용 예시:**
+```bash
+# 개발 환경에서 광고 비활성화
+VITE_ADSENSE_ENABLED=false
+
+# 프로덕션 환경에서 광고 활성화
+VITE_ADSENSE_ENABLED=true
+```
+
+### 광고 슬롯 ID 관리 (선택사항)
 
 광고 슬롯 ID를 환경 변수로 관리하려면:
 
-```tsx
-// .env 파일
+```bash
+# .env 파일
 VITE_ADSENSE_SLOT_DASHBOARD_TOP=1234567890
 VITE_ADSENSE_SLOT_DASHBOARD_BOTTOM=0987654321
 VITE_ADSENSE_SLOT_EDITOR_SIDEBAR=1122334455
 VITE_ADSENSE_SLOT_SHARE_MIDDLE=2222222222
+```
 
+```tsx
 // 컴포넌트에서 사용
 <GoogleAdSense
   adSlot={import.meta.env.VITE_ADSENSE_SLOT_DASHBOARD_TOP}

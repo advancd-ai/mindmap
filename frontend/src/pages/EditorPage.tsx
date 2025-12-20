@@ -21,6 +21,7 @@ import VersionHistoryDialog from '../components/VersionHistoryDialog';
 import ShareSettingsModal from '../components/ShareSettingsModal';
 import Toolbox from '../components/Toolbox';
 import GoogleAdSense from '../components/GoogleAdSense';
+import { isAdSenseEnabled } from '../utils/adsense';
 import './EditorPage.css';
 
 export default function EditorPage() {
@@ -613,7 +614,7 @@ export default function EditorPage() {
 
       <div className="editor-content">
         {/* Google AdSense - Positioned at 1/3 of screen height */}
-        {map && showAd && (
+        {map && showAd && isAdSenseEnabled() && (
           <div 
             className="editor-ad-container"
             onClick={() => {

@@ -1,9 +1,19 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { isAdSenseEnabled } from './utils/adsense';
 import './i18n'; // Initialize i18n
 import App from './App.tsx';
 import './index.css';
+
+// Dynamically load AdSense script if enabled
+if (isAdSenseEnabled()) {
+  const script = document.createElement('script');
+  script.async = true;
+  script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6929869719862616';
+  script.crossOrigin = 'anonymous';
+  document.head.appendChild(script);
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
