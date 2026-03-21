@@ -17,48 +17,112 @@ permissions:
 jobs:
   notify:
     runs-on: ubuntu-latest
+    env:
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
     steps:
       - name: Send workflow status to Discord
         if: ${{ env.DISCORD_WEBHOOK_URL != '' }}
         env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
-          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
-          EVENT_NAME: ${{ github.event.workflow_run.event }}
-          BRANCH: ${{ github.event.workflow_run.head_branch }}
-          ACTOR: ${{ github.event.workflow_run.actor.login }}
-          RUN_URL: ${{ github.event.workflow_run.html_url }}
           REPOSITORY: ${{ github.repository }}
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+          WORKFLOW_PATH: ${{ github.event.workflow_run.path }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          STATUS: ${{ github.event.workflow_run.status }}
+          EVENT_NAME: ${{ github.event.workflow_run.event }}
+          DISPLAY_TITLE: ${{ github.event.workflow_run.display_title }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_NUMBER: ${{ github.event.workflow_run.run_number }}
+          RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+          ACTOR: ${{ github.event.workflow_run.actor.login }}
+          TRIGGERING_ACTOR: ${{ github.event.workflow_run.triggering_actor && github.event.workflow_run.triggering_actor.login || '' }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          CREATED_AT: ${{ github.event.workflow_run.created_at }}
+          UPDATED_AT: ${{ github.event.workflow_run.updated_at }}
+          RUN_STARTED_AT: ${{ github.event.workflow_run.run_started_at }}
         run: |
-          if [ "$CONCLUSION" = "success" ]; then
-            COLOR=3066993
-            STATUS_TEXT="SUCCESS"
-          elif [ "$CONCLUSION" = "failure" ]; then
-            COLOR=15158332
-            STATUS_TEXT="FAILED"
+          set -euo pipefail
+
+          # Short SHA for display and commit link
+          SHORT_SHA=$(echo "${HEAD_SHA:-}" | cut -c1-7)
+          if [ -n "${HEAD_SHA:-}" ]; then
+            COMMIT_DISPLAY="[\`${SHORT_SHA}\`](https://github.com/${REPOSITORY}/commit/${HEAD_SHA})"
           else
-            COLOR=9807270
-            STATUS_TEXT=$(echo "$CONCLUSION" | tr '[:lower:]' '[:upper:]')
+            COMMIT_DISPLAY="N/A"
           fi
 
-          PAYLOAD=$(cat <<EOF
-          {
-            "embeds": [
-              {
-                "title": "${WORKFLOW_NAME} ${STATUS_TEXT}",
-                "color": ${COLOR},
-                "fields": [
-                  { "name": "Repository", "value": "${REPOSITORY}", "inline": true },
-                  { "name": "Event", "value": "${EVENT_NAME}", "inline": true },
-                  { "name": "Branch", "value": "${BRANCH}", "inline": true },
-                  { "name": "Actor", "value": "${ACTOR}", "inline": true },
-                  { "name": "Workflow Run", "value": "[Open run](${RUN_URL})", "inline": false }
-                ]
-              }
-            ]
-          }
-          EOF
-          )
+          # Status / color (Discord embed color int)
+          case "${CONCLUSION:-unknown}" in
+            success) COLOR=3066993; STATUS_TEXT="SUCCESS" ;;
+            failure) COLOR=15158332; STATUS_TEXT="FAILED" ;;
+            cancelled) COLOR=9807270; STATUS_TEXT="CANCELLED" ;;
+            skipped) COLOR=9807270; STATUS_TEXT="SKIPPED" ;;
+            *) COLOR=9807270; STATUS_TEXT=$(echo "${CONCLUSION:-unknown}" | tr '[:lower:]' '[:upper:]') ;;
+          esac
+
+          # Optional: second line in description (truncate for Discord 4096 limit)
+          DESC=""
+          if [ -n "${DISPLAY_TITLE:-}" ]; then
+            DESC=$(printf '%s' "$DISPLAY_TITLE" | head -c 350)
+            [ "${#DISPLAY_TITLE}" -gt 350 ] && DESC="${DESC}…"
+          fi
+
+          BRANCH_DISP="${BRANCH:-N/A}"
+          TRIGGER_DISP="${TRIGGERING_ACTOR:-${ACTOR:-unknown}}"
+
+          PAYLOAD=$(jq -n \
+            --arg title "${WORKFLOW_NAME} — ${STATUS_TEXT}" \
+            --argjson color "$COLOR" \
+            --arg desc "$DESC" \
+            --arg repo "$REPOSITORY" \
+            --arg wf "$WORKFLOW_NAME" \
+            --arg wpath "$WORKFLOW_PATH" \
+            --arg conc "$CONCLUSION" \
+            --arg st "$STATUS" \
+            --arg ev "$EVENT_NAME" \
+            --arg br "$BRANCH_DISP" \
+            --arg commit_disp "$COMMIT_DISPLAY" \
+            --arg rn "$RUN_NUMBER" \
+            --arg ra "$RUN_ATTEMPT" \
+            --arg actor "$ACTOR" \
+            --arg trig "$TRIGGER_DISP" \
+            --arg runurl "$RUN_URL" \
+            --arg rid "$RUN_ID" \
+            --arg c_at "$CREATED_AT" \
+            --arg u_at "$UPDATED_AT" \
+            --arg s_at "$RUN_STARTED_AT" \
+            '{
+              embeds: [
+                (
+                  {
+                    title: $title,
+                    color: $color,
+                    fields: [
+                      { name: "Repository", value: $repo, inline: true },
+                      { name: "Workflow", value: $wf, inline: true },
+                      { name: "Conclusion", value: $conc, inline: true },
+                      { name: "Status (API)", value: $st, inline: true },
+                      { name: "Event", value: $ev, inline: true },
+                      { name: "Branch", value: $br, inline: true },
+                      { name: "Commit", value: $commit_disp, inline: true },
+                      { name: "Run", value: ("#" + $rn + " (attempt " + $ra + ")"), inline: true },
+                      { name: "Actor", value: $actor, inline: true },
+                      { name: "Triggered by", value: $trig, inline: true },
+                      { name: "Workflow file", value: ("`" + $wpath + "`"), inline: false },
+                      { name: "Run ID", value: $rid, inline: true },
+                      { name: "Started", value: $s_at, inline: true },
+                      { name: "Created", value: $c_at, inline: true },
+                      { name: "Updated", value: $u_at, inline: true },
+                      { name: "Open in GitHub", value: ("[View workflow run](" + $runurl + ")"), inline: false }
+                    ],
+                    footer: { text: "workflow_run · GitHub Actions" }
+                  }
+                  | if ($desc | length) > 0 then . + {description: $desc} else . end
+                  | if ($u_at | length) > 0 then . + {timestamp: $u_at} else . end
+                )
+              ]
+            }')
 
           curl -sS -X POST \
             -H "Content-Type: application/json" \
