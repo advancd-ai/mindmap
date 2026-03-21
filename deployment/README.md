@@ -16,7 +16,7 @@ deployment/
 │   ├── redis-deployment.yaml   # Redis cache
 │   ├── api-deployment.yaml     # Backend API
 │   ├── frontend-deployment.yaml # Frontend
-│   ├── ingress.yaml            # Ingress controller
+│   ├── gateway-api.yaml       # Gateway API (Gateway + HTTPRoute)
 │   └── hpa.yaml               # Horizontal Pod Autoscaler
 ├── build.sh                    # Build Docker images script
 ├── deploy-k8s.sh              # Deploy to Kubernetes script
@@ -123,37 +123,55 @@ VITE_API_URL=https://api.yourdomain.com ./build.sh your-registry v1.0.0
 
 ### Prerequisites
 
-- Kubernetes cluster (1.19+)
+- Kubernetes cluster (1.24+ recommended; Gateway API CRDs + controller required for `gateway-api.yaml`)
 - kubectl configured
-- Container registry (Docker Hub, GCR, ECR, etc.)
+- Container registry (GitHub Container Registry is used by CI; see below)
+- **Node architecture:** CI publishes **linux/arm64** images only. Your cluster nodes must be ARM64 (e.g. Graviton, Ampere), or change the publish workflow to build `amd64` / multi-arch.
 
 ### Setup
 
-#### 1. Build and Push Images
+#### 1. Container images (GitHub Container Registry)
+
+On pushes to `main`, [`.github/workflows/publish-ghcr.yml`](../.github/workflows/publish-ghcr.yml) builds and pushes:
+
+| Image | Example |
+|-------|---------|
+| API | `ghcr.io/<GitHub owner>/mindmap-api` |
+| Frontend | `ghcr.io/<GitHub owner>/mindmap-frontend` |
+
+Tags: `latest` (default branch), plus UTC `YYYYMMDD-HHMM` per build.
+
+For this upstream repo, manifests default to:
+
+- `ghcr.io/advancd-ai/mindmap-api:latest`
+- `ghcr.io/advancd-ai/mindmap-frontend:latest`
+
+If you use a fork or different org, edit `deployment/kubernetes/api-deployment.yaml` and `frontend-deployment.yaml` and replace `advancd-ai` with your GitHub user or organization name.
+
+**Optional — build locally instead of CI:**
 
 ```bash
-# Build images
 cd /path/to/mindmap
 
-# Backend
-docker build -t your-registry/mindmap-api:latest -f api/Dockerfile ./api
-docker push your-registry/mindmap-api:latest
+# Backend (match your target platform; CI uses arm64)
+docker build --platform linux/arm64 -t ghcr.io/your-org/mindmap-api:latest -f api/Dockerfile ./api
 
-# Frontend
-docker build -t your-registry/mindmap-frontend:latest \
+# Frontend (set VITE_API_URL to your public API URL)
+docker build --platform linux/arm64 -t ghcr.io/your-org/mindmap-frontend:latest \
   --build-arg VITE_API_URL=https://api.yourdomain.com \
   -f frontend/Dockerfile ./frontend
-docker push your-registry/mindmap-frontend:latest
 ```
 
-#### 2. Update Image References
+#### 2. Image references in manifests
 
-Edit `deployment/kubernetes/*.yaml` files and replace `mindmap-api:latest` and `mindmap-frontend:latest` with your registry URLs:
+`deployment/kubernetes/api-deployment.yaml` and `frontend-deployment.yaml` already point at GHCR. Change the owner in the `image:` field if needed:
 
 ```yaml
-image: your-registry/mindmap-api:latest
-image: your-registry/mindmap-frontend:latest
+image: ghcr.io/your-org/mindmap-api:latest
+image: ghcr.io/your-org/mindmap-frontend:latest
 ```
+
+**Private GHCR packages:** create a `docker-registry` secret and set `imagePullSecrets` on the Deployments. Public packages do not require a pull secret.
 
 #### 3. Create Secrets
 
@@ -214,7 +232,7 @@ kubectl apply -f secrets.yaml
 kubectl apply -f redis-deployment.yaml
 kubectl apply -f api-deployment.yaml
 kubectl apply -f frontend-deployment.yaml
-kubectl apply -f ingress.yaml
+kubectl apply -f gateway-api.yaml
 kubectl apply -f hpa.yaml
 ```
 
@@ -230,29 +248,49 @@ kubectl get pods -n mindmap
 # Check services
 kubectl get svc -n mindmap
 
-# Check ingress
-kubectl get ingress -n mindmap
+# Check Gateway API
+kubectl get gateway,httproute -n mindmap
 
 # View logs
 kubectl logs -f deployment/mindmap-api -n mindmap
 kubectl logs -f deployment/mindmap-frontend -n mindmap
 ```
 
-### Ingress Configuration
+### Gateway API configuration
 
-The `ingress.yaml` supports two routing modes:
+Traffic enters through a **Gateway** (from your Gateway controller), not through `Ingress`.
 
-#### Option 1: Separate Subdomains
-- Frontend: `https://yourdomain.com`
-- API: `https://api.yourdomain.com`
+**Prerequisites**
 
-Update `GOOGLE_REDIRECT_URI` and `VITE_API_URL` accordingly.
+1. Install [Gateway API](https://gateway-api.sigs.k8s.io/) CRDs and a **Gateway controller** (e.g. [NGINX Gateway Fabric](https://docs.nginx.com/nginx-gateway-fabric/), Envoy Gateway, Cilium, Istio, GKE Gateway, …).
+2. Confirm a `GatewayClass` exists:
+   ```bash
+   kubectl get gatewayclass
+   ```
+3. Edit `gateway-api.yaml` and set `spec.gatewayClassName` on the `Gateway` to that class name (default in this repo is `nginx`).
 
-#### Option 2: Path-based Routing
-- Frontend: `https://yourdomain.com/`
-- API: `https://yourdomain.com/api/`
+**Routing in `gateway-api.yaml`**
 
-Requires path rewriting in ingress annotations.
+| Route | Target |
+|-------|--------|
+| `api.yourdomain.com` | `mindmap-api-service:8787` |
+| `yourdomain.com/api` | API (path prefix; list **before** `/` in the same `HTTPRoute`) |
+| `yourdomain.com/` | Frontend |
+
+Replace `yourdomain.com` / `api.yourdomain.com` in `hostnames` with your real domains.
+
+**TLS**
+
+- TLS secret name: `mindmap-tls` (same idea as the old Ingress example).
+- cert-manager: `cert-manager.io/cluster-issuer` is set on the `Gateway`; adjust issuer name or manage the Secret manually.
+
+**Frontend Service**
+
+- `mindmap-frontend-service` is **ClusterIP**; external access is only via the Gateway (not a per-Service cloud LoadBalancer).
+
+**Path `/api` on the main host**
+
+- The API may expect to be mounted at `/` (subdomain). Sending traffic to `/api/...` without rewriting may require your Gateway controller’s **URL rewrite** / **RequestRedirect** filters, or run the API only on `api.yourdomain.com` (simplest).
 
 ### Scaling
 
@@ -295,8 +333,8 @@ kubectl get hpa -n mindmap
 ### Updates & Rollbacks
 
 ```bash
-# Update image
-kubectl set image deployment/mindmap-api api=your-registry/mindmap-api:v2 -n mindmap
+# Update image (use a tag pushed to GHCR, e.g. latest or YYYYMMDD-HHMM)
+kubectl set image deployment/mindmap-api api=ghcr.io/advancd-ai/mindmap-api:latest -n mindmap
 
 # Check rollout status
 kubectl rollout status deployment/mindmap-api -n mindmap
@@ -338,8 +376,8 @@ kubectl rollout history deployment/mindmap-api -n mindmap
 
 1. **Scan images for vulnerabilities:**
 ```bash
-docker scan mindmap-api:latest
-docker scan mindmap-frontend:latest
+docker scan ghcr.io/advancd-ai/mindmap-api:latest
+docker scan ghcr.io/advancd-ai/mindmap-frontend:latest
 ```
 
 2. **Use non-root users** (already configured in Dockerfiles)
@@ -419,12 +457,12 @@ kubectl logs <pod-name> -n mindmap
 
 **Image pull errors:**
 ```bash
-# Check image exists
-docker pull your-registry/mindmap-api:latest
+# Check image exists (GHCR; use your owner if not advancd-ai)
+docker pull ghcr.io/advancd-ai/mindmap-api:latest
 
-# Create image pull secret
+# Create image pull secret (private GHCR packages only)
 kubectl create secret docker-registry regcred \
-  --docker-server=your-registry \
+  --docker-server=ghcr.io \
   --docker-username=your-username \
   --docker-password=your-password \
   -n mindmap
@@ -443,8 +481,9 @@ kubectl get svc -n mindmap
 # Port forward for testing
 kubectl port-forward svc/mindmap-api-service 8787:8787 -n mindmap
 
-# Check ingress
-kubectl describe ingress mindmap-ingress -n mindmap
+# Check Gateway / HTTPRoute
+kubectl describe gateway mindmap-gateway -n mindmap
+kubectl describe httproute -n mindmap
 ```
 
 ## 🌐 Production Considerations
@@ -452,13 +491,12 @@ kubectl describe ingress mindmap-ingress -n mindmap
 ### Domain Setup
 
 1. **DNS Configuration:**
-   - Point `yourdomain.com` to LoadBalancer IP
-   - Point `api.yourdomain.com` to LoadBalancer IP
+   - Point `yourdomain.com` and `api.yourdomain.com` to the **Gateway** external address (from your Gateway controller, e.g. `kubectl get gateway -n mindmap` → `ADDRESS`).
 
 2. **SSL/TLS:**
    - Install cert-manager in cluster
    - Configure Let's Encrypt issuer
-   - Update `ingress.yaml` with your domain
+   - Update `gateway-api.yaml` hostnames and TLS / cert-manager annotations as needed
 
 3. **Google OAuth Redirect URI:**
    - Update in Google Cloud Console
@@ -532,7 +570,7 @@ kubectl apply -f secrets.yaml
 kubectl apply -f redis-deployment.yaml
 kubectl apply -f api-deployment.yaml
 kubectl apply -f frontend-deployment.yaml
-kubectl apply -f ingress.yaml
+kubectl apply -f gateway-api.yaml
 kubectl apply -f hpa.yaml
 ```
 
@@ -545,7 +583,7 @@ curl http://localhost:3000
 # Kubernetes
 kubectl get pods -n mindmap
 kubectl get svc -n mindmap
-kubectl get ingress -n mindmap
+kubectl get gateway,httproute -n mindmap
 ```
 
 ---

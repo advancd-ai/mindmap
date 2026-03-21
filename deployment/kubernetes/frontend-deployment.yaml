@@ -19,7 +19,9 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: mindmap-frontend:latest
+        # Published by CI: .github/workflows/publish-ghcr.yml → ghcr.io/<GitHub owner>/mindmap-frontend
+        # Tags: latest (main), or YYYYMMDD-HHMM (UTC). Images are linux/arm64 only.
+        image: ghcr.io/advancd-ai/mindmap-frontend:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 80
@@ -57,7 +59,8 @@ metadata:
   labels:
     app: mindmap-frontend
 spec:
-  type: LoadBalancer
+  # External access is via Gateway API (gateway-api.yaml), not a cloud LoadBalancer per Service.
+  type: ClusterIP
   ports:
   - port: 80
     targetPort: 80

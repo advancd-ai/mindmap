@@ -1,0 +1,90 @@
+# Kubernetes Gateway API (replaces Ingress)
+# Requires: Gateway API CRDs + a Gateway controller (e.g. NGINX Gateway Fabric, Envoy Gateway, Cilium, Istio).
+#   kubectl get gatewayclass
+# Set spec.gatewayClassName below to match an existing GatewayClass (default: nginx).
+#
+# TLS: ensure cert-manager (or your issuer) can provision the Secret referenced below,
+# or create `mindmap-tls` in namespace `mindmap` manually.
+
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: mindmap-gateway
+  namespace: mindmap
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  # Must match: kubectl get gatewayclass
+  gatewayClassName: nginx
+  listeners:
+    - name: http
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: Same
+    - name: https
+      port: 443
+      protocol: HTTPS
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: mindmap-tls
+      allowedRoutes:
+        namespaces:
+          from: Same
+---
+# API on subdomain: https://api.yourdomain.com
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: mindmap-api-subdomain
+  namespace: mindmap
+spec:
+  parentRefs:
+    - name: mindmap-gateway
+      sectionName: http
+    - name: mindmap-gateway
+      sectionName: https
+  hostnames:
+    - api.yourdomain.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: mindmap-api-service
+          port: 8787
+---
+# Main site: path /api -> API, then / -> frontend (same host)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: mindmap-main-host
+  namespace: mindmap
+spec:
+  parentRefs:
+    - name: mindmap-gateway
+      sectionName: http
+    - name: mindmap-gateway
+      sectionName: https
+  hostnames:
+    - yourdomain.com
+  rules:
+    # More specific path first
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      backendRefs:
+        - name: mindmap-api-service
+          port: 8787
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: mindmap-frontend-service
+          port: 80

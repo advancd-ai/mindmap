@@ -65,8 +65,8 @@ echo -e "${GREEN}✅ API deployed${NC}"
 kubectl apply -f kubernetes/frontend-deployment.yaml
 echo -e "${GREEN}✅ Frontend deployed${NC}"
 
-kubectl apply -f kubernetes/ingress.yaml
-echo -e "${GREEN}✅ Ingress configured${NC}"
+kubectl apply -f kubernetes/gateway-api.yaml
+echo -e "${GREEN}✅ Gateway API (Gateway + HTTPRoute) configured${NC}"
 
 kubectl apply -f kubernetes/hpa.yaml
 echo -e "${GREEN}✅ HPA configured${NC}"
@@ -84,8 +84,9 @@ echo -e "${YELLOW}🔗 Services:${NC}"
 kubectl get svc -n mindmap
 
 echo ""
-echo -e "${YELLOW}🌐 Ingress:${NC}"
-kubectl get ingress -n mindmap
+echo -e "${YELLOW}🌐 Gateway API:${NC}"
+kubectl get gateway -n mindmap 2>/dev/null || true
+kubectl get httproute -n mindmap 2>/dev/null || true
 
 echo ""
 echo -e "${GREEN}💡 Next steps:${NC}"

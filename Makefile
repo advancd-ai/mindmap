@@ -107,7 +107,7 @@ k8s-status:
 	@echo ""
 	kubectl get all -n mindmap
 	@echo ""
-	kubectl get ingress -n mindmap
+	kubectl get gateway,httproute -n mindmap 2>/dev/null || true
 
 k8s-logs:
 	@echo "📜 Kubernetes Logs:"

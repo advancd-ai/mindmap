@@ -248,7 +248,7 @@ mindmap/
 │   │   ├── redis-deployment.yaml
 │   │   ├── api-deployment.yaml
 │   │   ├── frontend-deployment.yaml
-│   │   ├── ingress.yaml
+│   │   ├── gateway-api.yaml
 │   │   └── hpa.yaml
 │   ├── nginx.conf       # Nginx configuration
 │   └── README.md        # Deployment guide
@@ -332,7 +332,7 @@ kubectl apply -f secrets.yaml
 kubectl apply -f redis-deployment.yaml
 kubectl apply -f api-deployment.yaml
 kubectl apply -f frontend-deployment.yaml
-kubectl apply -f ingress.yaml
+kubectl apply -f gateway-api.yaml
 kubectl apply -f hpa.yaml
 ```
 

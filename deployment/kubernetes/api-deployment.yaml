@@ -19,7 +19,9 @@ spec:
     spec:
       containers:
       - name: api
-        image: mindmap-api:latest
+        # Published by CI: .github/workflows/publish-ghcr.yml → ghcr.io/<GitHub owner>/mindmap-api
+        # Tags: latest (main), or YYYYMMDD-HHMM (UTC). Images are linux/arm64 only.
+        image: ghcr.io/advancd-ai/mindmap-api:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8787
