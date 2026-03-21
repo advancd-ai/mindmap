@@ -31,7 +31,7 @@ cp .env.example .env
 - `GOOGLE_REDIRECT_URI`: `https://localhost/auth/callback` (HTTPS 사용)
 - `FRONTEND_URL`: `https://localhost` (HTTPS 사용)
 - `CORS_ORIGIN`: `https://localhost` (HTTPS 사용)
-- `VITE_API_URL`: `https://localhost/api` (HTTPS 사용)
+- `VITE_API_URL`, `VITE_ADSENSE_ENABLED`: **컨테이너 시작 시** `runtime-config.js`로 주입됩니다(이미지 재빌드 없이 `.env` 수정 후 `docker compose up -d frontend`로 반영). 자세한 설명은 [docs/ENVIRONMENT.md](./docs/ENVIRONMENT.md) 참고.
 - `GITHUB_TOKEN`: GitHub API 사용 시 필요
 - `GITHUB_OWNER`, `GITHUB_ORG`: GitHub 저장소 설정
 

@@ -11,6 +11,8 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Runtime env (Docker/K8s): overwritten by docker-entrypoint.sh; local dev uses public/runtime-config.js stub -->
+    <script src="/runtime-config.js"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

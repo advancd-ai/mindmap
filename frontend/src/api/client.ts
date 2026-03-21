@@ -4,8 +4,9 @@
 
 import axios from 'axios';
 import { useAuthStore } from '../store/auth';
+import { getBackendBaseUrl } from '../config/runtime';
 
-const baseURL = import.meta.env.VITE_API_URL || '/api';
+const baseURL = getBackendBaseUrl();
 
 // Flag to prevent multiple redirects
 let isRedirecting = false;

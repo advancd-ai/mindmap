@@ -44,6 +44,10 @@ Production example:
 VITE_API_URL=https://api.example.com
 ```
 
+### Docker / nginx image
+
+`VITE_*` is **not** baked into the JS bundle. The container entrypoint writes `/runtime-config.js` from environment variables so one image can serve every environment. See **[docs/ENVIRONMENT.md](../docs/ENVIRONMENT.md)**.
+
 ## Project Structure
 
 ```

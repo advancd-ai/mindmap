@@ -3,6 +3,7 @@
  */
 
 import { useState } from 'react';
+import { getBackendBaseUrl } from '../config/runtime';
 import './EmbedDialog.css';
 
 interface EmbedDialogProps {
@@ -82,7 +83,7 @@ export default function EmbedDialog({ mapId, onSave, onCancel }: EmbedDialogProp
       }
       
       // Upload file to backend
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+      const apiUrl = getBackendBaseUrl();
       const response = await fetch(`${apiUrl}/upload`, {
         method: 'POST',
         headers,

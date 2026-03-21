@@ -79,11 +79,23 @@ Variables must be prefixed with `VITE_` to be exposed to the client.
 
 | Variable | Required | Default / notes |
 |----------|------------|-----------------|
-| `VITE_API_URL` | No | API base URL. In dev, many call sites fall back to `http://localhost:8787`; `api/client.ts` defaults to `/api` (use dev proxy or set explicitly). |
+| `VITE_API_URL` | No | API base URL. `api/client.ts` and other call sites default to `/api` (Vite dev proxy → backend). Set to a full URL (e.g. `https://api.example.com`) when the UI and API are on different origins. |
 | `VITE_DEV_MODE` | No | `true` → bypass Google login in UI (`App.tsx`, `store/auth.ts`, `LoginPage.tsx`). |
-| `VITE_ADSENSE_ENABLED` | No | Controls AdSense loading (`utils/adsense.ts`, `Dockerfile` build args). |
+| `VITE_ADSENSE_ENABLED` | No | Controls AdSense loading (`utils/adsense.ts`, `config/runtime.ts`). |
 
 See also `frontend/src/vite-env.d.ts`.
+
+### Local `npm run dev`
+
+`VITE_*` from `.env` / `.env.local` are inlined by Vite at dev-server time.
+
+### Docker / Kubernetes: frontend **runtime** config (one image, many environments)
+
+The production image is static assets (nginx). **`VITE_*` is not baked into the JS bundle.** At container start, `frontend/docker-entrypoint.sh` runs `jq` and writes **`/usr/share/nginx/html/runtime-config.js`**, which sets `window.__RUNTIME_CONFIG__` before the app loads (`index.html` loads this script first). The app reads runtime values in `frontend/src/config/runtime.ts` (with fallback to `import.meta.env` for local dev).
+
+- **Docker Compose:** set `VITE_API_URL` and `VITE_ADSENSE_ENABLED` under **`environment:`** for the `frontend` service (see root `docker-compose.yml`). No frontend rebuild needed when only these change — restart the container.
+- **Kubernetes:** set `VITE_API_URL` / `VITE_ADSENSE_ENABLED` in `mindmap-config` and wire them in `frontend-deployment.yaml` (already configured).
+- `VITE_DEV_MODE` is only for local `npm run dev`; it is not generated in `runtime-config.js`.
 
 ---
 
@@ -93,16 +105,13 @@ The root `docker-compose.yml` passes through the API variables listed there (inc
 
 **Default in `.env.example`:** `GIT_PROVIDER=local` with `LOCAL_GIT_ROOT` / `LOCAL_GIT_ROOT_HOST` so map data lives on disk under the mounted volume. Switch to `GIT_PROVIDER=github` and set `GITHUB_TOKEN` / `GITHUB_OWNER` (or `GITHUB_ORG`) to use GitHub instead.
 
-Frontend build args:
-
-- `VITE_API_URL`
-- `VITE_ADSENSE_ENABLED`
+**Frontend:** `VITE_API_URL`, `VITE_ADSENSE_ENABLED` — passed as **container `environment:`** (runtime `runtime-config.js`). Change `.env` and `docker compose up -d frontend` (no image rebuild required).
 
 ---
 
 ## Kubernetes
 
-- **ConfigMap** `mindmap-config`: includes **`GIT_PROVIDER=local`** and `LOCAL_*` keys by default (`deployment/kubernetes/configmap.yaml`).
+- **ConfigMap** `mindmap-config`: includes **`GIT_PROVIDER=local`**, `LOCAL_*`, and **`VITE_API_URL` / `VITE_ADSENSE_ENABLED`** for the frontend pod (`deployment/kubernetes/configmap.yaml`).
 - **Secret** `mindmap-secrets`: OAuth and optional GitHub token (`deployment/kubernetes/secrets.yaml.example`). `GITHUB_TOKEN` may be empty when using local storage.
 - **API Deployment** mounts `emptyDir` at `/data/repos` for local Git data; replace with a **PersistentVolumeClaim** for production durability.
 

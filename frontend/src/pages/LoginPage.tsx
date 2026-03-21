@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/auth';
 import LanguageSelector from '../components/LanguageSelector';
+import { getBackendBaseUrl } from '../config/runtime';
 import './LoginPage.css';
 
 export default function LoginPage() {
@@ -34,9 +35,8 @@ export default function LoginPage() {
       return;
     }
 
-    // Production: Redirect to Google OAuth
-    // Note: Backend server runs on port 8787 without /api prefix
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+    // Production: Redirect to Google OAuth (dev: Vite proxies /api → backend)
+    const apiUrl = getBackendBaseUrl();
     const authUrl = `${apiUrl}/auth/google`;
     console.log('🔐 Redirecting to:', authUrl);
     // Use window.location.assign() to avoid TrustedScriptURL error
@@ -48,7 +48,7 @@ export default function LoginPage() {
     console.log('👤 Initiating guest login...');
     
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+      const apiUrl = getBackendBaseUrl();
       const response = await fetch(`${apiUrl}/auth/guest`, {
         method: 'POST',
         headers: {

@@ -49,6 +49,17 @@ spec:
           periodSeconds: 5
           timeoutSeconds: 2
           failureThreshold: 3
+        env:
+          - name: VITE_API_URL
+            valueFrom:
+              configMapKeyRef:
+                name: mindmap-config
+                key: VITE_API_URL
+          - name: VITE_ADSENSE_ENABLED
+            valueFrom:
+              configMapKeyRef:
+                name: mindmap-config
+                key: VITE_ADSENSE_ENABLED
 
 ---
 apiVersion: v1

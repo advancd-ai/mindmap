@@ -69,16 +69,16 @@ services:
     networks:
       - stock-network
 
-  # Frontend
+  # Frontend: VITE_* are applied at container start (runtime-config.js), not at image build
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args:
-        - VITE_API_URL=${VITE_API_URL:-https://mindmap-api.ziin.ai}
-        - VITE_ADSENSE_ENABLED=${VITE_ADSENSE_ENABLED:-true}
     container_name: mindmap-frontend
     restart: unless-stopped
+    environment:
+      - VITE_API_URL=${VITE_API_URL:-https://mindmap-api.ziin.ai}
+      - VITE_ADSENSE_ENABLED=${VITE_ADSENSE_ENABLED:-true}
     depends_on:
       - api
     healthcheck:

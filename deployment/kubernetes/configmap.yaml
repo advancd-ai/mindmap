@@ -29,6 +29,11 @@ data:
   REDIS_HOST: "redis-service"
   REDIS_PORT: "6379"
 
+  # Frontend container env (docker-entrypoint.sh → /runtime-config.js). Same names as Vite for consistency.
+  # Set to your public API origin, e.g. https://api.example.com — empty means app falls back to /api (same-origin).
+  VITE_API_URL: ""
+  VITE_ADSENSE_ENABLED: "true"
+
 
 
 

@@ -115,8 +115,7 @@ The `build.sh` script automates building and optionally pushing images:
 # Build and push to registry
 ./build.sh your-registry.com/your-username v1.0.0
 
-# With custom API URL
-VITE_API_URL=https://api.yourdomain.com ./build.sh your-registry v1.0.0
+# Frontend image is environment-agnostic; set VITE_* at container run time (Compose/K8s).
 ```
 
 ## ☸️ Kubernetes Deployment
@@ -158,9 +157,8 @@ cd /path/to/mindmap
 # Backend (match your target platform; CI uses arm64)
 docker build --platform linux/arm64 -t ghcr.io/your-org/mindmap-api:latest -f api/Dockerfile ./api
 
-# Frontend (set VITE_API_URL to your public API URL)
+# Frontend (VITE_* is injected at container start, not build)
 docker build --platform linux/arm64 -t ghcr.io/your-org/mindmap-frontend:latest \
-  --build-arg VITE_API_URL=https://api.yourdomain.com \
   -f frontend/Dockerfile ./frontend
 ```
 

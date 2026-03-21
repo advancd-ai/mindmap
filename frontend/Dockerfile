@@ -20,17 +20,14 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build arguments for environment variables
-ARG VITE_API_URL
-ENV VITE_API_URL=${VITE_API_URL}
-
-ARG VITE_ADSENSE_ENABLED
-ENV VITE_ADSENSE_ENABLED=${VITE_ADSENSE_ENABLED}
-
+# VITE_* is not baked in at build time. At container start, docker-entrypoint.sh writes
+# /usr/share/nginx/html/runtime-config.js from env (see docs/ENVIRONMENT.md).
 RUN npm run build
 
 # Production image - serve with nginx
 FROM nginx:alpine AS runner
+
+RUN apk add --no-cache jq
 
 # Copy custom nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
@@ -38,18 +35,14 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Copy built static files
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Create non-root user
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+# Create non-root user (static files owned by nginx-user; entrypoint runs as root to write runtime-config.js)
 RUN addgroup --system --gid 1001 nginx-user && \
     adduser --system --uid 1001 nginx-user && \
     chown -R nginx-user:nginx-user /usr/share/nginx/html
 
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
-
-
-
-
-
-
-
+ENTRYPOINT ["/docker-entrypoint.sh"]

@@ -32,6 +32,7 @@ import AppleIcon from './AppleIcon';
 import DeleteConfirmDialog from './DeleteConfirmDialog';
 import './MindMapCanvas.css';
 import { getNodeAnchorPosition } from '../utils/anchorHelpers';
+import { getBackendBaseUrl } from '../config/runtime';
 
 interface MindMapCanvasProps {
   isReadOnly?: boolean;
@@ -724,7 +725,7 @@ export default function MindMapCanvas({
           headers.Authorization = `Bearer ${authToken}`;
         }
 
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+        const apiUrl = getBackendBaseUrl();
         const response = await fetch(`${apiUrl}/upload`, {
           method: 'POST',
           headers,
@@ -987,7 +988,7 @@ export default function MindMapCanvas({
     }
 
     // Upload file to backend
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+    const apiUrl = getBackendBaseUrl();
     const response = await fetch(`${apiUrl}/upload`, {
       method: 'POST',
       headers,

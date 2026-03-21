@@ -281,48 +281,30 @@ VITE_ADSENSE_SLOT_SHARE_MIDDLE=2222222222
 
 ## Docker 배포 시 환경변수 설정
 
-Docker로 빌드할 때는 빌드 타임에 환경변수를 전달해야 합니다:
-
-### Dockerfile 사용 시
-
-```bash
-docker build \
-  --build-arg VITE_ADSENSE_ENABLED=true \
-  -t mindmap-frontend:latest \
-  -f frontend/Dockerfile ./frontend
-```
+프론트엔드 이미지는 빌드 시 `VITE_*`를 넣지 않습니다. 컨테이너 시작 시 `docker-entrypoint.sh`가 `runtime-config.js`를 생성합니다 (`docs/ENVIRONMENT.md` 참고).
 
 ### docker-compose 사용 시
 
-`docker-compose.yml` 파일의 `frontend` 서비스에 `build.args`를 추가:
+`frontend` 서비스에 `environment:`로 설정하고 컨테이너를 재시작합니다:
 
 ```yaml
 frontend:
-  build:
-    context: ./frontend
-    dockerfile: Dockerfile
-    args:
-      - VITE_API_URL=${VITE_API_URL:-https://mindmap-api.ziin.ai}
-      - VITE_ADSENSE_ENABLED=${VITE_ADSENSE_ENABLED:-true}
+  environment:
+    - VITE_API_URL=${VITE_API_URL:-https://mindmap-api.ziin.ai}
+    - VITE_ADSENSE_ENABLED=${VITE_ADSENSE_ENABLED:-true}
 ```
 
-그리고 `.env` 파일에 설정:
+`.env` 예:
 
 ```bash
 VITE_ADSENSE_ENABLED=true
 ```
 
-### build.sh 스크립트 사용 시
+### build.sh / Dockerfile 직접 빌드
 
-```bash
-# AdSense 활성화 (기본값)
-VITE_ADSENSE_ENABLED=true ./deployment/build.sh
+이미지 빌드와 무관하게, 실행 시 `VITE_ADSENSE_ENABLED` 환경변수를 주입하면 됩니다 (Compose/Kubernetes 동일).
 
-# AdSense 비활성화
-VITE_ADSENSE_ENABLED=false ./deployment/build.sh
-```
-
-**중요:** Vite 환경변수는 빌드 타임에 주입되므로, 이미지를 빌드한 후에는 변경할 수 없습니다. 다른 설정으로 변경하려면 이미지를 다시 빌드해야 합니다.
+**참고:** AdSense on/off를 바꾼 뒤에는 프론트엔드 컨테이너만 재시작하면 되며, **이미지 재빌드는 필요 없습니다.**
 
 ## 문제 해결
 
