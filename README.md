@@ -1,6 +1,6 @@
 # Open Mindmap
 
-A visual thinking tool for organizing ideas with an intuitive mindmap interface. Features multiple node shapes, flexible connections, content embedding, and Google authentication. Each user has their own private GitHub repository for data storage.
+A visual thinking tool for organizing ideas with an intuitive mindmap interface. Features multiple node shapes, flexible connections, content embedding, and Google authentication. Map data is stored as Git: either via the **GitHub API** (per-user repos) or **on-disk Git** on your server (`GIT_PROVIDER=local` — default in `api/.env.example` and Docker/Kubernetes examples).
 
 ## 🌟 Features
 
@@ -12,7 +12,7 @@ A visual thinking tool for organizing ideas with an intuitive mindmap interface.
 - **Node Interactions**: Drag & drop, resize with 8-direction handles, collapse/expand, and connect
 - **Google Authentication**: Secure login with Google OAuth 2.0
 - **Guest Mode**: Try the app without signing in (shared repository)
-- **Personal GitHub Storage**: Each user has their own private GitHub repository (branch-based architecture)
+- **Git-backed storage**: Branch-based maps (`maps/{mapId}`) — **GitHub** (Octokit) or **local Git** on disk, configurable with `GIT_PROVIDER`
 - **Multi-language Support**: English and Korean with i18next
 - **JSON Preview**: Debug and verify changes before saving
 - **Zoom & Pan**: Navigate large mindmaps with mouse wheel zoom and canvas panning
@@ -22,20 +22,17 @@ A visual thinking tool for organizing ideas with an intuitive mindmap interface.
 ## 🏗️ Architecture
 
 ```
-┌──────────────┐         ┌──────────────────────┐         ┌──────────────┐
-│   Frontend   │ HTTPS   │   API (Node.js)      │   REST  │    GitHub    │
-│   (React)    │────────▶│   + Hono Framework   │────────▶│  {username}/ │
-│   + Zustand  │         │   + Redis            │         │  mindmap-data│
-└──────────────┘         └──────────────────────┘         └──────────────┘
-      │                           │                              │
-      │                           ├── Redis (Cache, Sessions)   │
-      │                           ├── Octokit (GitHub API)      │
-      │                           └── Google OAuth 2.0          │
-      │                                                          │
-      └──────────────────────────────────────────────────────────┘
-                          GitHub Branch per Map
-                          maps/map_1234567890
-                          maps/map_9876543210
+┌──────────────┐         ┌──────────────────────┐         ┌─────────────────────────┐
+│   Frontend   │ HTTPS   │   API (Node.js)      │   Git   │  GitHub API  OR  local │
+│   (React)    │────────▶│   + Hono + Redis     │────────▶│  filesystem repos       │
+│   + Zustand  │         │   + Google OAuth     │         │  (GIT_PROVIDER)         │
+└──────────────┘         └──────────────────────┘         └─────────────────────────┘
+      │                           │
+      │                           ├── Redis (sessions, cache)
+      │                           ├── Octokit (only if GIT_PROVIDER=github)
+      │                           └── Google OAuth 2.0
+                          │
+                          └── One branch per map: maps/map_1234567890 …
 ```
 
 ### Branch-Based Storage
@@ -53,7 +50,9 @@ Each mindmap is stored in its own Git branch:
 - **Redis** server (for sessions and caching)
 - **Google** account (for OAuth authentication)
 - **Google Cloud** Project with OAuth 2.0 credentials configured
-- **GitHub** account with Personal Access Token (repo permissions)
+- **Git storage** (pick one):
+  - **`GIT_PROVIDER=local`** (default in examples): writable directory for repos — no GitHub token required for map storage.
+  - **`GIT_PROVIDER=github`**: **GitHub** account and Personal Access Token (`repo`) — see [docs/GITHUB_SETUP.md](./docs/GITHUB_SETUP.md).
 - **Linux server** (for production deployment, optional)
 
 ## 🚀 Quick Start
@@ -93,54 +92,29 @@ Quick steps:
 3. Create credentials (Client ID & Secret)
 4. Add authorized redirect URIs
 
-### 5. Setup GitHub Token
+### 5. GitHub token (only if `GIT_PROVIDER=github`)
 
-Follow the detailed guide: [docs/GITHUB_SETUP.md](./docs/GITHUB_SETUP.md)
+If you use **GitHub** for map storage, follow [docs/GITHUB_SETUP.md](./docs/GITHUB_SETUP.md):
 
-Quick steps:
-1. Generate Personal Access Token in GitHub Settings
-2. Grant `repo` permissions
-3. Each user will have their own repository: `{username}/mindmap-data`
+1. Generate a Personal Access Token with `repo` scope  
+2. Set `GITHUB_TOKEN` (and `GITHUB_OWNER` / `GITHUB_ORG` as needed) in `api/.env`
+
+If you use **`GIT_PROVIDER=local`** (default in `api/.env.example`), you can skip this step for storage; GitHub token is still optional for other features.
 
 ### 6. Configure environment variables
 
-Create `api/.env` (see `api/.env.example`):
+**Reference:** [docs/ENVIRONMENT.md](./docs/ENVIRONMENT.md) (full list of variables used in code).
 
-```bash
-# Server
-PORT=8787
-NODE_ENV=development
+1. **API** — copy `api/.env.example` to `api/.env`. The example uses **`GIT_PROVIDER=local`** and `LOCAL_GIT_ROOT`. Set Google OAuth and Redis; add `GITHUB_*` only if you switch to GitHub storage. Use `DEV_MODE=true` only for local testing without OAuth.
 
-# Google OAuth
-GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-GOOGLE_REDIRECT_URI=http://localhost:8787/auth/google/callback
-FRONTEND_URL=http://localhost:3000
-
-# GitHub Storage
-GITHUB_TOKEN=ghp_your_personal_access_token
-# Optional: Set owner (organization or user account)
-# If not set, will use the authenticated user from GITHUB_TOKEN
-GITHUB_OWNER=your-github-username
-# Or for organizations:
-# GITHUB_ORG=your-organization-name
-
-# Redis
-REDIS_URL=redis://localhost:6379
-REDIS_PASSWORD=
-
-# CORS
-CORS_ORIGIN=http://localhost:3000
-
-# Development Mode (optional - bypasses authentication)
-DEV_MODE=true
-```
-
-Create `frontend/.env.local`:
+2. **Frontend** — create `frontend/.env.local`:
 
 ```bash
 VITE_API_URL=http://localhost:8787
-VITE_DEV_MODE=true  # Optional: bypasses Google login
+# Optional: bypass Google login in the UI (matches API DEV_MODE)
+VITE_DEV_MODE=true
+# Optional: AdSense
+# VITE_ADSENSE_ENABLED=false
 ```
 
 ### 7. Run development servers
@@ -194,6 +168,7 @@ mindmap/
 │   │   ├── lib/           # Redis client
 │   │   └── utils/         # GitHub username helpers
 │   ├── package.json
+│   ├── .env.example       # API env template (GIT_PROVIDER=local)
 │   └── tsconfig.json
 │
 ├── frontend/              # React frontend
@@ -229,10 +204,14 @@ mindmap/
 │   └── build-index.mjs    # (Deprecated with branch architecture)
 │
 ├── .github/
-│   └── workflows/         # CI/CD workflows
-│       └── validate-schema.yml
+│   └── workflows/         # CI/CD (schema validation, GHCR images, CodeQL, etc.)
+│       ├── publish-ghcr.yml
+│       ├── validate-schema.yml
+│       ├── codeql-analysis.yml
+│       └── …
 │
 ├── docs/                  # Documentation
+│   ├── ENVIRONMENT.md     # Environment variables reference
 │   ├── BRANCH_ARCHITECTURE.md
 │   ├── GITHUB_SETUP.md
 │   ├── GOOGLE_OAUTH_SETUP.md
@@ -308,13 +287,15 @@ make up
 # Or manually
 cd deployment/docker
 cp .env.example .env
-# Edit .env with your credentials
+# Edit .env (defaults use GIT_PROVIDER=local — see docs/ENVIRONMENT.md)
 docker-compose up -d
 ```
 
 See [deployment/README.md](./deployment/README.md) for details.
 
 ### ☸️ Kubernetes (Production)
+
+Container images are published to **GitHub Container Registry** (`ghcr.io/<owner>/mindmap-api`, `mindmap-frontend`) by [`.github/workflows/publish-ghcr.yml`](./.github/workflows/publish-ghcr.yml) (Linux **arm64**). Traffic uses **Gateway API** (`gateway-api.yaml`), not Ingress.
 
 ```bash
 # Using deployment script
@@ -336,7 +317,7 @@ kubectl apply -f gateway-api.yaml
 kubectl apply -f hpa.yaml
 ```
 
-See [deployment/README.md](./deployment/README.md) for details.
+See [deployment/README.md](./deployment/README.md) for prerequisites (Gateway controller, arm64 nodes, etc.).
 
 ### 🖥️ Traditional Server Deployment
 
@@ -373,10 +354,10 @@ npm run build
 
 ### Branch-Based Architecture
 
-Each mindmap is stored in its own Git branch:
+Each mindmap is stored in its own Git branch. With **GitHub**, repos are typically `{user}/mindmap-data`; with **local Git**, paths follow your `LOCAL_GIT_ROOT` layout.
 
 ```
-Repository: {username}/mindmap-data
+Example (GitHub): {username}/mindmap-data
 
 Branches:
 ├── main                     # Documentation (README.md)
@@ -429,7 +410,7 @@ Each `map.json` contains:
 
 ### Map List (Auto-generated)
 
-Map list is generated from GitHub branch list:
+Map list is generated from Git branches (GitHub API or local Git, depending on `GIT_PROVIDER`):
 
 ```typescript
 // GET /api/maps
@@ -489,10 +470,10 @@ Map list is generated from GitHub branch list:
 - **Google OAuth 2.0**: Secure authentication with Google accounts
 - **Session Management**: Redis-based session storage with expiration
 - **CORS Protection**: Configurable origin whitelist
-- **GitHub Token Security**: Environment-based token management
-- **Private Repositories**: Each user's data in private GitHub repo
+- **Git credentials**: GitHub PAT or local disk paths — never commit secrets; use env files and cluster Secrets
+- **Private data**: With GitHub backend, user data lives in private repos; with local backend, protect filesystem permissions and backups
 - **Schema Validation**: Automatic validation with AJV
-- **Rate Limiting**: GitHub API rate limits respected
+- **Rate Limiting**: GitHub API rate limits respected when using `GIT_PROVIDER=github`
 - **HTTPS Only**: Production requires HTTPS
 
 ## 📊 API Endpoints
@@ -549,7 +530,7 @@ See [frontend/src/components/README_I18N.md](./frontend/src/components/README_I1
 5. Add nodes, connect edges
 6. Try different node shapes and edge types
 7. Embed a YouTube video
-8. Save and verify in GitHub
+8. Save and verify in Git (GitHub or local remote)
 
 ### API Testing
 
@@ -564,6 +545,7 @@ curl -H "Authorization: Bearer {token}" \
 
 ## 📖 Documentation
 
+- **[docs/ENVIRONMENT.md](./docs/ENVIRONMENT.md)** - Environment variables (API, frontend, Docker/K8s)
 - **[docs/BRANCH_ARCHITECTURE.md](./docs/BRANCH_ARCHITECTURE.md)** - Branch-based storage architecture
 - **[docs/GITHUB_SETUP.md](./docs/GITHUB_SETUP.md)** - GitHub Personal Access Token setup
 - **[docs/GOOGLE_OAUTH_SETUP.md](./docs/GOOGLE_OAUTH_SETUP.md)** - Google OAuth configuration

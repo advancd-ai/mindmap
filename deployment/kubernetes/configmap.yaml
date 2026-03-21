@@ -1,3 +1,4 @@
+# Non-secret API settings. See docs/ENVIRONMENT.md and deployment/kubernetes/api-deployment.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -16,6 +17,13 @@ data:
   CORS_ORIGIN: "http://localhost:3000,https://yourdomain.com"
   DEV_MODE: "false"
   DISCORD_WEBHOOK_URL: ""
+  
+  # Storage: local on-disk Git (maps under LOCAL_GIT_ROOT). Use github + Secrets instead if preferred.
+  GIT_PROVIDER: "local"
+  LOCAL_GIT_ROOT: "/data/repos"
+  LOCAL_GIT_OWNER: "local"
+  LOCAL_GIT_AUTHOR_NAME: "Mindmap Ziin"
+  LOCAL_GIT_AUTHOR_EMAIL: "mindmap@ziin.ai"
   
   # Redis Configuration
   REDIS_HOST: "redis-service"

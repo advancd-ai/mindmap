@@ -28,13 +28,17 @@ Output will be in `dist/` directory.
 
 ## Configuration
 
-Create `.env.local`:
+Create `.env.local`. All `VITE_*` variables are listed in **[docs/ENVIRONMENT.md](../docs/ENVIRONMENT.md)**.
 
 ```bash
 VITE_API_URL=http://localhost:8787
+# Optional: skip Google login in UI (local dev)
+# VITE_DEV_MODE=true
+# Optional: AdSense
+# VITE_ADSENSE_ENABLED=false
 ```
 
-For production:
+Production example:
 
 ```bash
 VITE_API_URL=https://api.example.com

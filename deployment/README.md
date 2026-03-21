@@ -121,6 +121,8 @@ VITE_API_URL=https://api.yourdomain.com ./build.sh your-registry v1.0.0
 
 ## ☸️ Kubernetes Deployment
 
+Environment variables for the app are documented in **[docs/ENVIRONMENT.md](../docs/ENVIRONMENT.md)** (ConfigMap + Secrets templates in `deployment/kubernetes/`).
+
 ### Prerequisites
 
 - Kubernetes cluster (1.24+ recommended; Gateway API CRDs + controller required for `gateway-api.yaml`)

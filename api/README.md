@@ -45,38 +45,29 @@ npm install
 
 ### Configuration
 
-Create `.env` file:
+Copy `.env.example` to `.env` and edit. **Full variable list:** [docs/ENVIRONMENT.md](../docs/ENVIRONMENT.md).
+
+Minimal example:
 
 ```bash
-# Server
 PORT=8787
 NODE_ENV=development
 
-# Google OAuth
 GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your-google-client-secret
-GOOGLE_REDIRECT_URI=http://localhost:8787/api/auth/google/callback
-FRONTEND_URL=http://localhost:5173
+GOOGLE_REDIRECT_URI=http://localhost:8787/auth/google/callback
+FRONTEND_URL=http://localhost:3000
 
-# GitHub Storage
-# Personal Access Token with repo and org permissions
 GITHUB_TOKEN=ghp_your_personal_access_token
-
-# Organization name (all user repositories will be under this org)
-# Each user will have their own repository: {GITHUB_ORG}/{email-id}
-# Example: GITHUB_ORG=open-mindmap, user=john@example.com → open-mindmap/john
 GITHUB_ORG=open-mindmap
+# GITHUB_OWNER=...
 
-# Redis
 REDIS_URL=redis://localhost:6379
-REDIS_PASSWORD=
-
-# CORS
-CORS_ORIGIN=http://localhost:5173,http://localhost:3000
-
-# Development Mode (optional - bypasses authentication)
-DEV_MODE=true
+CORS_ORIGIN=http://localhost:3000
+DEV_MODE=false
 ```
+
+OAuth callback path is **`/auth/google/callback`** (routes are mounted at `/auth`, not under `/api`).
 
 **Setup Guides:**
 - Google OAuth 설정: [GOOGLE_OAUTH_SETUP.md](../docs/GOOGLE_OAUTH_SETUP.md)
@@ -143,7 +134,7 @@ api/
 ### Health Check
 
 ```
-GET /api/health
+GET /health
 ```
 
 Returns server status and uptime.

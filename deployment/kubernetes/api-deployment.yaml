@@ -70,6 +70,31 @@ spec:
               name: mindmap-config
               key: DISCORD_WEBHOOK_URL
               optional: true
+        - name: GIT_PROVIDER
+          valueFrom:
+            configMapKeyRef:
+              name: mindmap-config
+              key: GIT_PROVIDER
+        - name: LOCAL_GIT_ROOT
+          valueFrom:
+            configMapKeyRef:
+              name: mindmap-config
+              key: LOCAL_GIT_ROOT
+        - name: LOCAL_GIT_OWNER
+          valueFrom:
+            configMapKeyRef:
+              name: mindmap-config
+              key: LOCAL_GIT_OWNER
+        - name: LOCAL_GIT_AUTHOR_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: mindmap-config
+              key: LOCAL_GIT_AUTHOR_NAME
+        - name: LOCAL_GIT_AUTHOR_EMAIL
+          valueFrom:
+            configMapKeyRef:
+              name: mindmap-config
+              key: LOCAL_GIT_AUTHOR_EMAIL
         
         # From Secrets
         - name: GOOGLE_CLIENT_ID
@@ -92,11 +117,24 @@ spec:
             secretKeyRef:
               name: mindmap-secrets
               key: GITHUB_TOKEN
+              optional: true
         - name: GITHUB_OWNER
           valueFrom:
             secretKeyRef:
               name: mindmap-secrets
               key: GITHUB_OWNER
+              optional: true
+        - name: GITHUB_ORG
+          valueFrom:
+            secretKeyRef:
+              name: mindmap-secrets
+              key: GITHUB_ORG
+              optional: true
+        - name: GITHUB_WEBHOOK_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: mindmap-secrets
+              key: GITHUB_WEBHOOK_SECRET
               optional: true
         - name: REDIS_PASSWORD
           valueFrom:
@@ -104,6 +142,10 @@ spec:
               name: mindmap-secrets
               key: REDIS_PASSWORD
               optional: true
+        
+        volumeMounts:
+        - name: local-git-data
+          mountPath: /data/repos
         
         resources:
           requests:
@@ -130,6 +172,10 @@ spec:
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 3
+      
+      volumes:
+      - name: local-git-data
+        emptyDir: {}
 
 ---
 apiVersion: v1
