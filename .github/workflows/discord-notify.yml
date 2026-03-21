@@ -1,0 +1,65 @@
+name: Discord Notify
+
+on:
+  workflow_run:
+    workflows:
+      - Validate Schema
+      - Build Index
+      - Secret Scanning Check
+      - CodeQL
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send workflow status to Discord
+        if: ${{ env.DISCORD_WEBHOOK_URL != '' }}
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          EVENT_NAME: ${{ github.event.workflow_run.event }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          ACTOR: ${{ github.event.workflow_run.actor.login }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          if [ "$CONCLUSION" = "success" ]; then
+            COLOR=3066993
+            STATUS_TEXT="SUCCESS"
+          elif [ "$CONCLUSION" = "failure" ]; then
+            COLOR=15158332
+            STATUS_TEXT="FAILED"
+          else
+            COLOR=9807270
+            STATUS_TEXT=$(echo "$CONCLUSION" | tr '[:lower:]' '[:upper:]')
+          fi
+
+          PAYLOAD=$(cat <<EOF
+          {
+            "embeds": [
+              {
+                "title": "${WORKFLOW_NAME} ${STATUS_TEXT}",
+                "color": ${COLOR},
+                "fields": [
+                  { "name": "Repository", "value": "${REPOSITORY}", "inline": true },
+                  { "name": "Event", "value": "${EVENT_NAME}", "inline": true },
+                  { "name": "Branch", "value": "${BRANCH}", "inline": true },
+                  { "name": "Actor", "value": "${ACTOR}", "inline": true },
+                  { "name": "Workflow Run", "value": "[Open run](${RUN_URL})", "inline": false }
+                ]
+              }
+            ]
+          }
+          EOF
+          )
+
+          curl -sS -X POST \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD" \
+            "$DISCORD_WEBHOOK_URL"
