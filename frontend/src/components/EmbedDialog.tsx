@@ -18,8 +18,25 @@ export default function EmbedDialog({ mapId, onSave, onCancel }: EmbedDialogProp
   const [uploading, setUploading] = useState(false);
 
   const detectEmbedType = (inputUrl: string): 'youtube' | 'webpage' | 'image' | 'pdf' => {
-    if (inputUrl.includes('youtube.com') || inputUrl.includes('youtu.be')) {
-      return 'youtube';
+    // Detect YouTube URLs by parsing and checking the hostname rather than using a substring match
+    try {
+      const urlObj = new URL(inputUrl);
+      const hostname = urlObj.hostname.toLowerCase();
+      const isYoutubeDomain =
+        hostname === 'youtube.com' ||
+        hostname === 'www.youtube.com' ||
+        hostname === 'm.youtube.com' ||
+        hostname === 'youtu.be' ||
+        hostname.endsWith('.youtube.com');
+      if (isYoutubeDomain) {
+        return 'youtube';
+      }
+    } catch (e) {
+      // If URL parsing fails (e.g., relative URL), fall back to a conservative substring check
+      const lower = inputUrl.toLowerCase();
+      if (lower.includes('youtube.com') || lower.includes('youtu.be')) {
+        return 'youtube';
+      }
     }
     
     // Check for image URLs
