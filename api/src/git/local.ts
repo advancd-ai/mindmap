@@ -66,6 +66,8 @@ export class LocalGitProvider implements GitProvider {
     const isRepo = await git.checkIsRepo();
     if (!isRepo) {
       await git.init();
+      // Docker/bind mounts often differ from host file modes; avoid spurious dirty trees
+      await git.addConfig('core.fileMode', 'false', false, 'local');
       await git.addConfig('user.name', this.authorName, false, 'local');
       await git.addConfig('user.email', this.authorEmail, false, 'local');
 
@@ -74,6 +76,7 @@ export class LocalGitProvider implements GitProvider {
       await git.commit('Initial commit');
     } else {
       try {
+        await git.addConfig('core.fileMode', 'false', false, 'local');
         await git.addConfig('user.name', this.authorName, false, 'local');
         await git.addConfig('user.email', this.authorEmail, false, 'local');
       } catch (error) {
